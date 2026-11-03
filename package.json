@@ -16,7 +16,10 @@
     "actualizar": "node servidor/cli.mjs actualizar",
     "bajar": "node servidor/cli.mjs bajar",
     "buscar": "node servidor/cli.mjs buscar",
-    "catalogo": "node scripts/construir-catalogo.mjs"
+    "catalogo": "node scripts/construir-catalogo.mjs",
+    "trimestres": "node scripts/trimestres.mjs",
+    "prueba:trimestres": "node scripts/prueba-trimestres.mjs",
+    "prueba:tablas": "node scripts/prueba-tablas.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",

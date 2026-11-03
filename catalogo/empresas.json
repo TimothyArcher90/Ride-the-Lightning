@@ -1,0 +1,18 @@
+[
+  {"ticker": "AMZN", "cik": 1018724, "nombre": "Amazon"},
+  {"ticker": "AAPL", "cik": 320193, "nombre": "Apple"},
+  {"ticker": "MSFT", "cik": 789019, "nombre": "Microsoft"},
+  {"ticker": "GOOGL", "cik": 1652044, "nombre": "Alphabet (Google)"},
+  {"ticker": "META", "cik": 1326801, "nombre": "Meta (Facebook)"},
+  {"ticker": "NVDA", "cik": 1045810, "nombre": "NVIDIA"},
+  {"ticker": "TSLA", "cik": 1318605, "nombre": "Tesla"},
+  {"ticker": "NFLX", "cik": 1065280, "nombre": "Netflix"},
+  {"ticker": "AMD", "cik": 2488, "nombre": "AMD"},
+  {"ticker": "ORCL", "cik": 1341439, "nombre": "Oracle"},
+  {"ticker": "CRM", "cik": 1108524, "nombre": "Salesforce"},
+  {"ticker": "ADBE", "cik": 796343, "nombre": "Adobe"},
+  {"ticker": "COST", "cik": 909832, "nombre": "Costco"},
+  {"ticker": "WMT", "cik": 104169, "nombre": "Walmart"},
+  {"ticker": "KO", "cik": 21344, "nombre": "Coca-Cola"},
+  {"ticker": "INTC", "cik": 50863, "nombre": "Intel"}
+]

@@ -1,0 +1,10 @@
+Plantillas y ejemplos de tablas para Ride the Lightning.
+
+estado_resultados_ejemplo.csv  -> Sankey (origen, destino, valor, tipo[ingreso|beneficio|costo|neutral])
+composicion_ejemplo.csv        -> Anillo (concepto, valor)
+puente_ejemplo.csv             -> Cascada (concepto, valor, tipo[inicio|total|vacío])
+
+Las cifras de estos ejemplos son de DEMOSTRACIÓN: se tomaron de una imagen pública de terceros
+(App Economy Insights, «Amazon Q3 FY26 Income Statement», cifras en miles de millones de US$) y NO están
+verificadas contra el reporte oficial de la empresa. Para publicar, reemplázalas por las del reporte oficial.
+Reglas: los valores son siempre positivos en los flujos; en la cascada las restas llevan signo menos.

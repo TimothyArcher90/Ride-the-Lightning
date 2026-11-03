@@ -18,11 +18,11 @@ const api = async (u, o) => {
   return j;
 };
 const post = (u, body) => api(u, {method: 'POST', body: JSON.stringify(body)});
-const guardar = () => { try { localStorage.setItem('rtl', JSON.stringify({series: S.series, plantilla: S.plantilla, titulo: S.titulo, formato: S.formato, camara: S.camara, vivo: S.vivo, foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, tituloEditado: S.tituloEditado, paso: Math.min(S.paso, 3), etiquetas: S.etiquetas, sel: S.sel})); } catch {} };
+const guardar = () => { try { localStorage.setItem('rtl', JSON.stringify({series: S.series, plantilla: S.plantilla, titulo: S.titulo, formato: S.formato, camara: S.camara, vivo: S.vivo, foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, intento: S.intento, emp: S.emp, tituloEditado: S.tituloEditado, paso: Math.min(S.paso, 3), etiquetas: S.etiquetas, sel: S.sel})); } catch {} };
 const cargarGuardado = () => { try { return JSON.parse(localStorage.getItem('rtl') ?? 'null'); } catch { return null; } };
 
 const PASOS = ['Tus datos', 'Cómo verlo', 'Cámara y ritmo', 'Revisar y exportar'];
-const S = Object.assign({estiloMomento: 'tarjeta', tema: 'oscuro', foco: 0, paso: 0, series: [], plantilla: 'historia', titulo: '', tituloAuto: true, formato: 'horizontal', camara: 'documental', vivo: false, etiquetas: {}, sel: null,
+const S = Object.assign({estiloMomento: 'tarjeta', tema: 'oscuro', intento: 'serie', emp: null, empQ: '', empresas: null, trims: null, foco: 0, paso: 0, series: [], plantilla: 'historia', titulo: '', tituloAuto: true, formato: 'horizontal', camara: 'documental', vivo: false, etiquetas: {}, sel: null,
   bib: null, q: '', cat: '', plantillas: [], camaras: [], analisis: null, spec: null, plano: null, informe: null, notas: [], error: '', generando: false, modo: 'guiado', render: null, subida: null}, cargarGuardado() ?? {});
 S.tituloEditado = !!S.tituloEditado && !!S.titulo;
 
@@ -80,9 +80,31 @@ function pintarSeleccion() {
   c.querySelectorAll('.ficha-sel button').forEach((b) => (b.onclick = () => { S.series.splice(+b.dataset.k, 1); S.sel = null; S.analisis = null; guardar(); pintarLista(); pintarSeleccion(); pintarPasos(); regenerar(); }));
   const s = $('#sig'); if (s) s.onclick = () => ir(1);
 }
+// El primer paso no pide elegir «un tipo de gráfico»: pide elegir QUÉ HISTORIA se quiere contar. El estilo se deduce de ahí.
+const INTENTOS = [
+  {id: 'serie', t: 'Algo que cambia en el tiempo', s: 'Bitcoin, oro, inflación, tasas… Datos reales completos, siempre al día.', mini: 'historia', plantilla: 'historia'},
+  {id: 'flujos', t: 'Cómo gana y gasta dinero una empresa', s: 'Diagrama de flujo, trimestre a trimestre, con datos oficiales de la SEC.', mini: 'resultados', plantilla: 'resultados'},
+  {id: 'composicion', t: 'Cuánto pesa cada parte', s: 'Un anillo con las partes de un total y su porcentaje.', mini: 'composicion', plantilla: 'composicion'},
+  {id: 'puente', t: 'Qué sumó y qué restó', s: 'Una cascada desde un total hasta el resultado. También para pérdidas.', mini: 'puente', plantilla: 'puente'},
+];
+const claseDe = (intento) => (intento === 'serie' ? 'serie' : intento === 'flujos' ? 'flujos' : 'categorias');
+const claseDatos = () => S.series[0]?.tabla ?? (S.series.length ? 'serie' : claseDe(S.intento));
 function paso1() {
   $('#paso').innerHTML = `
-    <h2>¿Qué quieres mostrar?</h2>
+    <h2>¿Qué quieres contar?</h2>
+    <p class="ayuda">Elige una historia. El tipo de gráfico, la cámara y los colores los resolvemos nosotros.</p>
+    <div class="rejilla" id="intentos" style="grid-template-columns:repeat(2,minmax(0,1fr))" role="radiogroup" aria-label="Qué quieres contar">${INTENTOS.map((i) => `<button type="button" class="carta" role="radio" aria-checked="${S.intento === i.id}" data-id="${i.id}">${MINI[i.mini] ?? ''}<span class="marca">${ic('check')}</span><span class="tit">${esc(i.t)}</span><span class="sub">${esc(i.s)}</span></button>`).join('')}</div>
+    <div id="bloque"></div>`;
+  $('#intentos').querySelectorAll('.carta').forEach((b) => (b.onclick = () => {
+    const nuevo = b.dataset.id; if (nuevo === S.intento) return;
+    S.intento = nuevo;
+    if (S.series.length && claseDatos() !== claseDe(nuevo)) { S.series = []; S.sel = null; S.analisis = null; S.subida = null; S.spec = S.plano = S.informe = null; mostrarVista(); }
+    S.plantilla = INTENTOS.find((i) => i.id === nuevo).plantilla; guardar(); paso1(); pintarPasos();
+  }));
+  if (S.intento === 'serie') paso1Serie(); else paso1Tabla();
+}
+function paso1Serie() {
+  $('#bloque').innerHTML = `
     <p class="ayuda">Elige un dato real. Se descarga <strong>completo, desde el primer registro que existe</strong>, y se mantiene al día solo. No tienes que buscar ni pasar archivos.</p>
     <label class="etq" for="busca">Busca en palabras simples</label>
     <input id="busca" type="search" placeholder="oro, bitcoin, petróleo, inflación, dólar, población…" value="${esc(S.q)}" autocomplete="off">
@@ -100,6 +122,99 @@ function paso1() {
   pintarSeleccion(); pintarSubida(); if (S.bib) pintarLista(); else cargarBiblioteca();
 }
 
+// ── historias con tablas: empresa + trimestre (SEC), o tu propia tabla ──────────────────────────────────────────────
+const AYUDA_TABLA = {
+  flujos: {cols: 'Tres columnas: <strong>origen</strong>, <strong>destino</strong> y <strong>valor</strong> (y, si quieres, <strong>tipo</strong>: ingreso, beneficio o costo).', archivo: 'estado_resultados_ejemplo.csv'},
+  composicion: {cols: 'Dos columnas: <strong>concepto</strong> y <strong>valor</strong>.', archivo: 'composicion_ejemplo.csv'},
+  puente: {cols: 'Dos columnas: <strong>concepto</strong> y <strong>valor</strong> (las restas con signo menos). En <strong>tipo</strong> marca «inicio» la primera fila y «total» los subtotales: se comprueba que cuadren.', archivo: 'puente_ejemplo.csv'},
+};
+function paso1Tabla() {
+  const conEmpresa = S.intento === 'flujos' || S.intento === 'puente', a = AYUDA_TABLA[S.intento];
+  $('#bloque').innerHTML = `
+    ${conEmpresa ? `<h3>Una empresa, un trimestre</h3>
+      <p class="ayuda">Los números salen del <strong>reporte oficial</strong> que la empresa entrega a la SEC (10-Q / 10-K). Cuando publique el siguiente, aparece aquí solo.</p>
+      <label class="etq" for="busE">Busca una empresa</label>
+      <input id="busE" type="search" placeholder="Amazon, Apple, NVIDIA, Tesla…" value="${esc(S.empQ)}" autocomplete="off">
+      <div id="listaE"></div><div id="trims"></div>` : ''}
+    <h3>${conEmpresa ? 'O usa tu propia tabla' : 'Tu tabla'}</h3>
+    <p class="ayuda">${a.cols} Excel (xlsx, xls, ods) o CSV.</p>
+    <div class="fila"><button class="btn" id="ej">${ic('film')}Probar con un ejemplo</button><a class="btn" href="/ejemplos/${a.archivo}" download>${ic('up')}Descargar la plantilla</a></div>
+    <div id="drop" tabindex="0" style="margin-top:12px">${ic('up')} Suelta aquí tu archivo o <label for="arch" style="color:var(--oro);text-decoration:underline;cursor:pointer">elígelo</label><input id="arch" type="file" class="sr"></div>
+    <div id="subida"></div>
+    <div class="seleccion" id="seleccion"></div>`;
+  const drop = $('#drop'); drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('sobre'); }; drop.ondragleave = () => drop.classList.remove('sobre');
+  drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('sobre'); subir(e.dataTransfer.files[0]); };
+  $('#arch').onchange = (e) => subir(e.target.files[0]);
+  $('#ej').onclick = async () => {
+    try {
+      const j = await api('/api/ejemplo?id=' + S.intento);
+      S.series = [{origen: 'archivo', ruta: j.ruta, tabla: j.tabla, nombre: j.nombre, fuente: j.fuente, prefijo: j.prefijo, sufijo: j.sufijo, decimales: j.decimales}];
+      S.plantilla = INTENTOS.find((i) => i.id === S.intento).plantilla; S.tituloEditado = false; S.sel = null; S.analisis = null; S.modo = 'guiado';
+      guardar(); pintarSeleccion(); pintarPasos(); regenerar(); aviso('Ejemplo cargado: mira la vista previa. Las cifras son de demostración.');
+    } catch (e) { $('#subida').innerHTML = `<div class="aviso mal">${ic('warn')}<div>${esc(e.message)}</div></div>`; }
+  };
+  pintarSeleccion(); if (S.subida) pintarSubidaTabla();
+  if (conEmpresa) {
+    let d; $('#busE').oninput = (e) => { S.empQ = e.target.value; clearTimeout(d); d = setTimeout(cargarEmpresas, 200); };
+    cargarEmpresas(); if (S.emp && S.trims) pintarTrims();
+  }
+}
+async function cargarEmpresas() {
+  try { S.empresas = (await api('/api/empresas?q=' + encodeURIComponent(S.empQ))).empresas; } catch (e) { S.empresas = []; }
+  pintarEmpresas();
+}
+function pintarEmpresas() {
+  const c = $('#listaE'); if (!c) return;
+  const l = S.empresas ?? []; if (!l.length) { c.innerHTML = '<p class="ayuda">No tengo esa empresa todavía. Prueba con otra o sube tu propia tabla abajo.</p>'; return; }
+  c.innerHTML = `<div class="chips" role="radiogroup" aria-label="Empresas">${l.map((e) => `<button type="button" class="chip" role="radio" data-t="${esc(e.ticker)}" aria-checked="${S.emp === e.ticker}" aria-pressed="${S.emp === e.ticker}" title="${e.trimestres ? e.trimestres + ' trimestres · último ' + esc(e.ultimo) : 'Se descarga al elegirla'}">${esc(e.nombre)}</button>`).join('')}</div>`;
+  c.querySelectorAll('.chip').forEach((b) => (b.onclick = () => elegirEmpresa(b.dataset.t)));
+}
+async function elegirEmpresa(t) {
+  S.emp = t; S.trims = null; pintarEmpresas(); const box = $('#trims'); if (box) box.innerHTML = '<p class="ayuda">Trayendo los trimestres de la SEC…</p>';
+  try { S.trims = await api('/api/trimestres?ticker=' + t); } catch (e) { if (box) box.innerHTML = `<div class="aviso mal">${ic('warn')}<div>${esc(e.message)}</div></div>`; return; }
+  guardar(); pintarTrims();
+}
+const fmtMM = (v) => (v >= 1e9 ? 'US$ ' + (v / 1e9).toLocaleString('es-CO', {maximumFractionDigits: 1}) + ' mil M' : 'US$ ' + (v / 1e6).toLocaleString('es-CO', {maximumFractionDigits: 0}) + ' M');
+function pintarTrims() {
+  const box = $('#trims'); if (!box || !S.trims) return;
+  const T = S.trims, flujo = S.intento === 'flujos', sel = S.series[0]?.trimestre, esSel = (t) => sel && sel.ticker === T.ticker && sel.fin === t.fin;
+  const chip = (t) => { const off = flujo && !t.sankey; return `<button type="button" class="chip" data-fin="${t.fin}" aria-pressed="${esSel(t)}" ${off ? 'disabled' : ''} title="${esc(off ? 'Trimestre con pérdida: el flujo no puede dibujarlo. Usa «Qué sumó y qué restó».' : `Reporte ${t.form} del ${t.publicado} · ingresos ${fmtMM(t.ingresos)}${t.q4Calculado ? ' · Q4 calculado: año − 9 meses' : ''}`)}">${esc(t.etiqueta.replace(' FY', ' · '))}</button>`; };
+  const recientes = T.trimestres.slice(0, 8), resto = T.trimestres.slice(8), porAnio = {};
+  resto.forEach((t) => (porAnio[t.fy] ??= []).push(t));
+  box.innerHTML = `<h3 style="margin-top:14px">${esc(T.nombre)} · elige un trimestre</h3>
+    <div class="chips" role="group" aria-label="Trimestres recientes">${recientes.map(chip).join('')}</div>
+    ${resto.length ? `<details class="det"><summary>Ver los ${resto.length} trimestres anteriores (desde ${esc(T.trimestres.at(-1).etiqueta)})</summary>${Object.entries(porAnio).sort((a, b) => b[0] - a[0]).map(([y, l]) => `<p class="etq" style="margin:10px 0 4px">FY${y}</p><div class="chips">${l.map(chip).join('')}</div>`).join('')}</details>` : ''}
+    <p class="ayuda" style="margin-top:10px">Fuente: SEC EDGAR · dominio público. Última revisión ${esc(String(T.actualizado).slice(0, 10))}. Los trimestres nuevos se suman solos.</p>`;
+  box.querySelectorAll('.chip').forEach((b) => (b.onclick = () => elegirTrim(b.dataset.fin)));
+}
+async function elegirTrim(fin) {
+  const uso = S.intento === 'puente' ? 'puente' : 'sankey';
+  try {
+    const it = await api(`/api/trimestre?ticker=${S.emp}&fin=${fin}&uso=${uso}`);
+    S.series = [it]; S.plantilla = uso === 'sankey' ? 'resultados' : 'puente'; S.sel = null; S.analisis = null; S.modo = 'guiado'; S.tituloEditado = false;
+    guardar(); pintarSeleccion(); pintarPasos(); pintarTrims(); regenerar(); aviso(`${it.nombre}: listo. Mira la vista previa.`);
+  } catch (e) { $('#trims').insertAdjacentHTML('beforeend', `<div class="aviso mal">${ic('warn')}<div>${esc(e.message)}</div></div>`); }
+}
+function pintarSubidaTabla() {
+  const box = $('#subida'); if (!box || !S.subida) return;
+  const {insp, ruta, nombre, tabla} = S.subida, necesita = claseDe(S.intento), nom = nombre.replace(/\.[^.]+$/, '');
+  if (tabla !== necesita) {
+    box.innerHTML = `<div class="aviso mal">${ic('warn')}<div><strong>Esta tabla no sirve para esta historia.</strong><br>Tiene las columnas: ${insp.columnas.map((c) => esc(c.nombre)).join(', ')}.<br>${AYUDA_TABLA[S.intento].cols}</div></div>`; return;
+  }
+  box.innerHTML = `<div class="simple" style="margin-top:12px"><h3>${esc(nombre)} · ${insp.filas.toLocaleString('es-CO')} filas · detecté una tabla de ${tabla === 'flujos' ? 'flujos' : 'categorías'}</h3>
+    <label class="etq" for="fnom">¿De dónde vienen estos datos? (obligatorio)</label>
+    <input id="fnom" type="text" placeholder="Ej.: Informe trimestral de la empresa, 2026">
+    <p class="ayuda" style="margin:6px 0 0">Sale escrito al pie del video. Sin fuente no podemos garantizar la exactitud.</p>
+    <div class="fila" style="margin-top:10px"><div><label class="etq" for="fpre">Símbolo antes de la cifra</label><input id="fpre" type="text" placeholder="US$ " maxlength="6"></div><div><label class="etq" for="fsuf">Texto después de la cifra</label><input id="fsuf" type="text" placeholder=" mil M" maxlength="10"></div></div>
+    <div id="errSub"></div><div class="fila" style="margin-top:12px"><button class="btn p" id="usarSub">Usar esta tabla</button></div></div>`;
+  $('#usarSub').onclick = () => {
+    const fn = $('#fnom').value.trim(); if (!fn) { $('#errSub').innerHTML = `<div class="aviso mal">${ic('warn')}<div>Falta decir de dónde vienen los datos.</div></div>`; $('#fnom').focus(); return; }
+    S.series = [{origen: 'archivo', ruta, hoja: insp.hoja ?? undefined, filaEncabezado: insp.filaEncabezado, tabla, nombre: nom, fuente: {nombre: fn, obtenido: new Date().toISOString().slice(0, 10)}, prefijo: $('#fpre').value || undefined, sufijo: $('#fsuf').value || undefined, decimales: 'auto'}];
+    S.plantilla = INTENTOS.find((i) => i.id === S.intento).plantilla; S.tituloEditado = false; S.sel = null; S.analisis = null; S.modo = 'guiado';
+    guardar(); pintarSeleccion(); pintarPasos(); regenerar(); aviso('Listo: tu tabla está elegida. Mira la vista previa.');
+  };
+}
+
 // ── datos propios ───────────────────────────────────────────────────────────────────────────────────────────────
 async function subir(f) {
   if (!f) return;
@@ -107,7 +222,9 @@ async function subir(f) {
   try {
     const j = await api('/api/subir?nombre=' + encodeURIComponent(f.name), {method: 'POST', body: await f.arrayBuffer()});
     if (j.tipo === 'imagen') { box.innerHTML = `<div class="aviso ok">${ic('check')}<div>Imagen guardada: <span class="mono">${esc(j.ruta)}</span>. Las imágenes se usan como fondo o encuadre en el Modo experto.</div></div>`; return; }
-    S.subida = {ruta: j.ruta, insp: j.inspeccion, nombre: f.name}; pintarSubida();
+    S.subida = {ruta: j.ruta, insp: j.inspeccion, nombre: f.name, tabla: j.tabla};
+    if (j.tabla && S.intento === 'serie') { S.intento = j.tabla === 'flujos' ? 'flujos' : 'composicion'; S.plantilla = S.intento === 'flujos' ? 'resultados' : 'composicion'; guardar(); paso1(); pintarPasos(); return; }   // parece una tabla: pasamos a la historia que le corresponde
+    if (S.intento === 'serie') pintarSubida(); else pintarSubidaTabla();
   } catch (e) { box.innerHTML = `<div class="aviso mal">${ic('warn')}<div>No pude leer ese archivo: ${esc(e.message)}</div></div>`; }
 }
 function pintarSubida() {
@@ -148,6 +265,9 @@ const MINI = {
   historia: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true"><path d="M8 70 L40 64 L64 66 L96 40 L124 46 L168 18 L168 78 L8 78Z" fill="#C9A84C" opacity=".15"/><path d="M8 70 L40 64 L64 66 L96 40 L124 46 L168 18" fill="none" stroke="#C9A84C" stroke-width="3" stroke-linecap="round"/><circle cx="168" cy="18" r="5" fill="#fff"/><rect x="104" y="6" width="50" height="22" rx="3" fill="#232320" stroke="#C9A84C"/></svg>',
   panel: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true">' + [[8, 6], [106, 6], [8, 46], [106, 46]].map(([x, y], k) => `<path d="M${x} ${y + 32} L${x + 24} ${y + 24} L${x + 48} ${y + 28} L${x + 84} ${y + 6}" fill="none" stroke="${['#C9A84C', '#50B5A2', '#C27BCB', '#CBC6BC'][k]}" stroke-width="2.5"/>`).join('') + '</svg>',
   carrera: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true">' + [150, 120, 96, 60].map((w, k) => `<rect x="10" y="${8 + k * 19}" width="${w}" height="13" rx="2" fill="${['#CBC6BC', '#50B5A2', '#C9A84C', '#C27BCB'][k]}"/>`).join('') + '</svg>',
+  resultados: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true"><rect x="8" y="12" width="8" height="60" fill="#C9A84C"/><path d="M16 14 C50 14 50 8 84 8 L84 38 C50 38 50 70 16 70Z" fill="#4FB477" opacity=".4"/><path d="M16 40 C50 40 50 44 84 44 L84 70 C50 70 50 70 16 70Z" fill="#D9534F" opacity=".4"/><rect x="84" y="8" width="8" height="30" fill="#4FB477"/><rect x="84" y="44" width="8" height="26" fill="#D9534F"/><path d="M92 10 C130 10 130 12 168 12 L168 26 C130 26 130 30 92 30Z" fill="#4FB477" opacity=".4"/><path d="M92 32 C130 32 130 48 168 48 L168 60 C130 60 130 36 92 36Z" fill="#D9534F" opacity=".4"/><rect x="168" y="12" width="8" height="14" fill="#4FB477"/><rect x="168" y="48" width="8" height="12" fill="#D9534F"/></svg>',
+  composicion: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true"><g transform="translate(46 42)" fill="none" stroke-width="16">' + [['#C9A84C', 0, 38], ['#50B5A2', 38, 24], ['#C27BCB', 62, 20], ['#4FB477', 82, 12], ['#CBC6BC', 94, 6]].map(([c, a, b]) => `<circle r="26" stroke="${c}" stroke-dasharray="${(b * 163.4) / 100} 163.4" stroke-dashoffset="${-(a * 163.4) / 100}" transform="rotate(-90)"/>`).join('') + '</g><g fill="#CBC6BC" opacity=".5"><rect x="104" y="18" width="70" height="6" rx="2"/><rect x="104" y="34" width="56" height="6" rx="2"/><rect x="104" y="50" width="62" height="6" rx="2"/></g></svg>',
+  puente: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true"><rect x="12" y="10" width="22" height="62" fill="#C9A84C"/><rect x="44" y="10" width="22" height="26" fill="#D9534F"/><rect x="76" y="36" width="22" height="36" fill="#C9A84C"/><rect x="108" y="36" width="22" height="14" fill="#D9534F"/><rect x="140" y="50" width="22" height="22" fill="#4FB477" opacity=".9"/><path d="M34 10 H44 M66 36 H76 M98 36 H108 M130 50 H140" stroke="#CBC6BC" stroke-dasharray="3 3" opacity=".6"/></svg>',
   correlacion: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true">' + [0, 1, 2, 3].flatMap((r) => [0, 1, 2, 3].map((c) => `<rect x="${50 + c * 26}" y="${4 + r * 19}" width="24" height="17" rx="2" fill="${r === c ? '#50B5A2' : (r + c) % 3 === 0 ? '#C27BCB' : '#50B5A2'}" opacity="${r === c ? 1 : 0.25 + ((r * 3 + c) % 4) * 0.2}"/>`)).join('') + '</svg>',
 };
 async function paso2() {
@@ -155,10 +275,13 @@ async function paso2() {
   $('#paso').innerHTML = `
     <h2>¿Cómo lo quieres ver?</h2>
     <p class="ayuda">Elige un estilo. Ya viene con el ritmo, los zooms y los colores de marca resueltos; tú decides qué contar.</p>
-    <div class="rejilla" role="radiogroup" aria-label="Estilos de animación">${S.plantillas.map((p) => {
-      const ok = n >= p.necesita.min && n <= p.necesita.max;
-      return `<button type="button" class="carta tpl" role="radio" aria-checked="${S.plantilla === p.id}" aria-disabled="${!ok}" data-id="${p.id}">${MINI[p.id] ?? ''}<span class="marca">${ic('check')}</span><span class="tit">${esc(p.nombre)}</span><span class="sub">${esc(p.descripcion)}</span><span class="sub" style="color:${ok ? 'var(--teal)' : 'var(--oro)'}">${ok ? ic('check') : ic('warn')} ${ok ? 'Encaja con lo que elegiste' : esc(p.ayuda) + ` Elegiste ${n}.`}</span></button>`;
-    }).join('')}</div>
+    ${(() => {
+      // solo se muestran los estilos que sirven para lo que elegiste; el resto queda plegado (sin regañar)
+      const clase = claseDatos(), mios = S.plantillas.filter((p) => (p.datos ?? 'serie') === clase), encajan = mios.filter((p) => n >= p.necesita.min && n <= p.necesita.max), otros = mios.filter((p) => !encajan.includes(p));
+      const carta = (p, ok) => `<button type="button" class="carta tpl" role="radio" aria-checked="${S.plantilla === p.id}" aria-disabled="${!ok}" data-id="${p.id}">${MINI[p.id] ?? ''}<span class="marca">${ic('check')}</span><span class="tit">${esc(p.nombre)}</span><span class="sub">${esc(p.descripcion)}</span>${ok ? '' : `<span class="sub" style="color:var(--oro)">${ic('warn')} ${esc(p.ayuda)} Elegiste ${n}.</span>`}</button>`;
+      const casos = clase === 'categorias' && S.intento !== 'serie' ? encajan.filter((p) => (S.intento === 'puente' ? p.id === 'puente' : p.id === 'composicion')).concat(encajan.filter((p) => !(S.intento === 'puente' ? p.id === 'puente' : p.id === 'composicion'))) : encajan;
+      return `<div class="rejilla" role="radiogroup" aria-label="Estilos de animación">${casos.map((p) => carta(p, true)).join('')}</div>${otros.length ? `<details class="det"><summary>Otros estilos (necesitan otra cantidad de datos)</summary><div class="rejilla" style="margin-top:10px">${otros.map((p) => carta(p, false)).join('')}</div></details>` : ''}`;
+    })()}
     <h3>Título</h3>
     <label class="etq" for="titulo">Lo que se lee arriba del video (corto funciona mejor)</label>
     <input id="titulo" type="text" maxlength="60" value="${esc(S.titulo)}" placeholder="${esc(S.series[0]?.nombre ?? 'Mi título')}">
@@ -194,6 +317,16 @@ const limpio = (s) => { const {ficha, ...r} = s; return r; };
 
 // ── PASO 3: cámara y ritmo ──────────────────────────────────────────────────────────────────────────────────────
 function paso3() {
+  if (S.series[0]?.tabla) {   // flujos, anillos y cascadas se construyen solos: no hay cámara que elegir, solo el aspecto
+    $('#paso').innerHTML = `
+      <h2>Aspecto</h2>
+      <p class="ayuda">Esta animación se construye sola, de izquierda a derecha, sin zooms que elegir. Solo falta escoger cómo se ve.</p>
+      <div class="seg" role="group" aria-label="Aspecto de color"><button type="button" data-tema="oscuro" aria-pressed="${S.tema === 'oscuro'}">MacroWise (oscuro cálido)</button><button type="button" data-tema="harris" aria-pressed="${S.tema === 'harris'}">Negro y rosa-rojo</button><button type="button" data-tema="carbon" aria-pressed="${S.tema === 'carbon'}">Gris carbón y teal</button></div>
+      ${S.plano ? `<p class="ayuda" style="margin-top:16px">Duración: <strong>${S.plano.duracion.toFixed(1)} segundos</strong>.</p>` : ''}
+      ${barraNav(true, true, 'Siguiente: revisar y exportar')}`;
+    $('#paso').querySelectorAll('[data-tema]').forEach((b) => (b.onclick = () => { S.tema = b.dataset.tema; guardar(); paso3(); regenerar(); }));
+    enlazarNav(2); return;
+  }
   $('#paso').innerHTML = `
     <h2>Cámara y ritmo</h2>
     <p class="ayuda">Define cómo se mueve la cámara y qué tan rápido se cuenta. Puedes cambiarlo y ver el resultado a la derecha al instante.</p>
@@ -263,8 +396,9 @@ const regenerarDebounce = () => { clearTimeout(deb); deb = setTimeout(regenerar,
 async function regenerar() {
   const seq = ++genSeq, def = S.plantillas.find((p) => p.id === S.plantilla);
   if (!S.series.length) { S.spec = S.plano = S.informe = null; mostrarVista(); pintarEstadoPasos(); return; }
-  if (def && (S.series.length < def.necesita.min || S.series.length > def.necesita.max)) {
-    const ok = S.plantillas.find((p) => S.series.length >= p.necesita.min && S.series.length <= p.necesita.max);
+  const claseSel = S.series[0]?.tabla ?? 'serie';
+  if (def && ((def.datos ?? 'serie') !== claseSel || S.series.length < def.necesita.min || S.series.length > def.necesita.max)) {
+    const ok = S.plantillas.find((p) => (p.datos ?? 'serie') === claseSel && S.series.length >= p.necesita.min && S.series.length <= p.necesita.max);
     if (ok) { S.plantilla = ok.id; guardar(); if (S.paso === 1) paso2(); } else { S.error = 'Esta cantidad de datos no encaja con ningún estilo.'; mostrarVista(); return; }
   }
   S.generando = true; $('#carga').hidden = false; S.error = '';
@@ -321,12 +455,12 @@ function pintarSimple() {
   const cifras = inf.cifras.filter((c) => c.mostrado), fuentes = [...new Set(inf.datos.map((d) => d.fuente.nombre))];
   if (inf.errores.length) inf.errores.forEach((e) => items.push(li('mal', 'warn', esc(e))));
   else items.push(li('ok', 'check', `<strong>Todas las cifras salen de los datos.</strong> ${cifras.length} cifra${cifras.length === 1 ? '' : 's'} en pantalla, calculadas por el sistema (ninguna escrita a mano).`));
-  inf.datos.forEach((d) => items.push(li('ok', 'check', `<strong>Datos reales:</strong> ${esc(d.fuente.nombre)}.<br><span class="mono" style="font-size:12px;color:var(--suave)">${esc(String(d.inicio))} → ${esc(String(d.fin))} · ${d.filas.toLocaleString('es-CO')} registros${d.recortada ? ' · RECORTADA' : ' · serie completa'}</span>${d.fuente.url ? `<br><a href="${esc(d.fuente.url)}" target="_blank" rel="noopener">Ver la fuente</a>` : ''}`)));
+  inf.datos.forEach((d) => items.push(li('ok', 'check', `<strong>Datos reales:</strong> ${esc(d.fuente.nombre)}.<br><span class="mono" style="font-size:12px;color:var(--suave)">${d.tipoTabla ? `${d.elementos} elementos · ${d.filas.toLocaleString('es-CO')} filas · cada cifra sale de su fila` : `${esc(String(d.inicio))} → ${esc(String(d.fin))} · ${d.filas.toLocaleString('es-CO')} registros${d.recortada ? ' · RECORTADA' : ' · serie completa'}`}</span>${d.fuente.url ? `<br><a href="${esc(d.fuente.url)}" target="_blank" rel="noopener">Ver la fuente</a>` : ''}`)));
   S.series.filter((s) => s.ficha).forEach((s) => { const sa = s.ficha.salud; items.push(li(sa.estado === 'al_dia' ? 'ok' : 'av', sa.estado === 'al_dia' ? 'check' : 'warn', `<strong>${esc(s.nombre)}:</strong> ${esc(sa.texto)}`)); });
   inf.avisos.filter((a) => /LICENCIA|RECORTADA|coinciden|largo/.test(a)).forEach((a) => items.push(li('av', 'warn', esc(a.replace(/^datos\.\w+:\s*/, '')))));
   S.notas.forEach((n) => items.push(li('', 'info', esc(n))));
   box.innerHTML = `<h3>Tu animación, en simple</h3><ul>${items.join('')}</ul>
-    <details class="det"><summary>Ver cada cifra y de qué fila sale</summary>${cifras.map((c) => `<div class="cifra">«${esc(c.mostrado)}»<small>${esc(c.serie ?? '')} · ${esc(String(c.fecha ?? ''))}${c.fila != null ? ' · fila ' + c.fila : ''}</small></div>`).join('') || '<p class="ayuda">Esta pieza no muestra cifras sueltas.</p>'}</details>`;
+    <details class="det"><summary>Ver cada cifra y de qué fila sale</summary>${cifras.map((c) => `<div class="cifra">«${esc(c.mostrado)}»<small>${esc(c.serie ?? c.nombre ?? '')} · ${esc(String(c.fecha ?? ''))}${c.fila != null ? ' · fila ' + c.fila : c.filas ? ' · filas ' + c.filas.join(', ') : ''}</small></div>`).join('') || '<p class="ayuda">Esta pieza no muestra cifras sueltas.</p>'}</details>`;
 }
 
 // ── estado de los datos vivos, avisos y ejemplos ────────────────────────────────────────────────────────────────
@@ -342,6 +476,7 @@ async function estadoVivo() {
 }
 try {
   const es = new EventSource('/api/eventos');
+  es.addEventListener('trimestre', (e) => { const d = JSON.parse(e.data); aviso(`${d.nombre} publicó su ${d.etiqueta}: ya está en la biblioteca y tienes un borrador listo.`); if (S.paso === 0 && S.emp === d.ticker) elegirEmpresa(d.ticker); else if (S.paso === 0) cargarEmpresas(); });
   es.addEventListener('serie', (e) => { const d = JSON.parse(e.data); aviso(`Datos nuevos: ${d.nombre ?? d.id}`); if (S.series.some((s) => s.id === d.id)) { S.analisis = null; regenerar(); } });
 } catch {}
 $('#btnExperto').onclick = (e) => { const on = document.body.classList.toggle('exp'); e.currentTarget.setAttribute('aria-pressed', on); };

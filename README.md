@@ -72,3 +72,9 @@ Licencia del código: MIT. Fuentes Geist: SIL OFL (`fuentes/OFL-Geist.txt`).
 
 ## Estilo Harris / Caspian (novedades)
 - **Cámara «seguir»**, **píldora** y **círculo** para marcar momentos, **bandas** de periodo y **temas** de color (`oscuro`, `harris`, `carbon`). Se eligen en el paso 3 del estudio o en la spec (`camara`, `estilo`, `tema`). Detalle y límites: `docs/REFERENCIAS_ESTILO.md` §7.6.
+
+## Diagramas de flujo por trimestre (Sankey) y más
+- **Paso 1 del estudio = «¿qué quieres contar?»**: algo que cambia en el tiempo · cómo gana y gasta dinero una empresa · cuánto pesa cada parte · qué sumó y qué restó. El estilo se deduce solo.
+- **Biblioteca de trimestres** (16 empresas, todos los Q desde 2009, datos oficiales de la SEC) + **agente** que cada 4 h busca reportes nuevos y deja un borrador listo. Todo en `docs/TRIMESTRES.md`.
+- Capas nuevas: `sankey`, `donut`, `cascada` (`docs/CAPAS.md`). MCP: 16 herramientas (`listar_trimestres`, `generar_trimestre`, `vigilar_reportes`).
+- Pruebas: `npm run prueba:trimestres` · `npm run prueba:tablas`.

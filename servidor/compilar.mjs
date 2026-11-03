@@ -11,9 +11,10 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {leerTabla, columnaNumeros, columnaFechas, indiceColumna} from './datos.mjs';
 import {fmtNum, fmtSigno, fmtPct, fmtFecha, colorDe, utc, TEMAS_DISPONIBLES} from '../motor/nucleo.js';
+import {cargarFlujos, cargarCategorias} from './tablas.mjs';
 
 export const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const TIPOS_GRAFICA = ['linea', 'barras', 'carrera', 'dispersion', 'calor'];
+const TIPOS_GRAFICA = ['linea', 'barras', 'carrera', 'dispersion', 'calor', 'sankey', 'donut', 'cascada'];
 const TIPOS = [...TIPOS_GRAFICA, 'zona', 'llamada', 'contador', 'titulo', 'cortina', 'imagen', 'sello'];
 const MAX_PX = {horizontal: [1920, 1080], vertical: [1080, 1920]};
 
@@ -55,6 +56,17 @@ function cargarDataset(id, d, informe) {
   if (!fuente?.nombre) { err('sin fuente. Declara "fuente":{"nombre","url","obtenido"} o descarga la serie con el catálogo (escribe su .meta.json).'); return null; }
   if (!fuente.url) aviso('la fuente no tiene url: queda como "datos del usuario"; no verificable por terceros.');
   if (/\bNC\b|uso personal|no redistribuir|investigaci/i.test(fuente.licencia ?? '')) aviso(`LICENCIA: «${fuente.licencia}». Si la pieza se monetiza (YouTube, clientes), esta fuente puede NO permitirlo: confirma la licencia o sustitúyela por una fuente oficial.`);
+
+  if (d.tipo === 'flujos' || d.tipo === 'categorias') {   // tablas que no son series de tiempo
+    const tab = d.tipo === 'flujos' ? cargarFlujos(id, d, t, informe) : cargarCategorias(id, d, t, informe);
+    if (!tab) return null;
+    tab.fuente = fuente;
+    const n = tab.tipoX === 'flujos' ? tab.nodos.length : tab.items.length;
+    informe.datos.push({id, archivo: d.archivo, formato: t.formato, hoja: t.hoja ?? null, sha256: t.hash, filas: t.filas.length, filasEnArchivo: t.filas.length, inicio: null, fin: null, recortada: false, fuente, series: [], tipoTabla: d.tipo, elementos: n});
+    if (tab.tipoX === 'flujos') tab.nodos.forEach((nd) => informe.cifras.push({capa: `datos.${id}`, tipo: 'nodo', nombre: nd.nombre, mostrado: fmtNum(nd.valor, tab.fmt), valorCrudo: nd.valor * (d.divisor ?? 1), divisor: d.divisor ?? 1, filas: nd.filas, nota: 'Tamaño = suma de los flujos que entran/salen de este nodo; el % sobre la base y la variación se calculan de las mismas filas.', dataset: id, archivo: d.archivo}));
+    else tab.items.forEach((it) => informe.cifras.push({capa: `datos.${id}`, tipo: 'categoría', nombre: it.nombre, mostrado: fmtNum(it.valor, tab.fmt), valorCrudo: it.valor * (d.divisor ?? 1), divisor: d.divisor ?? 1, fila: it.fila, dataset: id, archivo: d.archivo}));
+    return tab;
+  }
 
   const tipoX = d.tipoX ?? 'fecha';
   let x, tipoFinal = tipoX === 'anio' ? 'fecha' : tipoX;
@@ -241,6 +253,10 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
     if (TIPOS_GRAFICA.includes(capa.tipo)) {
       const tab = tablas[capa.datos];
       if (!tab) { E(`${donde}: "datos":"${capa.datos}" no existe o no compiló.`); return; }
+      const esTabla = tab.tipoX === 'flujos' || tab.tipoX === 'categorias';
+      if (capa.tipo === 'sankey' && tab.tipoX !== 'flujos') { E(`${donde}: el Sankey necesita datos de tipo "flujos" (origen, destino, valor).`); return; }
+      if ((capa.tipo === 'donut' || capa.tipo === 'cascada') && tab.tipoX !== 'categorias') { E(`${donde}: ${capa.tipo} necesita datos de tipo "categorias" (concepto, valor).`); return; }
+      if (esTabla && !['sankey', 'donut', 'cascada'].includes(capa.tipo)) { E(`${donde}: estos datos son una tabla de ${tab.tipoX}, no una serie de tiempo: úsalos con sankey, donut o cascada.`); return; }
       (capa.series ?? []).forEach((s) => { if (!tab.series[s]) E(`${donde}: serie ${s} no existe (hay ${tab.series.length}).`); });
       if (capa.camara === 'seguir') {
         if (capa.tipo !== 'linea') E(`${donde}: la cámara "seguir" solo existe en gráficas de línea.`);
@@ -319,7 +335,7 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
       ['texto', 'sub'].forEach((campo) => {
         if (capa[campo] == null) return;
         chequearDigitos(capa[campo], capa, `${donde}.${campo}`, informe);
-        if (tab) { const r = expandir(capa[campo], {tab, si: 0, i: tab.x.length - 1}, informe, `${donde}.${campo}`); capa[campo] = r.texto; if (r.usados.length) informe.cifras.push({capa: donde, campo, mostrado: r.texto, marcadores: r.usados}); }
+        if (tab && tab.tipoX !== 'flujos' && tab.tipoX !== 'categorias') { const r = expandir(capa[campo], {tab, si: 0, i: tab.x.length - 1}, informe, `${donde}.${campo}`); capa[campo] = r.texto; if (r.usados.length) informe.cifras.push({capa: donde, campo, mostrado: r.texto, marcadores: r.usados}); }
       });
     }
 
@@ -346,7 +362,7 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
 
   const plano = {
     version: 1, titulo: spec.titulo ?? '', ancho, alto, fps, duracion, formato, fondo: spec.fondo ?? {}, tema: spec.tema ?? 'oscuro',
-    tablas: Object.fromEntries(Object.entries(tablas).map(([k, t]) => [k, {tipoX: t.tipoX, x: t.x, series: t.series.map((s) => ({nombre: s.nombre, y: s.y, color: colorDe(s.color, 0) && s.color, fmt: s.fmt}))}])),
+    tablas: Object.fromEntries(Object.entries(tablas).map(([k, t]) => [k, t.tipoX === 'flujos' || t.tipoX === 'categorias' ? {tipoX: t.tipoX, x: [], series: [], nodos: t.nodos, enlaces: t.enlaces, items: t.items, total: t.total, fmt: t.fmt, baseNodo: t.baseNodo} : {tipoX: t.tipoX, x: t.x, series: t.series.map((s) => ({nombre: s.nombre, y: s.y, color: colorDe(s.color, 0) && s.color, fmt: s.fmt}))}])),
     capas, imagenes: [...imagenes],
   };
   informe.ok = informe.errores.length === 0;

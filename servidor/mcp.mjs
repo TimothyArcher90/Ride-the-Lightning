@@ -11,6 +11,7 @@ import {buscar, descargar, leerCatalogo} from './catalogo.mjs';
 import {descargarAdHoc, combinar} from './biblioteca.mjs';
 import {inspeccionar} from './datos.mjs';
 import {PLANTILLAS, CAMARAS, analizar, generar} from './plantillas.mjs';
+import {empresas as empresasCat, listarEmpresas, leerIndice, actualizarEmpresa, itemTrimestre, vigilar as vigilarSec} from './trimestres.mjs';
 
 const server = new McpServer({name: 'ride-the-lightning', version: '0.1.0'},
   {instructions: 'Ride the Lightning anima gráficas de datos con cifras 100 % trazables. Antes de dirigir una pieza llama a guia_de_direccion. Flujo: buscar_series → descargar_serie → compilar_spec → vista_previa (mira las imágenes) → exportar_video. Nunca escribas cifras a mano en los textos: usa marcadores.'});
@@ -81,5 +82,26 @@ server.tool('exportar_video', 'Renderiza en segundo plano: MP4 de referencia (h2
   });
 
 server.tool('estado_render', 'Estado de un render lanzado con exportar_video.', {id: z.string()}, async ({id}) => texto(trabajos.get(id) ?? {estado: 'desconocido'}));
+
+// ── trimestres (SEC EDGAR): biblioteca de estados de resultados por Q + agente vigilante ───────────────────────────
+server.tool('listar_trimestres', 'Biblioteca de trimestres por empresa (SEC EDGAR, datos oficiales desde 2009). Sin «ticker» lista las empresas; con «ticker» (AMZN, AAPL…) sus trimestres y cuáles admiten Sankey. Si la empresa aún no está bajada, la baja.',
+  {ticker: z.string().optional()}, async ({ticker}) => {
+    if (!ticker) return texto(listarEmpresas());
+    const t = ticker.toUpperCase(); if (!empresasCat().some((e) => e.ticker === t)) return texto({error: `Empresa desconocida. Disponibles: ${empresasCat().map((e) => e.ticker).join(', ')}`});
+    if (!leerIndice(t)) await actualizarEmpresa(t);
+    const i = leerIndice(t); return texto({ticker: t, nombre: i.nombre, actualizado: i.actualizado, trimestres: i.trimestres.map((x) => ({fin: x.fin, etiqueta: x.etiqueta, ingresos: x.ingresos, utilidadNeta: x.utilidadNeta, sankey: !!x.archivo, q4Calculado: x.q4Calculado, notas: x.notas})), omitidos: i.omitidos});
+  });
+server.tool('generar_trimestre', 'Genera la spec de UN trimestre de una empresa (Sankey «de dónde viene y adónde va», o cascada) y la guarda en specs/. Luego usa vista_previa y exportar_video. «fin» = fecha de cierre (AAAA-MM-DD) o «ultimo».',
+  {ticker: z.string(), fin: z.string().default('ultimo'), uso: z.enum(['sankey', 'puente']).default('sankey'), formato: z.enum(['horizontal', 'vertical']).default('horizontal'), tema: z.enum(['oscuro', 'harris', 'carbon']).default('oscuro')},
+  async (a) => {
+    const t = a.ticker.toUpperCase(); if (!leerIndice(t)) await actualizarEmpresa(t);
+    const idx = leerIndice(t), tr = a.fin === 'ultimo' ? idx.trimestres.find((x) => (a.uso === 'sankey' ? x.archivo : true)) : idx.trimestres.find((x) => x.fin === a.fin);
+    if (!tr) return texto({error: `No hay ese trimestre. Usa listar_trimestres con ticker ${t}.`});
+    const r = generar({plantilla: a.uso === 'sankey' ? 'resultados' : 'puente', series: [itemTrimestre(t, tr.fin, a.uso)], formato: a.formato, tema: a.tema});
+    const nombre = `trimestre-${t}-${tr.etiqueta.replace(/\s+/g, '-')}${a.uso === 'puente' ? '-cascada' : ''}`, ruta = path.join('specs', nombre + '.json');
+    fs.writeFileSync(path.join(RAIZ, ruta), JSON.stringify(r.spec, null, 2));
+    return texto({spec: ruta, etiqueta: tr.etiqueta, errores: r.informe.errores, avisos: r.informe.avisos, notas: r.notas});
+  });
+server.tool('vigilar_reportes', 'Pregunta a la SEC si alguna empresa de la biblioteca publicó un 10-Q/10-K nuevo; si sí, suma el trimestre a la biblioteca. (El actualizador 24/7 ya lo hace cada 4 h.)', {}, async () => texto(await vigilarSec()));
 
 await server.connect(new StdioServerTransport());

@@ -28,7 +28,7 @@ export const PALETA = {
 /** Nombres de color admitidos en las specs -> hex. */
 export const COLOR = {
   oro: PALETA.oro, teal: PALETA.teal, purpura: '#A24FB0', piedra: PALETA.piedra, blanco: PALETA.blanco,
-  rosa: '#E4584A', amarillo: '#F2C230',
+  rosa: '#E4584A', amarillo: '#F2C230', rojo: '#D9534F', verde: '#4FB477',
 };
 /** Orden en que se asignan colores a las series que no declaran uno, y color del resplandor de fondo. Lo cambia el tema. */
 export const TEMA = {nombre: 'oscuro', orden: ['oro', 'teal', 'purpura', 'piedra'], brillo: '#C9A84C'};

@@ -52,3 +52,10 @@ imagen 5 · zona 8 · gráficas 10 · llamada 20 · contador 25 · título 30 ·
 
 ## Salidas
 `salidas/<pieza>/<pieza>_vN.mp4` (referencia), `…_alfa.mov` (ProRes 4444 con alfa: solo gráficas y texto, sin fondo), `…_contacto.png` (12 fotogramas), `…_vN.json` (informe de verificación). Las tarjetas son opacas a propósito.
+
+## Tablas: sankey, donut, cascada
+Datos que no son series de tiempo. En `datos` se declara `"tipo":"flujos"` (columnas origen, destino, valor, tipo opcional) o `"tipo":"categorias"` (concepto, valor, tipo opcional; `"uso":"donut"|"cascada"`).
+- `{"tipo":"sankey","id":"g1","datos":"d","t":[0.9,7.9]}` — diagrama de flujo. Nodo = suma de sus flujos; % sobre el nodo mayor; variación a/a si hay columna `anterior`. Las etiquetas buscan sitio libre (arriba, abajo, izquierda, derecha).
+- `{"tipo":"donut",…}` — anillo que se llena parte por parte; leyenda con valor y %.
+- `{"tipo":"cascada",…}` — barras flotantes; filas `inicio`/`total` van desde 0; las demás suben o bajan. Admite negativos. Los `total` se comprueban contra la suma.
+Reglas de exactitud: fuente obligatoria; nodo que no cuadra (>5 %) = error, (>0,5 %) = aviso; valores de flujo siempre positivos; ciclos y tipos desconocidos = error.

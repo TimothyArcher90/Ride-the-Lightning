@@ -11,6 +11,16 @@ import {inspeccionar, FORMATOS} from './datos.mjs';
 import {iniciarVivo, eventos, estadoVivo} from './vivo.mjs';
 import {salud, licencia} from './analisis.mjs';
 import {PLANTILLAS, CAMARAS, analizar, generar} from './plantillas.mjs';
+import {detectarTabla} from './tablas.mjs';
+import {empresas as empresasCat, listarEmpresas, leerIndice, actualizarEmpresa, itemTrimestre} from './trimestres.mjs';
+
+// Tablas de ejemplo (se copian a entradas/ para usarlas con un clic). Las cifras son de demostración y así se rotulan.
+const EJEMPLOS = {
+  flujos: {archivo: 'estado_resultados_ejemplo.csv', tabla: 'flujos', nombre: 'Estado de resultados (ejemplo)', prefijo: 'US$ ', sufijo: ' mil M', decimales: 1},
+  composicion: {archivo: 'composicion_ejemplo.csv', tabla: 'categorias', nombre: 'Ingresos por línea (ejemplo)', prefijo: 'US$ ', sufijo: ' mil M', decimales: 1},
+  puente: {archivo: 'puente_ejemplo.csv', tabla: 'categorias', nombre: 'De ingresos a utilidad neta (ejemplo)', prefijo: 'US$ ', sufijo: ' mil M', decimales: 1},
+};
+const FUENTE_EJEMPLO = 'EJEMPLO de demostración · cifras tomadas de una imagen pública de App Economy Insights, sin verificar contra el reporte oficial';
 
 const PUERTO = Number(process.env.RTL_PUERTO ?? 5180);
 const trabajos = new Map();
@@ -56,8 +66,27 @@ async function api(req, res) {
         const dest = path.join(RAIZ, 'entradas', n);
         fs.writeFileSync(dest, await cuerpo(req));
         const rel = `entradas/${n}`;
-        return json(res, IMG.includes(ext) ? {ruta: rel, tipo: 'imagen'} : {ruta: rel, tipo: 'datos', inspeccion: inspeccionar(dest, {})});
+        if (IMG.includes(ext)) return json(res, {ruta: rel, tipo: 'imagen'});
+        const insp = inspeccionar(dest, {});
+        return json(res, {ruta: rel, tipo: 'datos', inspeccion: insp, tabla: detectarTabla(insp.columnas.map((c) => c.nombre))});
       }
+      case '/api/ejemplo': {
+        const e = EJEMPLOS[q.get('id')]; if (!e) return json(res, {error: 'Ese ejemplo no existe'}, 404);
+        fs.mkdirSync(path.join(RAIZ, 'entradas'), {recursive: true});
+        fs.copyFileSync(path.join(RAIZ, 'ejemplos', e.archivo), path.join(RAIZ, 'entradas', e.archivo));
+        return json(res, {ruta: `entradas/${e.archivo}`, tabla: e.tabla, nombre: e.nombre, fuente: {nombre: FUENTE_EJEMPLO, obtenido: new Date().toISOString().slice(0, 10)}, prefijo: e.prefijo, sufijo: e.sufijo, decimales: e.decimales});
+      }
+      case '/api/empresas': {   // biblioteca de trimestres: empresas disponibles (con búsqueda simple)
+        const qq = (q.get('q') ?? '').toLowerCase().split(/\s+/).filter(Boolean);
+        return json(res, {empresas: listarEmpresas().filter((e) => qq.every((p) => `${e.ticker} ${e.nombre}`.toLowerCase().includes(p)))});
+      }
+      case '/api/trimestres': {   // trimestres de una empresa; si aún no están, se bajan de la SEC en ese momento
+        const t = String(q.get('ticker') ?? '').toUpperCase(); if (!empresasCat().some((e) => e.ticker === t)) return json(res, {error: 'Empresa desconocida'}, 404);
+        if (!leerIndice(t)) await actualizarEmpresa(t);
+        const i = leerIndice(t);
+        return json(res, {ticker: t, nombre: i.nombre, actualizado: i.actualizado, trimestres: i.trimestres.map((x) => ({fin: x.fin, etiqueta: x.etiqueta, fy: x.fy, q: x.q, publicado: x.publicado, form: x.form, ingresos: x.ingresos, utilidadNeta: x.utilidadNeta, margenOperativo: x.margenOperativo, q4Calculado: x.q4Calculado, sankey: !!x.archivo, motivoSankey: x.motivoSankey, notas: x.notas})), omitidos: i.omitidos});
+      }
+      case '/api/trimestre': return json(res, itemTrimestre(String(q.get('ticker')).toUpperCase(), q.get('fin'), q.get('uso') === 'puente' ? 'puente' : 'sankey'));
       case '/api/inspeccionar': return json(res, inspeccionar(rutaSegura(q.get('archivo')), {hoja: q.get('hoja') || undefined, filaEncabezado: q.get('fila') ? +q.get('fila') : undefined}));
       case '/api/render': {
         const {spec: s, calidad = 'borrador', alfa = false, nombre} = JSON.parse((await cuerpo(req)).toString('utf8'));
@@ -72,7 +101,7 @@ async function api(req, res) {
       case '/api/vivo': return json(res, estadoVivo());
       case '/api/eventos': {
         res.writeHead(200, {'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', Connection: 'keep-alive'});
-        const f = (ev) => (e) => res.write(`event: ${ev}\ndata: ${JSON.stringify(e)}\n\n`), tipos = ['serie', 'derivado', 'render-inicio', 'render', 'error'], hs = tipos.map((t) => [t, f(t)]);
+        const f = (ev) => (e) => res.write(`event: ${ev}\ndata: ${JSON.stringify(e)}\n\n`), tipos = ['serie', 'derivado', 'render-inicio', 'render', 'error', 'trimestre'], hs = tipos.map((t) => [t, f(t)]);
         hs.forEach(([t, h]) => eventos.on(t, h)); res.write(': conectado\n\n');
         const ping = setInterval(() => res.write(': ping\n\n'), 25000);
         req.on('close', () => { clearInterval(ping); hs.forEach(([t, h]) => eventos.off(t, h)); });

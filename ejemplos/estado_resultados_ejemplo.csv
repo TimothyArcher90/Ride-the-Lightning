@@ -1,0 +1,20 @@
+origen,destino,valor,tipo
+Tiendas online,Ingresos,68.5,
+Tiendas físicas,Ingresos,5.7,
+Servicios a vendedores,Ingresos,46.5,
+Publicidad,Ingresos,19.6,
+Suscripciones,Ingresos,14.0,
+AWS (nube),Ingresos,46.0,
+Otros,Ingresos,1.6,
+Ingresos,Utilidad bruta,107.4,beneficio
+Ingresos,Costo de ventas,94.6,costo
+Utilidad bruta,Utilidad operativa,28.1,beneficio
+Utilidad bruta,Gastos operativos,79.3,costo
+Utilidad operativa,Utilidad neta,20.7,beneficio
+Utilidad operativa,Impuestos,6.2,costo
+Utilidad operativa,Otros (no operativos),1.2,costo
+Gastos operativos,Tecnología e infraestructura,34.8,costo
+Gastos operativos,Logística,30.0,costo
+Gastos operativos,Marketing y ventas,11.6,costo
+Gastos operativos,Administración,2.7,costo
+Gastos operativos,Otros gastos,0.1,costo

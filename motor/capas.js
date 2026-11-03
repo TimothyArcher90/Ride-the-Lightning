@@ -4,14 +4,14 @@
 // mano en píxeles, todo se ancla a un dato.
 import {
   PALETA, clamp, lerp, ease, prog, colorDe, mezcla, rgba, fmtNum, fmtFecha, ticksNum, ticksFecha, etiquetaTick,
-  lowerBound, valorEn, mezclaRango,
+  lowerBound, valorEn, mezclaRango, fmtSigno, COLOR, TEMA,
 } from './nucleo.js';
 
 const SANS = '"Geist", system-ui, sans-serif';
 const MONO = '"Geist Mono", ui-monospace, monospace';
 const fnt = (peso, px, mono = false) => `${peso} ${Math.round(px)}px ${mono ? MONO : SANS}`;
 
-export const Z = {imagen: 5, zona: 8, linea: 10, barras: 10, carrera: 10, dispersion: 10, calor: 10, llamada: 20, contador: 25, titulo: 30, cortina: 40, sello: 50};
+export const Z = {imagen: 5, zona: 8, sankey: 10, donut: 10, cascada: 10, linea: 10, barras: 10, carrera: 10, dispersion: 10, calor: 10, llamada: 20, contador: 25, titulo: 30, cortina: 40, sello: 50};
 
 function caja(env, capa, def) {
   const c = capa.caja ?? def;
@@ -707,4 +707,199 @@ function sello(env, capa) {
   reg(env, 'sello', S.caja, null);
 }
 
-export const DIBUJO = {linea, barras, carrera, dispersion, calor, zona, llamada, contador, titulo, cortina, imagen, sello};
+// ── TABLAS: Sankey (flujos), donut (composición) y cascada (puente) ──────────────────────────────────────────────
+// Los tamaños salen de los datos (nodos = suma de sus flujos); los porcentajes y variaciones se calculan aquí de esas mismas filas.
+const colorTipo = (tipo) => ({ingreso: TEMA.nombre === 'harris' ? COLOR.amarillo : COLOR.oro, beneficio: COLOR.verde, costo: COLOR.rojo, neutral: PALETA.piedra}[tipo] ?? PALETA.piedra);
+const pctTxt = (x) => (x > 0 && x < 0.05 ? '<0,1 %' : `${x.toFixed(x < 10 ? 1 : 0).replace('.', ',')} %`);
+const variacionTxt = (v, ant) => { if (!(ant > 0)) return null; const p = (v / ant - 1) * 100; return `${p >= 0 ? '+' : '−'}${Math.abs(p).toFixed(Math.abs(p) < 10 ? 1 : 0).replace('.', ',')} % a/a`; };
+/** Texto con halo del color del fondo: legible aunque pase sobre una cinta o una barra. */
+function rotulo(ctx, s, x, y, font, color, align = 'left', u = 1) {
+  ctx.save(); ctx.font = font; ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
+  ctx.lineWidth = 5 * u; ctx.strokeStyle = rgba(PALETA.fondo, 0.9); ctx.strokeText(s, x, y); ctx.fillStyle = color; ctx.fillText(s, x, y); ctx.restore();
+}
+function cortar(ctx, s, ancho) { if (ctx.measureText(s).width <= ancho) return s; while (s.length > 3 && ctx.measureText(s + '…').width > ancho) s = s.slice(0, -1); return s.trimEnd() + '…'; }
+
+function disenarSankey(env, capa, tab, B) {
+  const {ctx, u, H, W} = env, vert = H > W, k = vert ? 0.74 : 1;
+  const byName = new Map(tab.nodos.map((n) => [n.nombre, {...n}])), nodos = [...byName.values()];
+  const enl = tab.enlaces.map((e) => ({...e, a: byName.get(e.origen), b: byName.get(e.destino)}));
+  const ncol = Math.max(...nodos.map((n) => n.nivel)) + 1, base = byName.get(tab.baseNodo).valor;
+  const cols = Array.from({length: ncol}, (_, c) => nodos.filter((n) => n.nivel === c));
+  const f1 = fnt(700, 23 * u * k), f2 = fnt(500, 19 * u * k, true);
+  const det = (n) => `${fmtNum(n.valor, tab.fmt)}${n === byName.get(tab.baseNodo) ? '' : ` · ${pctTxt((n.valor / base) * 100)}`}`;
+  nodos.forEach((n) => { n.l1 = n.nombre; n.l2 = det(n); n.l3 = variacionTxt(n.valor, n.anterior); });
+  const ancho = (n) => { ctx.font = f1; const a = ctx.measureText(n.l1).width; ctx.font = f2; return Math.max(a, ctx.measureText(n.l2).width, n.l3 ? ctx.measureText(n.l3).width : 0); };
+  const LW = clamp(Math.max(...cols[0].map(ancho)) + 30 * u, 120 * u, B.w * 0.3), RW = clamp(Math.max(...cols[ncol - 1].map(ancho)) + 30 * u, 120 * u, B.w * 0.3);
+  const nw = 26 * u * k, px0 = B.x + LW, px1 = B.x + B.w - RW, paso = (px1 - px0 - nw) / (ncol - 1);
+  cols.forEach((c, i) => c.forEach((n) => { n.x = px0 + i * paso; }));
+  const LH = (cols.flat().some((n) => n.l3) ? 78 : 56) * u * k, GAP = 14 * u * k, GAPM = 64 * u * k, MARGEN = 50 * u, alto = B.h - MARGEN * 2, y0 = B.y + MARGEN;
+  const esBorde = (c) => c === 0 || c === ncol - 1, gapDe = (c) => (esBorde(c) ? GAP : GAPM);
+  const suma = (c, s) => cols[c].reduce((a, n) => a + Math.max(n.valor * s, esBorde(c) ? LH : 0), 0) + gapDe(c) * (cols[c].length - 1);
+  let s = (alto * 0.96) / Math.max(...cols.map((c) => c.reduce((a, n) => a + n.valor, 0)));
+  for (let g = 0; g < 80 && Math.max(...cols.map((_, c) => suma(c, s))) > alto; g++) s *= 0.96;
+  const apilar = (c) => { let y = y0 + (alto - suma(c, s)) / 2; for (const n of cols[c]) { n.h = n.valor * s; n.slot = Math.max(n.h, esBorde(c) ? LH : 0); n.y = y + (n.slot - n.h) / 2; y += n.slot + gapDe(c); } };
+  const cy = (n) => n.y + n.h / 2;
+  cols[0].sort((a, b) => a.orden - b.orden); apilar(0);
+  for (let c = 1; c < ncol; c++) {
+    cols[c].forEach((n) => { const ins = enl.filter((e) => e.b === n); n._bary = ins.length ? ins.reduce((a, e) => a + cy(e.a) * e.valor, 0) / ins.reduce((a, e) => a + e.valor, 0) : 0; });
+    cols[c].sort((a, b) => a._bary - b._bary || a.orden - b.orden); apilar(c);
+  }
+  // relajación: acerca cada nodo a sus vecinos sin cambiar el orden ni solaparse
+  const colocar_ = (c, deseo) => {
+    const L = cols[c], gap = gapDe(c);
+    L.forEach((n) => { const d = deseo(n); n._d = d == null ? n.y + n.h / 2 : d; });
+    let cursor = y0;   // hacia abajo: nadie se solapa con el anterior
+    L.forEach((n) => { n._top = Math.max(n._d - n.slot / 2, cursor); cursor = n._top + n.slot + gap; });
+    let limite = y0 + alto;   // hacia arriba: nada se sale por abajo
+    for (let i = L.length - 1; i >= 0; i--) { const sobra = L[i]._top + L[i].slot - limite; if (sobra > 0) L[i]._top -= sobra; limite = L[i]._top - gap; }
+    L.forEach((n) => { n.y = n._top + (n.slot - n.h) / 2; });
+  };
+  for (let pasada = 0; pasada < 4; pasada++) {
+    for (let c = 1; c < ncol; c++) colocar_(c, (n) => { const e = enl.filter((q) => q.b === n); return e.length ? e.reduce((a, q) => a + cy(q.a) * q.valor, 0) / e.reduce((a, q) => a + q.valor, 0) : null; });
+    for (let c = ncol - 2; c >= 0; c--) colocar_(c, (n) => { const e = enl.filter((q) => q.a === n); return e.length ? e.reduce((a, q) => a + cy(q.b) * q.valor, 0) / e.reduce((a, q) => a + q.valor, 0) : null; });
+  }
+  // desplazamientos de las cintas dentro de cada nodo (ordenadas por la altura del otro extremo: sin cruces innecesarios)
+  nodos.forEach((n) => {
+    let o = 0; enl.filter((e) => e.a === n).sort((p, q) => cy(p.b) - cy(q.b)).forEach((e) => { e.oa = o; e.th = e.valor * s; o += e.th; });
+    o = 0; enl.filter((e) => e.b === n).sort((p, q) => cy(p.a) - cy(q.a)).forEach((e) => { e.ob = o; o += e.valor * s; });
+  });
+  // rótulos: los de los bordes van a los lados; los de en medio prueban arriba / abajo / a la derecha y se quedan con el primer sitio libre
+  const f3 = fnt(600, 17 * u * k, true), cajas = [], libre = (c) => c[0] >= B.x - 2 && c[2] <= B.x + B.w + 2 && c[1] >= B.y - 30 * u && c[3] <= B.y + B.h + 30 * u && !cajas.some((o) => chocan(c, o, 6 * u));
+  const medida = (n) => { ctx.font = f1; const w1 = ctx.measureText(n.l1).width; ctx.font = f2; const w2 = ctx.measureText(n.l2).width; ctx.font = f3; const w3 = n.l3 ? ctx.measureText(n.l3).width : 0; return {w: Math.max(w1, w2, w3), alto: 26 * u * k + 24 * u * k + (n.l3 ? 22 * u * k : 0)}; };
+  for (const n of [...nodos].sort((a, b) => (a.nivel === 0 || a.nivel === ncol - 1 ? 0 : 1) - (b.nivel === 0 || b.nivel === ncol - 1 ? 0 : 1))) {
+    const {w, alto: al} = medida(n), cxn = n.x + nw / 2, ccy = n.y + n.h / 2;
+    const opts = n.nivel === 0 ? [['izq']] : n.nivel === ncol - 1 ? [['der']] : (n.tipo === 'costo' ? ['abajo', 'arriba', 'der', 'izq'] : ['arriba', 'abajo', 'izq', 'der']).map((x) => [x]);
+    let mejor = null, mejorPen = Infinity;
+    for (const [lado] of opts) {
+      let x, aling, yTop;
+      if (lado === 'izq') { x = n.x - 14 * u; aling = 'right'; yTop = ccy - al / 2; }
+      else if (lado === 'der') { x = n.x + nw + 14 * u; aling = 'left'; yTop = ccy - al / 2; }
+      else { x = clamp(cxn, B.x + w / 2, B.x + B.w - w / 2); aling = 'center'; yTop = lado === 'arriba' ? n.y - 10 * u - al : n.y + n.h + 8 * u; }
+      const x0 = aling === 'right' ? x - w : aling === 'center' ? x - w / 2 : x, caja = [x0, yTop, x0 + w, yTop + al];
+      const pen = cajas.reduce((s, o) => s + solape(caja, o), 0) + (caja[0] < B.x - 2 || caja[2] > B.x + B.w + 2 ? 1e9 : 0);   // si no hay hueco libre, el que menos estorba
+      if (pen < mejorPen) { mejorPen = pen; mejor = {x, aling, yTop, w, al, caja}; }
+      if (libre(caja)) { mejor = {x, aling, yTop, w, al, caja}; break; }
+    }
+    n.lab = mejor; cajas.push(mejor.caja);
+  }
+  return {nodos, enl, nw, ncol, cols, base, k};
+}
+
+function sankey(env, capa) {
+  const {ctx, u, t, W, H} = env, tab = env.tablas[capa.datos], vert = H > W;
+  const B = caja(env, capa, vert ? [0.04, 0.26, 0.92, 0.62] : [0.035, 0.235, 0.93, 0.66]);
+  const [t0, t1] = capa.t ?? [0.5, 6], ap = aparece(env, capa, t0); if (ap <= 0) return;
+  const L = (capa._lay ??= disenarSankey(env, capa, tab, B));
+  const p = prog(t, t0, t1, ease.io2), rx = lerp(B.x, B.x + B.w, p), k = L.k;
+  ctx.save(); ctx.globalAlpha *= ap;
+  // cintas: se dibujan de izquierda a derecha con un borde que avanza
+  ctx.save(); ctx.beginPath(); ctx.rect(B.x - 4, B.y - 80 * u, rx - B.x + 4, B.h + 160 * u); ctx.clip();
+  for (const e of L.enl) {
+    const x0 = e.a.x + L.nw - 1, x1 = e.b.x + 1, ya = e.a.y + e.oa, yb = e.b.y + e.ob, h = e.th, m = (x0 + x1) / 2;
+    const col = colorTipo(e.b.tipo === 'neutral' ? e.a.tipo : e.b.tipo);
+    ctx.beginPath(); ctx.moveTo(x0, ya); ctx.bezierCurveTo(m, ya, m, yb, x1, yb); ctx.lineTo(x1, yb + h); ctx.bezierCurveTo(m, yb + h, m, ya + h, x0, ya + h); ctx.closePath();
+    const g = ctx.createLinearGradient(x0, 0, x1, 0); g.addColorStop(0, rgba(colorTipo(e.a.tipo === 'neutral' ? e.b.tipo : e.a.tipo), 0.42)); g.addColorStop(1, rgba(col, 0.5));
+    ctx.fillStyle = g; ctx.fill();
+  }
+  ctx.restore();
+  // nodos y rótulos: aparecen cuando el borde llega a ellos
+  for (const n of L.nodos) {
+    const a = clamp((rx - n.x) / (34 * u)); if (a <= 0) continue;
+    const col = colorTipo(n.tipo), hh = n.h * ease.out3(a), cx = n.x + L.nw / 2, ccy = n.y + n.h / 2;
+    ctx.fillStyle = col; ctx.fillRect(n.x, ccy - hh / 2, L.nw, Math.max(hh, 1.5 * u));
+    const la = clamp((rx - n.x - 14 * u) / (70 * u)); if (la <= 0) continue;
+    ctx.save(); ctx.globalAlpha *= la;
+    const f1 = fnt(700, 23 * u * k), f2 = fnt(500, 19 * u * k, true), f3 = fnt(600, 17 * u * k, true), {x, aling: al, yTop, al: alto, caja} = n.lab;
+    const lh1 = 26 * u * k, lh2 = 24 * u * k;
+    rotulo(ctx, n.l1, x, yTop + lh1 - 4 * u, f1, PALETA.blanco, al, u);
+    rotulo(ctx, n.l2, x, yTop + lh1 + lh2 - 4 * u, f2, PALETA.piedraClara, al, u);
+    if (n.l3) rotulo(ctx, n.l3, x, yTop + alto - 4 * u, f3, n.valor >= n.anterior ? COLOR.verde : COLOR.rojo, al, u);
+    reg(env, 'etiqueta', caja, `${capa.id ?? 'sankey'}:${n.nombre}`);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function donut(env, capa) {
+  const {ctx, u, t, W, H} = env, tab = env.tablas[capa.datos], vert = H > W;
+  const B = caja(env, capa, vert ? [0.06, 0.26, 0.88, 0.64] : [0.05, 0.24, 0.9, 0.64]);
+  const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
+  const items = (capa._it ??= [...tab.items].filter((x) => x.valor > 0).sort((a, b) => (capa.orden === 'archivo' ? 0 : b.valor - a.valor)));
+  const total = items.reduce((a, x) => a + x.valor, 0), TAU = Math.PI * 2;
+  const R = vert ? Math.min(B.w * 0.36, B.h * 0.3) : Math.min(B.h * 0.46, B.w * 0.27), cx = vert ? B.x + B.w / 2 : B.x + R + 40 * u, cy = vert ? B.y + R + 10 * u : B.y + B.h / 2, grosor = R * 0.38;
+  const p = prog(t, t0, t1, ease.io2) * TAU, paleta = [colorTipo('ingreso'), COLOR.teal, COLOR.purpura, COLOR.verde, COLOR.rojo, PALETA.piedra, COLOR.amarillo, COLOR.rosa];
+  ctx.save(); ctx.globalAlpha *= ap;
+  let a0 = -Math.PI / 2; const arr = [];
+  items.forEach((it, i) => {
+    const sw = (it.valor / total) * TAU, vis = clamp((p - (a0 + Math.PI / 2)), 0, sw), col = paleta[i % paleta.length];
+    arr.push({it, i, a0, sw, vis, col});
+    if (vis > 0.002) { ctx.beginPath(); ctx.arc(cx, cy, R, a0, a0 + Math.max(0, vis - 0.012)); ctx.arc(cx, cy, R - grosor, a0 + Math.max(0, vis - 0.012), a0, true); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); }
+    a0 += sw;
+  });
+  const g = clamp(p / TAU);
+  // total al centro: el tamaño se ajusta para caber siempre dentro del hueco
+  const txtTotal = fmtNum(total * g, tab.fmt), hueco = (R - grosor) * 1.7; let tam = R * 0.3; ctx.font = fnt(800, tam, true);
+  while (ctx.measureText(fmtNum(total, tab.fmt)).width > hueco && tam > 14 * u) { tam -= 2 * u; ctx.font = fnt(800, tam, true); }
+  rotulo(ctx, txtTotal, cx, cy + tam * 0.2, fnt(800, tam, true), PALETA.blanco, 'center', u);
+  rotulo(ctx, (capa.etiquetaTotal ?? 'Total').toUpperCase(), cx, cy + tam * 0.2 + 30 * u, fnt(600, 18 * u, true), PALETA.piedraOscura, 'center', u);
+  // leyenda: una fila por parte, con su valor y su porcentaje calculados de los datos
+  const lx = vert ? B.x + 10 * u : cx + R + 90 * u, ly0 = vert ? cy + R + 40 * u : B.y, area = vert ? B.y + B.h - ly0 : B.h, lw = vert ? B.w - 20 * u : B.x + B.w - lx;
+  const rh = Math.min(vert ? 62 * u : 74 * u, area / items.length), k = clamp(rh / (74 * u), 0.6, 1);
+  const y0 = ly0 + (area - rh * items.length) / 2;
+  arr.forEach(({it, i, a0: s0, col}) => {
+    const la = clamp((p - (s0 + Math.PI / 2)) / 0.5); if (la <= 0) return;
+    const y = y0 + i * rh + (1 - ease.out3(la)) * 14 * u, pct = (it.valor / total) * 100;
+    ctx.save(); ctx.globalAlpha *= la;
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(lx + 12 * u, y + rh / 2, 9 * u * k, 0, 7); ctx.fill();
+    ctx.font = fnt(700, 26 * u * k); const nombre = cortar(ctx, it.nombre, lw - 190 * u);
+    rotulo(ctx, nombre, lx + 36 * u, y + rh / 2 - 2 * u, fnt(700, 26 * u * k), PALETA.blanco, 'left', u);
+    rotulo(ctx, fmtNum(it.valor, tab.fmt), lx + 36 * u, y + rh / 2 + 24 * u * k, fnt(500, 20 * u * k, true), PALETA.piedraClara, 'left', u);
+    rotulo(ctx, pctTxt(pct), lx + lw, y + rh / 2 + 10 * u * k, fnt(800, 38 * u * k, true), col, 'right', u);
+    reg(env, 'etiqueta', [lx, y + 2 * u, lx + lw, y + rh - 2 * u], `${capa.id ?? 'donut'}:${it.nombre}`);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+function cascada(env, capa) {
+  const {ctx, u, t, W, H} = env, tab = env.tablas[capa.datos], vert = H > W;
+  const B = caja(env, capa, vert ? [0.06, 0.27, 0.88, 0.56] : [0.05, 0.25, 0.9, 0.56]);
+  const [t0, t1] = capa.t ?? [0.5, 6], ap = aparece(env, capa, t0); if (ap <= 0) return;
+  const barras = (capa._b ??= (() => { let run = 0; return tab.items.map((it) => { let ini, fin; if (it.tipo === 'inicio' || it.tipo === 'total') { ini = 0; fin = it.valor; run = it.valor; } else { ini = run; fin = run + it.valor; run = fin; } return {...it, ini, fin}; }); })());
+  const n = barras.length, vmin = Math.min(0, ...barras.flatMap((b) => [b.ini, b.fin])), vmax = Math.max(0, ...barras.flatMap((b) => [b.ini, b.fin]));
+  const zonaNombre = 96 * u, top = B.y + 40 * u, bajo = B.y + B.h - zonaNombre - 44 * u, pad = (vmax - vmin) * 0.04 || 1;
+  const py = (v) => bajo - ((v - vmin) / (vmax - vmin + pad)) * (bajo - top), slot = B.w / n, bw = Math.min(slot * 0.62, 150 * u), k = clamp(slot / (170 * u), 0.55, 1);
+  const p = prog(t, t0, t1, ease.io2) * n;
+  // si las cifras con unidad no caben en su columna, se muestran solo los números y la unidad va una vez, arriba
+  const compacto = (capa._cp ??= (() => { ctx.save(); ctx.font = fnt(800, 26 * u * k, true); const w = Math.max(...barras.map((b) => ctx.measureText(b.tipo === 'inicio' || b.tipo === 'total' ? fmtNum(b.valor, tab.fmt) : fmtSigno(b.valor, tab.fmt)).width)); ctx.restore(); return w > slot * 0.92; })());
+  const fm = compacto ? {...tab.fmt, prefijo: '', sufijo: ''} : tab.fmt, unidadTxt = `${(tab.fmt.prefijo ?? '').trim()} ${(tab.fmt.sufijo ?? '').trim()}`.trim() || tab.fmt.unidad;
+  ctx.save(); ctx.globalAlpha *= ap;
+  if (compacto && unidadTxt) { rotulo(ctx, `CIFRAS EN ${unidadTxt}`.toUpperCase(), B.x, B.y + 6 * u, fnt(600, 18 * u, true), PALETA.piedraOscura, 'left', u); reg(env, 'etiqueta', [B.x, B.y - 14 * u, B.x + 420 * u, B.y + 12 * u], `${capa.id ?? 'cascada'}:unidad`); }
+  ctx.strokeStyle = rgba(PALETA.piedra, 0.3); ctx.lineWidth = 1.5 * u; ctx.beginPath(); ctx.moveTo(B.x, py(0)); ctx.lineTo(B.x + B.w, py(0)); ctx.stroke();
+  barras.forEach((b, i) => {
+    const a = clamp(p - i), cxb = B.x + slot * (i + 0.5), x = cxb - bw / 2, esTotal = b.tipo === 'inicio' || b.tipo === 'total';
+    const col = esTotal ? colorTipo('ingreso') : b.valor >= 0 ? COLOR.verde : COLOR.rojo, e = ease.out3(a);
+    const yIni = py(b.ini), yFin = lerp(yIni, py(b.fin), e), yA = Math.min(yIni, yFin), hA = Math.max(Math.abs(yFin - yIni), 1.5 * u);
+    if (a > 0) {
+      ctx.fillStyle = col; ctx.fillRect(x, yA, bw, hA);
+      if (i < n - 1 && a >= 1) { ctx.strokeStyle = rgba(PALETA.piedra, 0.45); ctx.lineWidth = 1.5 * u; ctx.setLineDash([6 * u, 5 * u]); ctx.beginPath(); ctx.moveTo(x + bw, py(b.fin)); ctx.lineTo(x + slot, py(b.fin)); ctx.stroke(); ctx.setLineDash([]); }
+    }
+    const la = clamp((a - 0.55) / 0.45); if (la <= 0) return;
+    ctx.save(); ctx.globalAlpha *= la;
+    const txt = esTotal ? fmtNum(b.valor, fm) : fmtSigno(b.valor, fm), f = fnt(800, 26 * u * k, true), sube = esTotal || b.valor >= 0;
+    ctx.font = f; const w = ctx.measureText(txt).width, yv = sube ? Math.min(yIni, py(b.fin)) - 12 * u : Math.max(yIni, py(b.fin)) + 32 * u * k;
+    rotulo(ctx, txt, cxb, yv, f, esTotal ? PALETA.blanco : col, 'center', u);
+    reg(env, 'etiqueta', [cxb - w / 2, yv - 26 * u * k, cxb + w / 2, yv + 6 * u], `${capa.id ?? 'cascada'}:v:${i}`);
+    // nombre bajo la gráfica, en hasta 2 líneas
+    const fn = fnt(600, 21 * u * k), maxW = slot * 0.94; ctx.font = fn;
+    const pal = String(b.nombre).split(' '); let l1 = '', l2 = ''; for (const w_ of pal) { if (!l2 && ctx.measureText((l1 + ' ' + w_).trim()).width <= maxW) l1 = (l1 + ' ' + w_).trim(); else l2 = (l2 + ' ' + w_).trim(); }
+    l2 = cortar(ctx, l2, maxW); l1 = cortar(ctx, l1 || String(b.nombre), maxW);
+    const wn = Math.max(ctx.measureText(l1).width, l2 ? ctx.measureText(l2).width : 0), yn = bajo + 80 * u;
+    rotulo(ctx, l1, cxb, yn, fn, PALETA.blanco, 'center', u); if (l2) rotulo(ctx, l2, cxb, yn + 26 * u * k, fn, PALETA.piedraClara, 'center', u);
+    reg(env, 'etiqueta', [cxb - wn / 2, yn - 22 * u * k, cxb + wn / 2, yn + (l2 ? 30 * u * k : 6 * u)], `${capa.id ?? 'cascada'}:n:${i}`);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+export const DIBUJO = {linea, barras, carrera, dispersion, calor, zona, llamada, contador, titulo, cortina, imagen, sello, sankey, donut, cascada};

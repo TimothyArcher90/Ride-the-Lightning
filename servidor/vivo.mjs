@@ -10,6 +10,8 @@ import {leerCatalogo, descargar, cache} from './catalogo.mjs';
 import {combinar} from './biblioteca.mjs';
 import {compilar, RAIZ} from './compilar.mjs';
 import {renderizar} from './render.mjs';
+import {vigilar as vigilarSec, itemTrimestre} from './trimestres.mjs';
+import {generar} from './plantillas.mjs';
 
 export const eventos = new EventEmitter();
 const ESTADO = path.join(RAIZ, 'catalogo', 'estado-vivo.json');
@@ -95,12 +97,37 @@ function renderVivas(cambiados) {
   }
 }
 
+/** Agente de resultados trimestrales: cada 4 h pregunta a la SEC si alguna empresa de la biblioteca publicó un 10-Q/10-K nuevo.
+ *  Si sí: suma el trimestre a la biblioteca, guarda su spec (specs/trimestre-<TICKER>-<AÑO>-<Q>.json), avisa y deja listo un borrador en video. */
+export async function vigilarTrimestres({forzar = false} = {}) {
+  const est = leer(), k = '_trimestres';
+  if (!forzar && est[k] && Date.now() - new Date(est[k]).getTime() < 240 * 60000) return null;
+  est[k] = new Date().toISOString(); guardar(est);
+  const r = await vigilarSec();
+  for (const n of r.nuevos) for (const et of n.etiquetas) {
+    try {
+      const fin = leerIdx(n.ticker).trimestres.find((t) => t.etiqueta === et)?.fin; if (!fin) continue;
+      const uso = leerIdx(n.ticker).trimestres.find((t) => t.etiqueta === et)?.archivo ? 'sankey' : 'puente', item = itemTrimestre(n.ticker, fin, uso);
+      const g = generar({plantilla: uso === 'sankey' ? 'resultados' : 'puente', series: [item], formato: 'horizontal', camara: 'documental'});
+      const nombre = `trimestre-${n.ticker}-${et.replace(/\s+/g, '-')}`;
+      fs.writeFileSync(path.join(RAIZ, 'specs', nombre + '.json'), JSON.stringify(g.spec, null, 2));
+      log({tipo: 'trimestre', ticker: n.ticker, nombre: n.nombre, etiqueta: et, publicado: n.publicado, form: n.form, spec: nombre + '.json'});
+      const {spec: p, informe} = compilar(g.spec);
+      if (informe.ok) colaRender = colaRender.then(async () => { try { const rr = await renderizar(p, informe, {nombre, calidad: 'borrador', alfa: false}); log({tipo: 'render', spec: nombre + '.json', version: rr.version, salidas: rr.salidas}); } catch (e) { log({tipo: 'error', id: nombre, error: 'render: ' + e.message}); } });
+    } catch (e) { log({tipo: 'error', id: `${n.ticker} ${et}`, error: e.message}); }
+  }
+  r.errores.forEach((e) => log({tipo: 'error', id: 'sec', error: e}));
+  return r;
+}
+const leerIdx = (t) => JSON.parse(fs.readFileSync(path.join(RAIZ, 'datos', 'trimestres', t, 'indice.json'), 'utf8'));
+
 /** Un ciclo: actualiza lo vencido (o todo con forzar), reconstruye derivados y lanza renders vivos. */
 export async function ciclo({forzar = false, ids = null} = {}) {
   for (const k of Object.keys(cache)) delete cache[k];                        // el Pink Sheet / Shiller se vuelven a bajar frescos
   const lista = ids ? leerCatalogo().filter((e) => ids.includes(e.id)) : forzar ? leerCatalogo().filter((e) => descargada(e.id)) : vencidas();
   const cambiados = new Set(), res = [];
   for (const e of lista) { const r = await actualizarSerie(e); res.push(r); if (r.cambio) cambiados.add(e.id); await dormir(400); }
+  try { await vigilarTrimestres(); } catch (e) { log({tipo: 'error', id: 'trimestres', error: String(e.message ?? e)}); }
   if (cambiados.size) { reconstruirDerivados(cambiados).forEach((d) => cambiados.add(d)); renderVivas(cambiados); }
   return {revisadas: lista.length, cambiadas: [...cambiados], errores: res.filter((r) => r.error).map((r) => `${r.id}: ${r.error}`)};
 }

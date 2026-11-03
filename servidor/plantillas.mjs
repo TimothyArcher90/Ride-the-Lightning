@@ -24,7 +24,13 @@ export const PLANTILLAS = [
   {id: 'panel', nombre: 'Comparar varias a la vez', descripcion: 'De 2 a 4 gráficas en pantalla, cada una con su cifra al lado y un año común arriba.', necesita: {min: 2, max: 4}, ayuda: 'Elige de 2 a 4 datos.'},
   {id: 'carrera', nombre: 'Ranking en carrera', descripcion: 'Barras que compiten y se reordenan con el tiempo: quién va primero en cada año.', necesita: {min: 3, max: 10}, ayuda: 'Elige de 3 a 10 datos del mismo tipo.'},
   {id: 'correlacion', nombre: '¿Se mueven juntas?', descripcion: 'Un mapa de colores que muestra qué series suben y bajan a la vez, y cuáles al revés.', necesita: {min: 3, max: 8}, ayuda: 'Elige de 3 a 8 datos.'},
+  // — tablas (no son series de tiempo): se alimentan de un archivo con una tabla de flujos o de categorías —
+  {id: 'resultados', datos: 'flujos', nombre: '¿De dónde viene y adónde va?', descripcion: 'Un diagrama de flujo (Sankey): de dónde entra el dinero, en qué se reparte y qué queda. Los porcentajes se calculan solos.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de flujos (origen, destino, valor).'},
+  {id: 'composicion', datos: 'categorias', nombre: 'Qué parte pesa cuánto', descripcion: 'Un anillo que se llena parte por parte, con su valor y su porcentaje al lado.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor).'},
+  {id: 'puente', datos: 'categorias', nombre: 'Qué sumó y qué restó', descripcion: 'Una cascada: parte de un total, muestra cada suma y cada resta y llega al resultado. Los subtotales se comprueban.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor, y «total» en los subtotales).'},
 ];
+/** Qué clase de dato usa cada plantilla: 'serie' (tiempo), 'flujos' o 'categorias'. */
+export const tipoDatosDe = (id) => PLANTILLAS.find((p) => p.id === id)?.datos ?? 'serie';
 
 const COLORES = ['oro', 'teal', 'purpura', 'piedra'];
 const COLOR_MOMENTO = {subida: 'teal', caida: 'purpura'};
@@ -79,6 +85,12 @@ function armarDatos(items, {comun = false} = {}) {
   }
   // Datos del usuario: todas las columnas deben venir del mismo archivo y hoja.
   const a0 = arch[0];
+  if (a0.tabla) {   // tabla de flujos o de categorías
+    if (!a0.fuente?.nombre) throw new Error('Cuéntanos de dónde vienen tus datos (por ejemplo «Informe trimestral de la empresa, 2026»). Sin fuente no se puede garantizar la exactitud.');
+    const {prefijo, sufijo, decimales, unidad, divisor, decimal} = a0;
+    return {datos: {d: {archivo: a0.ruta, ...(a0.hoja ? {hoja: a0.hoja} : {}), ...(a0.filaEncabezado ? {filaEncabezado: a0.filaEncabezado} : {}), tipo: a0.tabla, uso: a0.uso, fuente: a0.fuente,
+      ...(prefijo ? {prefijo} : {}), ...(sufijo ? {sufijo} : {}), decimales: decimales ?? 'auto', ...(unidad ? {unidad} : {}), ...(divisor ? {divisor} : {}), ...(decimal ? {decimal} : {})}}, nombres: [a0.nombre ?? 'Tabla'], notas: [...notas, ...(a0.notasFuente ?? [])], desdeBiblioteca: false, tabla: a0.tabla};
+  }
   if (arch.some((a) => a.ruta !== a0.ruta || (a.hoja ?? '') !== (a0.hoja ?? ''))) throw new Error('Con tus propios datos, todas las series deben ser columnas del mismo archivo (y la misma hoja).');
   if (!a0.fuente?.nombre) throw new Error('Cuéntanos de dónde vienen tus datos (por ejemplo «Banco Central de Chile, 2026»). Sin fuente no se puede garantizar la exactitud.');
   const columnas = arch.map((a, k) => ({col: a.col, nombre: a.nombre ?? a.col, color: COLORES[k % 4], decimales: 'auto', ...(a.unidad ? {unidad: a.unidad} : {}), ...(a.divisor ? {divisor: a.divisor} : {})}));
@@ -147,6 +159,19 @@ function carrera({datos, titulo, tab}) {
   const n = datos.d.columnas.length, paso = tab.x.length > 1 ? (tab.x[tab.x.length - 1] - tab.x[0]) / (tab.x.length - 1) / 86400000 : 365, dur = 12;
   return {duracion: dur + 2, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur + 1.9]}, {tipo: 'carrera', datos: 'd', top: Math.min(8, n), t: [1, 1 + dur], formatoX: paso > 300 ? 'anio' : 'mes'}], notas: []};
 }
+// Tablas: la animación es una sola gráfica que se construye en el tiempo; el título y la fuente acompañan.
+function resultados({titulo, camara}) {
+  const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(5, Math.min(9, P.dibujo + 1)), dur = +(1 + dib + 3.5).toFixed(1);
+  return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'sankey', id: 'g1', datos: 'd', t: [0.9, 0.9 + dib]}], notas: ['Cada cinta mide exactamente su fila de la tabla; el tamaño de cada caja es la suma de sus cintas y el porcentaje se calcula sobre el nodo mayor. Si algo no cuadra, el programa lo avisa antes de dibujar.']};
+}
+function composicion({titulo, camara}) {
+  const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(4, Math.min(8, P.dibujo)), dur = +(1 + dib + 3).toFixed(1);
+  return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'donut', id: 'g1', datos: 'd', t: [0.9, 0.9 + dib]}], notas: ['El porcentaje de cada parte es su valor entre la suma de todas.']};
+}
+function puente({titulo, camara}) {
+  const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(5, Math.min(9, P.dibujo + 1)), dur = +(1 + dib + 3).toFixed(1);
+  return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'cascada', id: 'g1', datos: 'd', t: [0.9, 0.9 + dib]}], notas: ['Los subtotales marcados como «total» se comprueban contra la suma de lo anterior.']};
+}
 function correlacion({titulo}) {
   return {duracion: 8, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, 7.9]}, {tipo: 'calor', datos: 'd', sobre: 'variaciones', t: [0.8, 3.6]}], notas: ['La correlación se mide sobre las variaciones entre periodos (no sobre los niveles), que es la forma correcta cuando las series tienen tendencia.']};
 }
@@ -159,7 +184,11 @@ export function generar(entrada) {
   const {plantilla = 'historia', series = [], camara = 'documental', formato = 'horizontal', escala = 'auto', vivo = null} = entrada;
   const def = PLANTILLAS.find((p) => p.id === plantilla); if (!def) throw new Error(`Plantilla desconocida: ${plantilla}`);
   if (series.length < def.necesita.min || series.length > def.necesita.max) throw new Error(`«${def.nombre}» necesita ${def.necesita.min === def.necesita.max ? def.necesita.min : `de ${def.necesita.min} a ${def.necesita.max}`} datos y elegiste ${series.length}.`);
+  const clase = def.datos ?? 'serie', esTabla = series.some((s) => s.tabla);
+  if (clase === 'serie' && esTabla) throw new Error(`«${def.nombre}» se usa con series de tiempo, y elegiste una tabla de ${series.find((s) => s.tabla).tabla}. Elige otro estilo en el paso 2.`);
+  if (clase !== 'serie' && !series.every((s) => s.tabla === clase)) throw new Error(`«${def.nombre}» necesita ${clase === 'flujos' ? 'una tabla de flujos (columnas origen, destino y valor)' : 'una tabla de categorías (columnas concepto y valor)'}. ${def.ayuda}`);
   const {datos, nombres, notas: n0} = armarDatos(series, {comun: plantilla === 'comparar' || plantilla === 'correlacion'});
+  if (datos.d.tipo === 'categorias') datos.d.uso = plantilla === 'puente' ? 'cascada' : 'donut';
   if (plantilla === 'comparar') { datos.d.base100 = true; const f0 = Math.min(Math.max(0, entrada.foco ?? 0), datos.d.columnas.length - 1), otros = ['teal', 'purpura', 'piedra']; let k = 0; datos.d.columnas.forEach((c, i) => { c.color = i === f0 ? 'oro' : otros[k++ % 3]; }); }
   const base = compilar({version: 1, datos, capas: []});
   const tab = base.spec.tablas?.d;
@@ -176,7 +205,12 @@ export function generar(entrada) {
   } else if (plantilla === 'panel') g = panel({datos, titulo, vertical: formato === 'vertical', camara});
   else if (plantilla === 'comparar') g = comparar({titulo, camara, foco: entrada.foco, n: nombres.length});
   else if (plantilla === 'carrera') g = carrera({datos, titulo, tab});
+  else if (plantilla === 'resultados') g = resultados({titulo, camara});
+  else if (plantilla === 'composicion') g = composicion({titulo, camara});
+  else if (plantilla === 'puente') g = puente({titulo, camara});
   else g = correlacion({titulo});
+  // el período («Q3 FY2026») sale de la fecha de cierre del reporte oficial, no se teclea: se declara verificado
+  if (series[0]?.trimestre && g.capas[0]?.tipo === 'titulo' && /\d/.test(g.capas[0].texto)) g.capas[0].verificada = {fuente: `Período del reporte ${series[0].trimestre.etiqueta} (SEC EDGAR, fecha de cierre ${series[0].trimestre.fin})`, url: series[0].fuente?.url};
   const spec = {version: 1, titulo, formato, fps: 30, duracion: g.duracion, datos, capas: g.capas, ...(entrada.tema && entrada.tema !== 'oscuro' ? {tema: entrada.tema} : {}), ...(g.vivo ? {vivo: g.vivo} : {})};
   const comp = compilar(spec);
   return {spec, plano: comp.spec, informe: comp.informe, notas: [...n0, ...(g.notas ?? [])]};

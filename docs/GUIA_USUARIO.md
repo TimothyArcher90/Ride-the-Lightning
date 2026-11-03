@@ -43,3 +43,10 @@ En «La historia de una cifra» verás **momentos propuestos** (el máximo, la m
 - **Cámara «Sigue la línea»**: la cámara acompaña la punta mientras se dibuja y al final se abre al plano completo.
 - **Cómo se marcan los momentos**: además de tarjeta y barra, hay **píldora amarilla** (la frase se escribe letra a letra) y **círculo** sobre el dato.
 - **Aspecto**: MacroWise (oscuro cálido), **negro y rosa-rojo** o **gris carbón y teal**.
+
+## «Cómo gana y gasta dinero una empresa» (por trimestre)
+1. Paso 1 → elige esa historia → busca la empresa (Amazon, Apple, NVIDIA…) → elige el trimestre (los 8 más recientes salen primero; los anteriores, plegados).
+2. El diagrama se arma solo, de izquierda a derecha: ingresos → costo de ventas y utilidad bruta → gastos operativos y utilidad operativa → impuestos y utilidad neta, con su porcentaje.
+3. Cuando la empresa publique su siguiente reporte, aparece solo en la lista y se deja un borrador en video (con el actualizador encendido).
+- **¿Un trimestre sale apagado?** Tuvo pérdida y un flujo no puede ser negativo: elige «Qué sumó y qué restó» y verás ese mismo trimestre en cascada.
+- **¿Tienes tu propia tabla?** Descarga la plantilla del mismo paso, llénala y suéltala: se detecta sola.
