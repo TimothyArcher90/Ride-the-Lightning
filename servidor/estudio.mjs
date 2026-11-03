@@ -1,7 +1,7 @@
 // Estudio local: `npm run iniciar`. Solo escucha en 127.0.0.1; los datos y los renders no salen de este equipo.
 import fs from 'node:fs';
 import path from 'node:path';
-import {spawn} from 'node:child_process';
+import {spawn, execSync} from 'node:child_process';
 import crypto from 'node:crypto';
 import {iniciarServidor} from './web.mjs';
 import {compilar, RAIZ, rutaSegura} from './compilar.mjs';
@@ -75,6 +75,20 @@ async function api(req, res) {
   } catch (e) { return json(res, {error: String(e.message ?? e)}, 400); }
 }
 
+// Como Electric Eye: un doble clic siempre deja en marcha la versión recién actualizada. Si ya había un estudio abierto
+// (se comprueba que es este programa) se cierra esa sesión y se arranca de nuevo.
+const liberarPuerto = (p) => {
+  try {
+    const pids = new Set(execSync('netstat -ano -p tcp').toString().split(/\r?\n/).filter((l) => /LISTENING/i.test(l) && new RegExp(`:${p}\\s`).test(l)).map((l) => l.trim().split(/\s+/).pop()).filter((x) => x && x !== '0' && x !== String(process.pid)));
+    for (const pid of pids) execSync(`taskkill /F /PID ${pid}`, {stdio: 'ignore'});
+    return pids.size > 0;
+  } catch { return false; }
+};
+const previo = await fetch(`http://127.0.0.1:${PUERTO}/web/estudio.html`, {signal: AbortSignal.timeout(1500)}).then((r) => r.text(), () => null);
+if (previo) {
+  if (/Ride the Lightning/.test(previo) && process.platform === 'win32' && liberarPuerto(PUERTO)) { console.log('  Cerrando la sesión anterior de Ride the Lightning...'); await new Promise((r) => setTimeout(r, 1500)); }
+  else { console.log(`  El puerto ${PUERTO} está ocupado por otro programa: cierra ese programa o usa RTL_PUERTO.`); process.exit(1); }
+}
 const {puerto} = await iniciarServidor(PUERTO, api);
 const url = `http://127.0.0.1:${puerto}/`;
 console.log(`Ride the Lightning · estudio en ${url}  (Ctrl+C para cerrar)`);

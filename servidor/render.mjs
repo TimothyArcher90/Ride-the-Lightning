@@ -50,6 +50,35 @@ export async function vistaPrevia(spec, tiempos, {dir, nombre = 'vista', escala 
   } finally { await nav.close(); await srv.cerrar(); }
 }
 
+/**
+ * Auditoría de textos (el equivalente al "revisar_proyecto" de Electric Eye): recorre la pieza cada 0,2 s y comprueba que
+ * ningún texto pise a otro ni se salga del cuadro. Los ejes pueden tocarse entre sí; todo lo demás, no.
+ */
+export async function auditarColisiones(spec, {paso = 0.2} = {}) {
+  const srv = await iniciarServidor(0), nav = await lanzarNavegador();
+  try {
+    const pag = await abrirPagina(spec, spec.ancho, spec.alto, srv.puerto, nav);
+    const ts = []; for (let t = 0; t <= spec.duracion + 1e-6; t += paso) ts.push(+t.toFixed(3));
+    const cuadros = await pag.evaluate((l) => window.RTL.auditar(l), ts);
+    const u = Math.min(spec.ancho, spec.alto) / 1080, m = 4 * u, W = spec.ancho, H = spec.alto, ev = new Map();
+    const choca = (a, b) => a[0] < b[2] - m && a[2] > b[0] + m && a[1] < b[3] - m && a[3] > b[1] + m;
+    for (const {t, registro} of cuadros) {
+      for (let i = 0; i < registro.length; i++) {
+        const A = registro[i];
+        if (A.caja[0] < -2 || A.caja[1] < -2 || A.caja[2] > W + 2 || A.caja[3] > H + 2) { const k = `fuera:${A.tipo}:${A.id ?? ''}`; (ev.get(k) ?? ev.set(k, {tipo: 'se sale del cuadro', a: A, ts: []}).get(k)).ts.push(t); }
+        for (let j = i + 1; j < registro.length; j++) {
+          const Bq = registro[j];
+          if (A.tipo.startsWith('eje') && Bq.tipo.startsWith('eje')) continue;
+          if (A.id && A.id === Bq.id && (A.tipo === 'eje-x' || A.tipo === 'eje-y')) continue;
+          if (choca(A.caja, Bq.caja)) { const k = `${A.tipo}:${A.id ?? ''}|${Bq.tipo}:${Bq.id ?? ''}`; (ev.get(k) ?? ev.set(k, {tipo: 'se pisan', a: A, b: Bq, ts: []}).get(k)).ts.push(t); }
+        }
+      }
+    }
+    const problemas = [...ev.values()].map((e) => ({tipo: e.tipo, a: `${e.a.tipo}${e.a.id ? ' (' + e.a.id + ')' : ''}`, b: e.b ? `${e.b.tipo}${e.b.id ? ' (' + e.b.id + ')' : ''}` : null, desde: e.ts[0], hasta: e.ts[e.ts.length - 1]}));
+    return {ok: problemas.length === 0, problemas, instantes: ts.length};
+  } finally { await nav.close(); await srv.cerrar(); }
+}
+
 function siguienteVersion(dir, base) {
   fs.mkdirSync(dir, {recursive: true});
   let v = 1; while (fs.existsSync(path.join(dir, `${base}_v${v}.mp4`)) || fs.existsSync(path.join(dir, `${base}_v${v}.json`))) v++;
@@ -93,7 +122,9 @@ export function sonda(archivo) {
  * calidad 'final' (1920×1080 o 1080×1920, 4 subfotogramas de desenfoque, crf 17 slow) | 'borrador' (mitad de tamaño, rápido).
  * alfa: además del MP4, un .mov ProRes 4444 sin fondo para montar en Premiere.
  */
-export async function renderizar(spec, informe, {nombre, calidad = 'final', alfa = true, salidaDir = path.join(RAIZ, 'salidas'), onProgreso} = {}) {
+export async function renderizar(spec, informe, {nombre, calidad = 'final', alfa = true, salidaDir = path.join(RAIZ, 'salidas'), onProgreso, forzar = false} = {}) {
+  const aud = await auditarColisiones(spec);
+  if (!aud.ok && !forzar) throw new Error('Textos que se pisan o se salen del cuadro: ' + aud.problemas.slice(0, 6).map((p) => `${p.a}${p.b ? ' × ' + p.b : ''} (${p.desde}–${p.hasta} s)`).join('; ') + '. Corrige la spec (separa llamadas en el tiempo, acorta textos) o usa forzar.');
   const base = (nombre ?? spec.titulo ?? 'grafica').replace(/[^\w.-]+/g, '_').slice(0, 60) || 'grafica';
   const dir = path.join(salidaDir, base);
   const v = siguienteVersion(dir, base), pref = path.join(dir, `${base}_v${v}`);

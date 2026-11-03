@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26261f"/><stop offset="1" stop-color="#141411"/></linearGradient>
+    <linearGradient id="r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E6C766"/><stop offset="1" stop-color="#B8922F"/></linearGradient>
+    <filter id="g" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9"/></filter>
+  </defs>
+  <rect width="256" height="256" rx="52" fill="url(#f)"/>
+  <rect x="3" y="3" width="250" height="250" rx="49" fill="none" stroke="#C9A84C" stroke-opacity=".35" stroke-width="3"/>
+  <!-- gráfica de fondo: línea ascendente y su área -->
+  <path d="M26 196 L70 176 L104 186 L142 140 L176 150 L226 92 L226 226 L26 226 Z" fill="#C9A84C" fill-opacity=".10"/>
+  <path d="M26 196 L70 176 L104 186 L142 140 L176 150 L226 92" fill="none" stroke="#50B5A2" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".9"/>
+  <!-- rayo -->
+  <polygon points="146,28 78,138 120,138 100,228 182,106 138,106" fill="#C9A84C" filter="url(#g)" opacity=".75"/>
+  <polygon points="146,28 78,138 120,138 100,228 182,106 138,106" fill="url(#r)" stroke="#FFF3C4" stroke-width="3" stroke-linejoin="round"/>
+</svg>

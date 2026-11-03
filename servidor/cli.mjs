@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {compilar, RAIZ} from './compilar.mjs';
-import {vistaPrevia, renderizar} from './render.mjs';
+import {vistaPrevia, renderizar, auditarColisiones} from './render.mjs';
 import {buscar, descargar, leerCatalogo} from './catalogo.mjs';
 import {inspeccionar} from './datos.mjs';
 import {ciclo, iniciarVivo, eventos} from './vivo.mjs';
@@ -26,6 +26,11 @@ try {
     const t = (pos[1] ?? '1,4,8').split(',').map(Number);
     const out = await vistaPrevia(spec, t, {dir: path.join(RAIZ, '.tmp', 'vistas'), nombre: path.basename(pos[0], '.json'), escala: flags.has('--completa') ? 1 : 0.5});
     console.log(out.join('\n'));
+  } else if (cmd === 'auditar') {
+    const {spec, informe} = compilar(leerSpec(pos[0])); mostrar(informe); if (!informe.ok) process.exit(1);
+    const a = await auditarColisiones(spec);
+    a.problemas.forEach((p) => console.log(`✗ ${p.tipo}: ${p.a}${p.b ? ' × ' + p.b : ''} entre ${p.desde} y ${p.hasta} s`));
+    console.log(a.ok ? `✓ ningún texto se pisa (${a.instantes} instantes revisados)` : `✗ ${a.problemas.length} problema(s)`); process.exit(a.ok ? 0 : 1);
   } else if (cmd === 'render') {
     const {spec, informe} = compilar(leerSpec(pos[0])); mostrar(informe); if (!informe.ok) process.exit(1);
     let ult = 0;
@@ -42,5 +47,5 @@ try {
   } else if (cmd === 'inspeccionar') console.log(JSON.stringify(inspeccionar(path.resolve(pos[0]), {hoja: pos[1]}), null, 2));
   else if (cmd === 'actualizar') { const r = await ciclo({forzar: pos[0] === 'todo' || flags.has('--todo'), ids: pos[0] && pos[0] !== 'todo' ? pos : null}); console.log(JSON.stringify(r, null, 2)); }
   else if (cmd === 'vivo') { for (const t of ['serie', 'derivado', 'render-inicio', 'render', 'error', 'inicio']) eventos.on(t, (e) => console.log(JSON.stringify(e))); iniciarVivo(); console.log('Actualizador vivo en marcha (Ctrl+C para salir)…'); await new Promise(() => {}); }
-  else console.log('Uso: cli.mjs compilar|vista|render <spec.json> [tiempos] [--borrador] [--sin-alfa] | buscar <texto> | bajar <id…|todo> | actualizar [ids|todo] | vivo | inspeccionar <archivo> [hoja]');
+  else console.log('Uso: cli.mjs compilar|vista|auditar|render <spec.json> [tiempos] [--borrador] [--sin-alfa] | buscar <texto> | bajar <id…|todo> | actualizar [ids|todo] | vivo | inspeccionar <archivo> [hoja]');
 } catch (e) { console.error('✗', e.message); process.exit(1); }

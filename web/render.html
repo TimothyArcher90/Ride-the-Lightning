@@ -56,6 +56,10 @@ window.RTL = {
     ctx.drawImage(trabajo, 0, 0);
     return true;
   },
+  /** Auditoría de textos: cajas registradas en cada instante (títulos, contador, tarjetas, ejes, fuente). */
+  auditar(tiempos) {
+    return tiempos.map((t) => ({t, registro: escena.dibujar(tctx, W, H, t, {sinFondo: true}).registro}));
+  },
   png() { return lienzo.toDataURL('image/png'); },
 };
 window.RTL_LISTO = true;

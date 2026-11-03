@@ -80,7 +80,7 @@ export function ticksNum(a, b, max = 6) {
   const span = b - a;
   if (!(span > 0)) return [a];
   const raw = span / max, mag = Math.pow(10, Math.floor(Math.log10(raw)));
-  const paso = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => span / s <= max) ?? 10 * mag;
+  const paso = [1, 2, 5, 10].map((m) => m * mag).find((s) => span / s <= max) ?? 10 * mag;
   const out = [];
   for (let v = Math.ceil(a / paso - 1e-9) * paso; v <= b + 1e-9; v += paso) out.push(Math.round(v / paso) * paso);
   return out;

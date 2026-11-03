@@ -274,6 +274,13 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
         if (i < 0) return;
         capa.x = tab.x[i]; capa.y = tab.series[si].y[i]; capa.serie = si;
         const ctx = {tab, si, i};
+        // la tarjeta muestra siempre el año y el dato anclado: salen de la fila, no se teclean
+        const base = {capa: donde, serie: tab.series[si].nombre, columna: tab.series[si].col, fecha: tab.tipoX === 'fecha' ? iso(tab.x[i]) : tab.x[i], fila: i, valorCrudo: tab.series[si].y[i] * tab.series[si].divisor, divisor: tab.series[si].divisor, dataset: g.datos, archivo: informe.datos.find((d) => d.id === g.datos)?.archivo};
+        capa.anioTxt = tab.tipoX === 'fecha' ? fmtFecha(capa.x, 'anio') : String(capa.x);
+        capa.valorTxt = fmtNum(capa.y, tab.series[si].fmt);
+        informe.cifras.push({...base, campo: 'anio', mostrado: capa.anioTxt, marcadores: ['fecha']}, {...base, campo: 'valor', mostrado: capa.valorTxt, marcadores: ['valor']});
+        if (capa.texto && String(capa.texto).length > 30) informe.avisos.push(`${donde}: el texto «${capa.texto}» es largo (${String(capa.texto).length} car.). Menos es más: tres o cuatro palabras.`);
+        if (capa.detalle) informe.avisos.push(`${donde}: «detalle» añade una cuarta línea a la tarjeta; mejor quitarla y dejar año · qué pasó · dato.`);
         ['texto', 'detalle'].forEach((campo) => {
           chequearDigitos(capa[campo], capa, `${donde}.${campo}`, informe);
           const r = expandir(capa[campo], ctx, informe, `${donde}.${campo}`);
@@ -305,6 +312,12 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
     capas.push(capa);
   });
 
+  // una idea a la vez: dos tarjetas de la misma gráfica no deben coincidir en pantalla
+  const lls = capas.filter((c) => c.tipo === 'llamada');
+  for (let a = 0; a < lls.length; a++) for (let b = a + 1; b < lls.length; b++) {
+    const A = lls[a], Bq = lls[b];
+    if (A.capa === Bq.capa && (A.t?.[0] ?? 0) < (Bq.t?.[1] ?? 99) && (Bq.t?.[0] ?? 0) < (A.t?.[1] ?? 99)) informe.avisos.push(`Las llamadas «${A.texto}» y «${Bq.texto}» coinciden en pantalla (${A.t?.join('–')} s y ${Bq.t?.join('–')} s). Una idea por encuadre: sepáralas en el tiempo.`);
+  }
   if (spec.fondo?.imagen) { try { if (!fs.existsSync(rutaSegura(spec.fondo.imagen, raiz))) E(`fondo: no existe ${spec.fondo.imagen}`); else imagenes.add(spec.fondo.imagen); } catch (e) { E(`fondo: ${e.message}`); } }
 
   // sello de fuente automático (todas las fuentes distintas)

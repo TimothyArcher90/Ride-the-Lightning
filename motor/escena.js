@@ -47,7 +47,7 @@ export class Escena {
   dibujar(ctx, W, H, t, {sinFondo = false, modo = 'todo'} = {}) {
     ctx.clearRect(0, 0, W, H);
     if (!sinFondo && modo !== 'texto') this.fondo(ctx, W, H, t);
-    const env = {ctx, W, H, u: Math.min(W, H) / 1080, t, tablas: this.spec.tablas, imgs: this.imgs, vistas: {}, cabezas: {}};
+    const env = {ctx, W, H, u: Math.min(W, H) / 1080, t, tablas: this.spec.tablas, imgs: this.imgs, vistas: {}, cabezas: {}, proy: {}, registro: [], capasTodas: this.capas};
     for (const capa of this.capas) {
       const f = DIBUJO[capa.tipo];
       if (!f) continue;
@@ -62,5 +62,6 @@ export class Escena {
       env.ctx.restore();
       env.ctx = ctx;
     }
+    return env;
   }
 }

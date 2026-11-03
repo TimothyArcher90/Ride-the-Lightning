@@ -106,36 +106,69 @@ function linea(env, capa) {
   const pyR = (y) => B.y + B.h - ((y - yR[0]) / (yR[1] - yR[0])) * B.h;
   const fmtL = tab.series[(izq[0] ?? idxs[0])].fmt;
 
+  // Estado de la gráfica en cualquier instante tt (cámara + proyección): lo usan las anotaciones para decidir dónde ir
+  // SIN depender del instante que se está dibujando (así la colocación es una función pura de los datos).
+  const estadoEn = (tt) => {
+    const c = camaraEn(capa, tab, izq.length ? izq : idxs, tt);
+    const yR_ = der.size ? (ajustarY(tab, [...der], c.x) ?? [0, 1]) : null;
+    const pxx = (x) => B.x + ((x - c.x[0]) / (c.x[1] - c.x[0])) * B.w;
+    const pyl = (y) => B.y + B.h - ((y - c.y[0]) / (c.y[1] - c.y[0])) * B.h;
+    const pyr = (y) => B.y + B.h - ((y - yR_[0]) / (yR_[1] - yR_[0])) * B.h;
+    const py = (y, si) => { const v = log ? Math.log10(y) : y; return der.has(si) ? pyr(v) : pyl(v); };
+    // ordenadas en pantalla de todas las series en la abscisa de pantalla sx (para no tapar la línea con una tarjeta)
+    const lineaY = (sx) => {
+      const xd = c.x[0] + ((sx - B.x) / B.w) * (c.x[1] - c.x[0]);
+      if (xd < orig.x[0] || xd > orig.x[orig.x.length - 1]) return [];
+      return idxs.map((si) => valorEn(orig.x, orig.series[si].y, xd)).filter((v) => v != null && (!log || v > 0)).map((v, k) => py(v, idxs[k]));
+    };
+    return {B, cam: c, px: pxx, py, lineaY};
+  };
+  if (capa.id) env.proy[capa.id] = estadoEn;
+
   ctx.save();
   ctx.globalAlpha = ap;
-  // rejilla + etiquetas del eje Y (izq)
+  const hx = px(xh), colorMarca = colorDe(tab.series[idxs[0]].color, idxs[0]);
+  // eje Y: pocas marcas y discretas (menos tinta: lo importante lo dicen el contador y las llamadas)
   const ty = log ? ticksLog(cam.y[0], cam.y[1]) : ticksNum(cam.y[0], cam.y[1], 5), paso = ty.length > 1 ? ty[1] - ty[0] : 1, dec = Math.max(decTicks(paso), 0);
   ctx.lineWidth = 1 * u;
   for (const v of ty) {
     const y = pyL(v);
-    ctx.strokeStyle = rgba(PALETA.piedra, 0.1); ctx.beginPath(); ctx.moveTo(B.x, y); ctx.lineTo(B.x + B.w, y); ctx.stroke();
-    texto(ctx, log ? fmtLog(v) : fmtNum(v, {decimales: dec}), B.x - 14 * u, y + 7 * u, fnt(400, 21 * u, true), PALETA.piedraOscura, 'right');
+    if (y < B.y - 4 * u || y > B.y + B.h + 4 * u) continue;
+    ctx.strokeStyle = rgba(PALETA.piedra, 0.06); ctx.beginPath(); ctx.moveTo(B.x, y); ctx.lineTo(B.x + B.w, y); ctx.stroke();
+    texto(ctx, log ? fmtLog(v) : fmtNum(v, {decimales: dec}), B.x - 16 * u, y + 7 * u, fnt(400, 20 * u, true), rgba(PALETA.piedraOscura, 0.8), 'right');
   }
-  if (fmtL?.unidad) texto(ctx, fmtL.unidad.toUpperCase(), B.x, B.y - 26 * u, fnt(500, 19 * u, true), PALETA.piedraOscura, 'left');
+  if (capa.ejeUnidad && fmtL?.unidad) texto(ctx, fmtL.unidad.toUpperCase(), B.x, B.y - 22 * u, fnt(500, 17 * u, true), PALETA.piedraOscura, 'left');
   if (yR) {
-    const tr = ticksNum(yR[0], yR[1], 5), pr = tr.length > 1 ? tr[1] - tr[0] : 1;
+    const tr = ticksNum(yR[0], yR[1], 4), pr = tr.length > 1 ? tr[1] - tr[0] : 1;
     const c = colorDe(tab.series[[...der][0]].color, [...der][0]);
-    for (const v of tr) texto(ctx, fmtNum(v, {decimales: decTicks(pr)}), B.x + B.w + 14 * u, pyR(v) + 7 * u, fnt(400, 21 * u, true), c, 'left');
-    const fu = tab.series[[...der][0]].fmt?.unidad; if (fu) texto(ctx, fu.toUpperCase(), B.x + B.w, B.y - 26 * u, fnt(500, 19 * u, true), c, 'right');
+    for (const v of tr) texto(ctx, fmtNum(v, {decimales: decTicks(pr)}), B.x + B.w + 16 * u, pyR(v) + 7 * u, fnt(400, 20 * u, true), c, 'left');
+    const fu = tab.series[[...der][0]].fmt?.unidad; if (fu) texto(ctx, fu.toUpperCase(), B.x + B.w, B.y - 22 * u, fnt(500, 17 * u, true), c, 'right');
   }
-  // eje X
+  // eje X + marca del año en curso (la cabeza siempre dice en qué año estamos: no se pierde el hilo)
   if (tab.tipoX === 'fecha') {
-    const tf = ticksFecha(cam.x[0], cam.x[1], Math.max(3, Math.floor(B.w / (130 * u))));
+    const tf = ticksFecha(cam.x[0], cam.x[1], Math.max(3, Math.floor(B.w / (200 * u))));
+    const enCurso = reveal > 0.001 && reveal < 0.999 && capa.marcaAnio !== false && hx >= B.x && hx <= B.x + B.w;
     for (const tk of tf.ticks) {
       const x = px(tk);
-      ctx.strokeStyle = rgba(PALETA.piedra, 0.07); ctx.beginPath(); ctx.moveTo(x, B.y); ctx.lineTo(x, B.y + B.h); ctx.stroke();
-      texto(ctx, etiquetaTick(tk, tf.unidad), x, B.y + B.h + 34 * u, fnt(400, 21 * u, true), PALETA.piedraOscura, 'center');
+      if (x < B.x - 2 || x > B.x + B.w + 2) continue;
+      if (enCurso && Math.abs(x - hx) < 80 * u) continue;
+      texto(ctx, etiquetaTick(tk, tf.unidad), x, B.y + B.h + 34 * u, fnt(400, 20 * u, true), rgba(PALETA.piedraOscura, 0.8), 'center');
+    }
+    if (enCurso) {
+      const largo = cam.x[1] - cam.x[0] > 3 * 365.25 * 86400000, et = fmtFecha(xh, largo ? 'anio' : 'mes');
+      ctx.font = fnt(800, 26 * u, true);
+      const w = ctx.measureText(et).width + 30 * u, h = 40 * u, xx = clamp(hx - w / 2, B.x, B.x + B.w - w), yy = B.y + B.h + 10 * u;
+      ctx.strokeStyle = colorMarca; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.moveTo(hx, B.y + B.h); ctx.lineTo(hx, yy); ctx.stroke();
+      ctx.fillStyle = colorMarca; ctx.fillRect(xx, yy, w, h);
+      texto(ctx, et, xx + w / 2, yy + h - 11 * u, fnt(800, 26 * u, true), PALETA.fondo, 'center');
     }
   } else {
-    for (const tk of ticksNum(cam.x[0], cam.x[1], 8)) texto(ctx, fmtNum(tk, {decimales: 0}), px(tk), B.y + B.h + 34 * u, fnt(400, 21 * u, true), PALETA.piedraOscura, 'center');
+    for (const tk of ticksNum(cam.x[0], cam.x[1], 6)) texto(ctx, fmtNum(tk, {decimales: 0}), px(tk), B.y + B.h + 34 * u, fnt(400, 20 * u, true), rgba(PALETA.piedraOscura, 0.8), 'center');
   }
+  reg(env, 'eje-y', [B.x - 120 * u, B.y - 8 * u, B.x - 4 * u, B.y + B.h + 8 * u], capa.id);
+  reg(env, 'eje-x', [B.x, B.y + B.h + 6 * u, B.x + B.w, B.y + B.h + 56 * u], capa.id);
   // eje base
-  ctx.strokeStyle = rgba(PALETA.piedra, 0.35); ctx.lineWidth = 1.5 * u;
+  ctx.strokeStyle = rgba(PALETA.piedra, 0.3); ctx.lineWidth = 1.5 * u;
   ctx.beginPath(); ctx.moveTo(B.x, B.y + B.h); ctx.lineTo(B.x + B.w, B.y + B.h); ctx.stroke();
 
   // series
@@ -375,6 +408,83 @@ function zona(env, capa) {
   ctx.restore();
 }
 
+// ── Registro de cajas de texto ────────────────────────────────────────────────────────────────────────────────
+// Aprendizaje de Electric Eye: nada de texto se coloca a ciegas. Cada texto reserva su caja, las tarjetas se colocan en
+// el primer hueco libre (sin pisar títulos, contador, ejes, fuente ni la línea) y una auditoría recorre la pieza entera.
+const reg = (env, tipo, c, id) => env.registro.push({tipo, caja: c, id});
+const chocan = (a, b, m = 0) => a[0] < b[2] + m && a[2] + m > b[0] && a[1] < b[3] + m && a[3] + m > b[1];
+const solape = (a, b) => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
+
+function cajaTitulo(env, capa) {
+  const {ctx, u, W, H} = env, tam = (capa.tam ?? 60) * u, pos = capa.pos ?? (H > W ? [0.08, 0.085] : [0.065, 0.115]);
+  ctx.font = fnt(800, tam);
+  const w = ctx.measureText(capa.texto).width, x = pos[0] * W, y = pos[1] * H;
+  return {x, y, w, tam, caja: [x - 6 * u, y - tam, x + w + 6 * u, y + 24 * u + (capa.sub ? 46 * u : 0)]};
+}
+function cajaContador(env, capa) {
+  const {u, W, H} = env, vert = H > W;
+  const pos = capa.pos ?? (vert ? [0.08, 0.215] : [0.935, 0.16]), al = capa.alinea ?? (vert ? 'left' : 'right');
+  const x = pos[0] * W, y = pos[1] * H, compacto = capa.modo === 'compacto', ancho = (compacto ? 360 : 440) * u;
+  const arriba = y - (compacto ? 30 : 96) * u, abajo = y + (compacto ? 84 : (capa.modo === 'fecha' ? 20 : 150)) * u;
+  return {x, y, al, caja: al === 'right' ? [x - ancho, arriba, x, abajo] : [x, arriba, x + ancho, abajo]};
+}
+function cajaSello(env, capa) {
+  const {ctx, u, W, H} = env;
+  let txt = 'FUENTE · ' + capa.texto, px = 15 * u;
+  ctx.font = fnt(500, px, true);
+  while (ctx.measureText(txt).width > W * 0.87 && px > 11 * u) { px -= 0.5 * u; ctx.font = fnt(500, px, true); }
+  while (ctx.measureText(txt).width > W * 0.87 && txt.length > 8) txt = txt.slice(0, -2);
+  if (txt.length < ('FUENTE · ' + capa.texto).length) txt = txt.slice(0, -1) + '…';
+  const w = ctx.measureText(txt).width, x = 0.065 * W;
+  return {txt, px, x, y: H - 34 * u, caja: [x - 4 * u, H - 34 * u - px - 4 * u, x + w + 4 * u, H - 34 * u + 8 * u]};
+}
+/** Cajas que no se mueven (título, contador, fuente, ejes): las tarjetas las esquivan. */
+function fijas(env, S) {
+  const {u} = env, B = S.B, out = [];
+  for (const c of env.capasTodas) {
+    if (c.tipo === 'titulo') out.push(cajaTitulo(env, c).caja);
+    else if (c.tipo === 'contador') out.push(cajaContador(env, c).caja);
+    else if (c.tipo === 'sello') out.push(cajaSello(env, c).caja);
+  }
+  out.push([B.x - 120 * u, B.y - 8 * u, B.x - 4 * u, B.y + B.h + 8 * u], [B.x, B.y + B.h + 6 * u, B.x + B.w, B.y + B.h + 56 * u]);
+  return out;
+}
+/** ¿La tarjeta tapa la línea? Se muestrea la línea completa bajo la cámara de referencia. */
+function lineaCruza(S, c, margen) {
+  for (let i = 0; i <= 28; i++) {
+    const sx = c[0] + ((c[2] - c[0]) * i) / 28;
+    for (const sy of S.lineaY(sx)) if (sy > c[1] - margen && sy < c[3] + margen) return true;
+  }
+  return false;
+}
+
+/** Elige el primer hueco libre alrededor del punto. Devuelve el desplazamiento tarjeta−punto (fijo durante toda la llamada). */
+function colocar(env, capa, cw, ch, k) {
+  const {u, W, H} = env, proy = env.proy[capa.capa];
+  const S = proy((capa.t?.[0] ?? 0) + 0.4), B = S.B;
+  const P = [S.px(capa.x), S.py(capa.y, capa.serie ?? 0)], g = (capa.dy ?? 70) * u * k;
+  const lim = k < 1 ? {x0: B.x, x1: B.x + B.w, y0: B.y, y1: B.y + B.h + 4 * u} : {x0: 28 * u, x1: W - 28 * u, y0: 28 * u, y1: H - 70 * u};
+  const F = fijas(env, S);
+  const orden = (capa.lado ?? 'arriba') === 'abajo' ? ['abajo', 'arriba', 'der', 'izq'] : ['arriba', 'abajo', 'der', 'izq'];
+  let mejor = null, mejorPen = Infinity, n = 0;
+  for (const lado of orden) for (const d of [1, 1.7, 2.5]) for (const s of [0, -0.3, 0.3, -0.6, 0.6]) {
+    let cx, cy;
+    if (lado === 'arriba') { cx = P[0] - cw / 2 + s * cw; cy = P[1] - g * d - ch; }
+    else if (lado === 'abajo') { cx = P[0] - cw / 2 + s * cw; cy = P[1] + g * d; }
+    else if (lado === 'der') { cx = P[0] + g * d; cy = P[1] - ch / 2 + s * ch; }
+    else { cx = P[0] - g * d - cw; cy = P[1] - ch / 2 + s * ch; }
+    cx += (capa.dx ?? 0) * u * k;
+    const caja = [cx, cy, cx + cw, cy + ch];
+    let pen = n++ * 0.01;
+    if (caja[0] < lim.x0 || caja[2] > lim.x1 || caja[1] < lim.y0 || caja[3] > lim.y1) pen += 1000;
+    for (const f of F) if (chocan(caja, f, 10 * u)) pen += 100 + solape(caja, f) / (u * u);
+    if (lineaCruza(S, caja, 8 * u)) pen += 60;
+    if (pen < mejorPen) { mejorPen = pen; mejor = [cx - P[0], cy - P[1]]; }
+    if (pen < 1) return mejor;
+  }
+  return mejor;
+}
+
 function llamada(env, capa) {
   const V = env.vistas[capa.capa]; if (!V) return;
   const {ctx, u, t, W, H} = env, {B} = V;
@@ -383,39 +493,43 @@ function llamada(env, capa) {
   const fin = 1 - prog(t, t1, t1 + 0.3, ease.lin); if (fin <= 0) return;
   const P = [V.px(capa.x), V.py(capa.y, capa.serie ?? 0)];
   if (P[0] < B.x - 10 * u || P[0] > B.x + B.w + 10 * u || P[1] < B.y - 40 * u || P[1] > B.y + B.h + 40 * u) return;
-  const color = colorDe(capa.color, capa.serie ?? 0);
+  const color = colorDe(capa.color, capa.serie ?? 0), k = clamp(B.w / (0.62 * W), 0.62, 1);
+  // contenido de la tarjeta: año grande · qué pasó (corto) · el dato. Nada más.
+  const L = [];
+  if (capa.anioTxt) L.push({s: capa.anioTxt, f: fnt(800, 60 * u * k, true), c: color, h: 64 * u * k});
+  if (capa.texto) L.push({s: capa.texto, f: fnt(700, 34 * u * k), c: PALETA.blanco, h: 44 * u * k});
+  if (capa.valorTxt && !capa.sinValor) L.push({s: capa.valorTxt, f: fnt(600, 28 * u * k, true), c: PALETA.piedraClara, h: 38 * u * k});
+  if (capa.detalle) L.push({s: capa.detalle, f: fnt(500, 22 * u * k, true), c: PALETA.piedraOscura, h: 32 * u * k});
+  const pad = 26 * u * k;
+  let cw = 0; for (const l of L) { ctx.font = l.f; cw = Math.max(cw, ctx.measureText(l.s).width); }
+  cw += pad * 2 + 8 * u * k;
+  const ch = L.reduce((a, l) => a + l.h, 0) + pad * 1.5;
+  const off = (capa._off ??= colocar(env, capa, cw, ch, k));
+  let cx = P[0] + off[0], cy = P[1] + off[1];
+  const lim = k < 1 ? {x0: B.x, x1: B.x + B.w, y0: B.y, y1: B.y + B.h + 4 * u} : {x0: 28 * u, x1: W - 28 * u, y0: 28 * u, y1: H - 70 * u};
+  cx = clamp(cx, lim.x0, Math.max(lim.x0, lim.x1 - cw)); cy = clamp(cy, lim.y0, Math.max(lim.y0, lim.y1 - ch));
   const a = ctx.globalAlpha;
   ctx.save(); ctx.globalAlpha = a * fin * V.ap;
-  // onda de impacto
+  // onda de impacto sobre el dato
   const o = clamp(tt / 0.7);
   if (o < 1) { ctx.strokeStyle = rgba(color, (1 - o) * 0.9); ctx.lineWidth = 3 * u; ctx.beginPath(); ctx.arc(P[0], P[1], (12 + 70 * ease.outExpo(o)) * u, 0, 7); ctx.stroke(); }
-  // tarjeta
-  const k = clamp(B.w / (0.62 * W), 0.62, 1);       // paneles pequeños → tarjetas más pequeñas
-  const tf = fnt(700, 31 * u * k), df = fnt(500, 22 * u * k, true), pad = 22 * u * k;
-  ctx.font = tf; const w1 = ctx.measureText(capa.texto ?? '').width;
-  ctx.font = df; const w2 = capa.detalle ? ctx.measureText(capa.detalle).width : 0;
-  const cw = Math.max(w1, w2) + pad * 2, ch = (capa.detalle ? 96 : 66) * u * k;
-  const arriba = (capa.lado ?? 'arriba') === 'arriba';
-  let cx = P[0] + (capa.dx ?? 0) * u - cw / 2, cy = arriba ? P[1] - (capa.dy ?? 130) * u - ch : P[1] + (capa.dy ?? 130) * u;
-  const lim = k < 1 ? {x0: B.x, x1: B.x + B.w, y0: B.y, y1: B.y + B.h + 30 * u} : {x0: 28 * u, x1: W - 28 * u, y0: 28 * u, y1: H - 70 * u};   // en paneles, la tarjeta no invade al vecino
-  cx = clamp(cx, lim.x0, Math.max(lim.x0, lim.x1 - cw)); cy = clamp(cy, lim.y0, Math.max(lim.y0, lim.y1 - ch));
-  const li = ease.out3(clamp(tt / 0.25));
-  const ax = clamp(P[0], cx + 18 * u, cx + cw - 18 * u), ay = arriba ? cy + ch : cy;
+  // línea guía hasta el borde más cercano de la tarjeta
+  const li = ease.out3(clamp(tt / 0.25)), nx = clamp(P[0], cx, cx + cw), ny = clamp(P[1], cy, cy + ch);
   ctx.strokeStyle = color; ctx.lineWidth = 2.5 * u;
-  ctx.beginPath(); ctx.moveTo(P[0], P[1]); ctx.lineTo(lerp(P[0], ax, li), lerp(P[1], ay, li)); ctx.stroke();
-  ctx.fillStyle = PALETA.blanco; ctx.beginPath(); ctx.arc(P[0], P[1], 6 * u, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(P[0], P[1]); ctx.lineTo(lerp(P[0], nx, li), lerp(P[1], ny, li)); ctx.stroke();
+  ctx.fillStyle = PALETA.blanco; ctx.beginPath(); ctx.arc(P[0], P[1], 6.5 * u, 0, 7); ctx.fill();
   ctx.strokeStyle = color; ctx.lineWidth = 3 * u; ctx.beginPath(); ctx.arc(P[0], P[1], 10 * u, 0, 7); ctx.stroke();
-  const sn = ease.outExpo(clamp((tt - 0.12) / 0.32)), esc = lerp(1.2, 1, sn), al = clamp((tt - 0.12) / 0.07);
+  // tarjeta con golpe seco: entra con rebote corto
+  const sn = ease.outExpo(clamp((tt - 0.12) / 0.32)), esc = lerp(1.14, 1, sn), al = clamp((tt - 0.12) / 0.07);
   if (al > 0) {
     ctx.save(); ctx.globalAlpha *= al; ctx.translate(cx + cw / 2, cy + ch / 2); ctx.scale(esc, esc);
     ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 24 * u * k; ctx.shadowOffsetY = 8 * u * k;
-    ctx.fillStyle = PALETA.tarjeta; ctx.fillRect(-cw / 2, -ch / 2, cw, ch);   // tarjeta OPACA (Premiere mezcla las semitransparentes)
-    ctx.shadowColor = 'transparent'; ctx.fillStyle = color; ctx.fillRect(-cw / 2, -ch / 2, 7 * u, ch);
+    ctx.fillStyle = PALETA.tarjeta; ctx.fillRect(-cw / 2, -ch / 2, cw, ch);              // tarjeta OPACA (Premiere mezcla las semitransparentes)
+    ctx.shadowColor = 'transparent'; ctx.fillStyle = color; ctx.fillRect(-cw / 2, -ch / 2, 7 * u * k, ch);
+    let y = -ch / 2 + pad * 0.55;
+    for (const l of L) { y += l.h; texto(ctx, l.s, -cw / 2 + pad + 8 * u * k, y - l.h * 0.22, l.f, l.c); }
     ctx.restore();
-    ctx.save(); ctx.globalAlpha *= al; ctx.translate(cx + cw / 2, cy + ch / 2); ctx.scale(esc, esc);
-    texto(ctx, capa.texto ?? '', -cw / 2 + pad + 6 * u, (capa.detalle ? -6 : 11) * u * k, tf, PALETA.blanco);
-    if (capa.detalle) texto(ctx, capa.detalle, -cw / 2 + pad + 6 * u, 28 * u * k, df, color);
-    ctx.restore();
+    if (al > 0.3) reg(env, 'tarjeta', [cx, cy, cx + cw, cy + ch], capa.id);
   }
   ctx.restore();
 }
@@ -423,34 +537,47 @@ function llamada(env, capa) {
 function contador(env, capa) {
   const H = env.cabezas[capa.capa]; if (!H) return;
   const s = H.series[capa.serie ?? Object.keys(H.series)[0]]; if (!s) return;
-  const {ctx, u, W, H: AH, t} = env, V = env.vistas[capa.capa];
-  const [t0, t1] = capa.t ?? [0, 99];
-  const g = H.ap * (1 - prog(t, t1, t1 + 0.3, ease.lin)); if (g <= 0) return;
-  const pos = capa.pos ?? (env.H > env.W ? [0.08, 0.2] : [0.935, 0.135]), al = capa.alinea ?? (env.H > env.W ? 'left' : 'right');
-  const x = pos[0] * W, y = pos[1] * AH;
+  const {ctx, u, t} = env, V = env.vistas[capa.capa];
+  const [, t1] = capa.t ?? [0, 99];
+  // mientras una tarjeta está activa, la tarjeta lleva el año y el dato: el contador se aparta (una idea a la vez)
+  let activa = 0;
+  for (const l of env.capasTodas) if (l.tipo === 'llamada' && l.capa === capa.capa) activa = Math.max(activa, prog(t, l.t[0], l.t[0] + 0.2, ease.lin) * (1 - prog(t, l.t[1], l.t[1] + 0.25, ease.lin)));
+  const g = H.ap * (1 - prog(t, t1, t1 + 0.3, ease.lin)) * (1 - activa); if (g <= 0.01) { reg(env, 'contador-oculto', [0, 0, 0, 0], capa.id); return; }
+  const C = cajaContador(env, capa), {x, y, al} = C;
   ctx.save(); ctx.globalAlpha *= g;
-  texto(ctx, (capa.etiqueta ?? s.nombre).toUpperCase(), x, y - 62 * u, fnt(600, 20 * u, true), s.color, al);
-  texto(ctx, fmtNum(s.valor, s.fmt), x, y, fnt(700, 76 * u, true), PALETA.blanco, al);
-  if (V?.tab.tipoX === 'fecha') texto(ctx, fmtFecha(H.xh, capa.formatoX ?? 'dia'), x, y + 36 * u, fnt(500, 24 * u, true), PALETA.piedraOscura, al);
+  const fecha = V?.tab.tipoX === 'fecha';
+  if (capa.modo === 'compacto') {
+    texto(ctx, (capa.etiqueta ?? s.nombre).toUpperCase(), x, y, fnt(700, 22 * u, true), s.color, al);
+    texto(ctx, fmtNum(s.valor, s.fmt), x, y + 44 * u, fnt(700, 36 * u, true), PALETA.blanco, al);
+    const un = String(s.fmt?.unidad ?? '').match(/(([^)]+))/)?.[1] ?? s.fmt?.unidad;   // la unidad siempre acompaña al dato
+    if (un) texto(ctx, String(un).toUpperCase(), x, y + 72 * u, fnt(500, 15 * u, true), PALETA.piedraOscura, al);
+  } else {
+    // el año manda: grande y en el color de la serie; debajo el dato y su unidad, en pequeño
+    texto(ctx, fecha ? fmtFecha(H.xh, 'anio') : fmtNum(H.xh, {decimales: 0}), x, y, fnt(800, 96 * u, true), s.color, al);
+    if (capa.modo !== 'fecha') {
+      texto(ctx, fmtNum(s.valor, s.fmt), x, y + 74 * u, fnt(700, 46 * u, true), PALETA.blanco, al);
+      if (s.fmt?.unidad) texto(ctx, String(s.fmt.unidad).toUpperCase(), x, y + 112 * u, fnt(500, 17 * u, true), PALETA.piedraOscura, al);
+    }
+  }
   ctx.restore();
+  if (g > 0.3) reg(env, 'contador', C.caja, capa.id);
 }
 
 function titulo(env, capa) {
-  const {ctx, u, t, W, H} = env;
+  const {ctx, u, t} = env;
   const [t0, t1] = capa.t ?? [0, 4];
   const sal = 1 - prog(t, t1, t1 + 0.4, ease.in2); if (t < t0 || sal <= 0) return;
-  const tam = (capa.tam ?? 64) * u, pos = capa.pos ?? (H > W ? [0.08, 0.1] : [0.065, 0.115]);
-  const x = pos[0] * W, y = pos[1] * H, color = colorDe(capa.color, 0);
+  const T = cajaTitulo(env, capa), {x, y, w, tam} = T, color = colorDe(capa.color, 0);
   ctx.save(); ctx.globalAlpha *= sal;
-  ctx.font = fnt(800, tam); const w = ctx.measureText(capa.texto).width;
   const p = prog(t, t0, t0 + 0.55, ease.io3);
   ctx.save(); ctx.beginPath(); ctx.rect(x - 4 * u, y - tam, (w + 8 * u) * p, tam * 1.5); ctx.clip();
   texto(ctx, capa.texto, x, y, fnt(800, tam), PALETA.blanco); ctx.restore();
   if (p < 1) { ctx.fillStyle = color; ctx.fillRect(x + w * p, y - tam * 0.9, 12 * u, tam * 1.05); }
   const r = prog(t, t0 + 0.2, t0 + 0.9, ease.out3);
-  ctx.fillStyle = color; ctx.fillRect(x, y + 16 * u, Math.min(w, 220 * u) * r, 4 * u);
-  if (capa.sub) texto(ctx, capa.sub, x, y + 62 * u, fnt(500, (capa.tamSub ?? 28) * u), PALETA.piedraOscura, 'left', 'alphabetic', prog(t, t0 + 0.5, t0 + 1.0, ease.out3));
+  ctx.fillStyle = color; ctx.fillRect(x, y + 16 * u, Math.min(w, 200 * u) * r, 4 * u);
+  if (capa.sub) texto(ctx, capa.sub, x, y + 62 * u, fnt(500, (capa.tamSub ?? 24) * u), PALETA.piedraOscura, 'left', 'alphabetic', prog(t, t0 + 0.5, t0 + 1.0, ease.out3));
   ctx.restore();
+  reg(env, 'titulo', T.caja, capa.id);
 }
 
 function cortina(env, capa) {
@@ -478,16 +605,11 @@ function imagen(env, capa) {
 }
 
 function sello(env, capa) {
-  const {ctx, u, W, H} = env;
-  let txt = 'FUENTE · ' + capa.texto, px = 17 * u;
-  const maxW = W * 0.87;
-  ctx.font = fnt(500, px, true);
-  while (ctx.measureText(txt).width > maxW && px > 12 * u) { px -= 0.5 * u; ctx.font = fnt(500, px, true); }
-  while (ctx.measureText(txt).width > maxW && txt.length > 8) txt = txt.slice(0, -2);
-  if (txt.length < ('FUENTE · ' + capa.texto).length) txt = txt.slice(0, -1) + '…';
+  const {ctx} = env, S = cajaSello(env, capa);
   ctx.save();
-  texto(ctx, txt, 0.065 * W, H - 36 * u, fnt(500, px, true), PALETA.piedraOscura, 'left');
+  texto(ctx, S.txt, S.x, S.y, fnt(500, S.px, true), rgba(PALETA.piedraOscura, 0.6), 'left');
   ctx.restore();
+  reg(env, 'sello', S.caja, null);
 }
 
 export const DIBUJO = {linea, barras, carrera, dispersion, calor, zona, llamada, contador, titulo, cortina, imagen, sello};

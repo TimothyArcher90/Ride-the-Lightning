@@ -3,7 +3,7 @@
   "titulo": "El balance de la Fed",
   "formato": "horizontal",
   "fps": 30,
-  "duracion": 20,
+  "duracion": 21.5,
   "datos": {
     "fed": {
       "archivo": "datos/biblioteca/fed_balance.csv",
@@ -27,10 +27,9 @@
     {
       "tipo": "titulo",
       "texto": "El balance de la Fed",
-      "sub": "Activos totales · semanal · {desde} – {hasta}",
       "t": [
         0.2,
-        19.6
+        21
       ],
       "color": "oro"
     },
@@ -43,7 +42,6 @@
         1,
         9
       ],
-      "ejeDer": [],
       "camara": [
         {
           "t": 0,
@@ -66,10 +64,10 @@
             "2023-09"
           ],
           "y": "ajustar",
-          "mov": 1.6
+          "mov": 1.2
         },
         {
-          "t": 17.2,
+          "t": 19.6,
           "x": "auto",
           "y": "auto",
           "mov": 1.6
@@ -80,10 +78,9 @@
       "tipo": "contador",
       "capa": "g1",
       "serie": 0,
-      "etiqueta": "Activos totales",
       "t": [
         0,
-        19.6
+        21
       ]
     },
     {
@@ -95,12 +92,9 @@
       },
       "t": [
         11.5,
-        13.9
+        12.9
       ],
-      "lado": "arriba",
-      "dx": -190,
-      "texto": "Crisis financiera global",
-      "detalle": "{valor} · {cambio:17} desde septiembre",
+      "texto": "Crisis financiera",
       "color": "oro"
     },
     {
@@ -111,14 +105,10 @@
         "fecha": "2020-06-03"
       },
       "t": [
-        14.2,
-        17
+        14.3,
+        16.1
       ],
-      "lado": "abajo",
-      "dx": -150,
-      "dy": 150,
       "texto": "Respuesta a la pandemia",
-      "detalle": "{cambio:12} en doce semanas",
       "color": "teal"
     },
     {
@@ -129,32 +119,10 @@
         "max": true
       },
       "t": [
-        14.9,
-        17
+        16.3,
+        18
       ],
-      "lado": "abajo",
-      "dy": 95,
-      "texto": "Máximo de la serie",
-      "detalle": "{valor} · {fecha}",
-      "color": "oro",
-      "dx": 130
-    },
-    {
-      "tipo": "llamada",
-      "capa": "g1",
-      "serie": 0,
-      "ancla": {
-        "ultimo": true
-      },
-      "t": [
-        18,
-        19.8
-      ],
-      "lado": "abajo",
-      "dx": -120,
-      "dy": 110,
-      "texto": "Último dato",
-      "detalle": "{valor} · {fecha}",
+      "texto": "Pico del balance",
       "color": "oro"
     }
   ]

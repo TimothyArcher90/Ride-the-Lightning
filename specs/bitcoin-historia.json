@@ -3,7 +3,7 @@
   "titulo": "Bitcoin desde su primer precio",
   "formato": "horizontal",
   "fps": 30,
-  "duracion": 18,
+  "duracion": 18.5,
   "datos": {
     "btc": {
       "archivo": "datos/biblioteca/cm_btc_precio.csv",
@@ -25,10 +25,9 @@
     {
       "tipo": "titulo",
       "texto": "Bitcoin, desde su primer precio",
-      "sub": "Precio de referencia diario · {desde:dia} – {hasta:dia}",
       "t": [
         0.2,
-        17.6
+        18
       ],
       "color": "oro"
     },
@@ -58,7 +57,7 @@
           "mov": 1.8
         },
         {
-          "t": 16.4,
+          "t": 17.4,
           "x": "auto",
           "y": "auto",
           "mov": 1.6
@@ -69,10 +68,9 @@
       "tipo": "contador",
       "capa": "g1",
       "serie": 0,
-      "etiqueta": "Bitcoin",
       "t": [
         0,
-        17.6
+        18.4
       ]
     },
     {
@@ -83,14 +81,10 @@
         "primero": true
       },
       "t": [
-        1.8,
-        5.2
+        1.6,
+        4.6
       ],
-      "lado": "arriba",
-      "dy": 150,
-      "dx": 120,
-      "texto": "Primer precio de la serie",
-      "detalle": "{valor} · {fecha}",
+      "texto": "Primer precio",
       "color": "teal"
     },
     {
@@ -102,31 +96,9 @@
       },
       "t": [
         13.9,
-        16.2
+        15.8
       ],
-      "lado": "abajo",
-      "dy": 110,
-      "dx": -160,
-      "texto": "Máximo de la serie",
-      "detalle": "{valor} · {fecha}",
-      "color": "oro"
-    },
-    {
-      "tipo": "llamada",
-      "capa": "g1",
-      "serie": 0,
-      "ancla": {
-        "ultimo": true
-      },
-      "t": [
-        16.8,
-        18
-      ],
-      "lado": "abajo",
-      "dy": 120,
-      "dx": -150,
-      "texto": "Último dato",
-      "detalle": "{valor} · {fecha}",
+      "texto": "Máximo",
       "color": "oro"
     }
   ],
