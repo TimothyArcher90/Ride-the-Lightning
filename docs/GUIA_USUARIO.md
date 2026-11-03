@@ -50,3 +50,14 @@ En «La historia de una cifra» verás **momentos propuestos** (el máximo, la m
 3. Cuando la empresa publique su siguiente reporte, aparece solo en la lista y se deja un borrador en video (con el actualizador encendido).
 - **¿Un trimestre sale apagado?** Tuvo pérdida y un flujo no puede ser negativo: elige «Qué sumó y qué restó» y verás ese mismo trimestre en cascada.
 - **¿Tienes tu propia tabla?** Descarga la plantilla del mismo paso, llénala y suéltala: se detecta sola.
+
+## Chat: editar hablando
+- Pulsa **Chat** (abajo a la derecha) y escribe lo que quieras cambiar: «pásalo a vertical», «ponlo en negro y rosa-rojo», «muéstrame el trimestre anterior», «ahora en cascada», «cómo gana dinero NVIDIA».
+- La vista previa se actualiza sola. **Nuevo** empieza una conversación limpia.
+- Si después tocas los pasos de la izquierda, la pieza se rehace desde cero (los cambios del chat se pierden).
+- Necesita Claude Code instalado y con tu cuenta iniciada en este equipo.
+
+## Empresas de toda la bolsa de EE. UU.
+- En «Cómo gana y gasta dinero una empresa» escribe el nombre o el ticker (Uber, SoFi, Costco…). La primera vez tarda 10–20 s porque se trae de la SEC.
+- Los trimestres con un punto dorado (●) incluyen **ingresos por producto o segmento**; los del último año traen además las **líneas propias de gasto** de la empresa.
+- Bancos, aseguradoras y empresas nuevas pueden aparecer sin datos: su estado de resultados no tiene la misma forma. No se inventa nada.

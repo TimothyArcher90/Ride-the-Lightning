@@ -12,7 +12,9 @@ import {iniciarVivo, eventos, estadoVivo} from './vivo.mjs';
 import {salud, licencia} from './analisis.mjs';
 import {PLANTILLAS, CAMARAS, analizar, generar} from './plantillas.mjs';
 import {detectarTabla} from './tablas.mjs';
-import {empresas as empresasCat, listarEmpresas, leerIndice, actualizarEmpresa, itemTrimestre} from './trimestres.mjs';
+import {empresas as empresasCat, buscarEmpresas, asegurarEmpresa, esDestacada, leerIndice, itemTrimestre, seriesDeEmpresa, construidas as construidasLista} from './trimestres.mjs';
+import {leerUniverso} from './universo.mjs';
+import {chat, pararChat, reiniciarChat} from './chat.mjs';
 
 // Tablas de ejemplo (se copian a entradas/ para usarlas con un clic). Las cifras son de demostración y así se rotulan.
 const EJEMPLOS = {
@@ -77,14 +79,21 @@ async function api(req, res) {
         return json(res, {ruta: `entradas/${e.archivo}`, tabla: e.tabla, nombre: e.nombre, fuente: {nombre: FUENTE_EJEMPLO, obtenido: new Date().toISOString().slice(0, 10)}, prefijo: e.prefijo, sufijo: e.sufijo, decimales: e.decimales});
       }
       case '/api/empresas': {   // biblioteca de trimestres: empresas disponibles (con búsqueda simple)
-        const qq = (q.get('q') ?? '').toLowerCase().split(/\s+/).filter(Boolean);
-        return json(res, {empresas: listarEmpresas().filter((e) => qq.every((p) => `${e.ticker} ${e.nombre}`.toLowerCase().includes(p)))});
+        // sin texto: las 16 destacadas; con texto: búsqueda en TODA la bolsa de EE. UU. (ticker o nombre)
+        return json(res, {empresas: buscarEmpresas(q.get('q') ?? ''), total: leerUniverso().length || empresasCat().length});
       }
-      case '/api/trimestres': {   // trimestres de una empresa; si aún no están, se bajan de la SEC en ese momento
-        const t = String(q.get('ticker') ?? '').toUpperCase(); if (!empresasCat().some((e) => e.ticker === t)) return json(res, {error: 'Empresa desconocida'}, 404);
-        if (!leerIndice(t)) await actualizarEmpresa(t);
-        const i = leerIndice(t);
-        return json(res, {ticker: t, nombre: i.nombre, actualizado: i.actualizado, trimestres: i.trimestres.map((x) => ({fin: x.fin, etiqueta: x.etiqueta, fy: x.fy, q: x.q, publicado: x.publicado, form: x.form, ingresos: x.ingresos, utilidadNeta: x.utilidadNeta, margenOperativo: x.margenOperativo, q4Calculado: x.q4Calculado, sankey: !!x.archivo, motivoSankey: x.motivoSankey, notas: x.notas})), omitidos: i.omitidos});
+      case '/api/trimestres': {   // trimestres de una empresa; si aún no están, se bajan de la SEC en ese momento (10-20 s)
+        const t = String(q.get('ticker') ?? '').toUpperCase();
+        let i; try { i = await asegurarEmpresa(t); } catch (e) { return json(res, {error: e.message}, 404); }
+        return json(res, {ticker: t, nombre: i.nombre, actualizado: i.actualizado, destacada: esDestacada(t), trimestres: i.trimestres.map((x) => ({fin: x.fin, etiqueta: x.etiqueta, fy: x.fy, q: x.q, publicado: x.publicado, form: x.form, ingresos: x.ingresos, utilidadNeta: x.utilidadNeta, margenOperativo: x.margenOperativo, q4Calculado: x.q4Calculado, sankey: !!x.archivo, motivoSankey: x.motivoSankey, detalleFino: !!x.detalleFino, conSegmentos: !!x.conSegmentos, notas: x.notas})), omitidos: i.omitidos,
+          sinDatos: i.trimestres.length === 0 ? 'Esta empresa no presenta ingresos, costos y utilidad operativa como una empresa industrial o de servicios (bancos, aseguradoras, fondos y empresas nuevas suelen quedar fuera). No se inventa nada.' : null});
+      }
+      case '/api/serie-empresa': { try { return json(res, await seriesDeEmpresa(String(q.get('ticker') ?? '').toUpperCase())); } catch (e) { return json(res, {error: e.message}, 404); } }
+      case '/api/datos': {   // mapa de lo que hay: series de mercado y macro, empresas (SEC) y archivos propios
+        const lsE = fs.existsSync(path.join(RAIZ, 'entradas')) ? fs.readdirSync(path.join(RAIZ, 'entradas')).filter((f) => !f.endsWith('.meta.json') && f !== '.gitkeep') : [];
+        const emp = buscarEmpresas('').length, cons = construidasLista();
+        return json(res, {series: {catalogo: leerCatalogo().length, descargadas: fs.existsSync(path.join(RAIZ, 'datos', 'biblioteca')) ? fs.readdirSync(path.join(RAIZ, 'datos', 'biblioteca')).filter((f) => f.endsWith('.csv')).length : 0},
+          empresas: {bolsa: leerUniverso().length, destacadas: emp, enBiblioteca: cons.length, trimestres: cons.reduce((s, t) => s + (leerIndice(t)?.trimestres.length ?? 0), 0)}, propios: lsE.length});
       }
       case '/api/trimestre': return json(res, itemTrimestre(String(q.get('ticker')).toUpperCase(), q.get('fin'), q.get('uso') === 'puente' ? 'puente' : 'sankey'));
       case '/api/inspeccionar': return json(res, inspeccionar(rutaSegura(q.get('archivo')), {hoja: q.get('hoja') || undefined, filaEncabezado: q.get('fila') ? +q.get('fila') : undefined}));
@@ -98,6 +107,9 @@ async function api(req, res) {
           .then((r) => Object.assign(t, {estado: 'listo', resultado: r})).catch((e) => Object.assign(t, {estado: 'error', error: String(e.message ?? e)}));
         return json(res, {id});
       }
+      case '/api/chat': { const b = JSON.parse((await cuerpo(req)).toString('utf8')); chat(req, res, {mensaje: String(b.mensaje ?? '').slice(0, 4000), spec: b.spec}); return true; }
+      case '/api/chat-parar': return json(res, {parado: pararChat()});
+      case '/api/chat-nuevo': return json(res, {nuevo: true, parado: reiniciarChat()});
       case '/api/vivo': return json(res, estadoVivo());
       case '/api/eventos': {
         res.writeHead(200, {'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', Connection: 'keep-alive'});

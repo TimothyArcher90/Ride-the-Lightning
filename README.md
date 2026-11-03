@@ -78,3 +78,8 @@ Licencia del código: MIT. Fuentes Geist: SIL OFL (`fuentes/OFL-Geist.txt`).
 - **Biblioteca de trimestres** (16 empresas, todos los Q desde 2009, datos oficiales de la SEC) + **agente** que cada 4 h busca reportes nuevos y deja un borrador listo. Todo en `docs/TRIMESTRES.md`.
 - Capas nuevas: `sankey`, `donut`, `cascada` (`docs/CAPAS.md`). MCP: 16 herramientas (`listar_trimestres`, `generar_trimestre`, `vigilar_reportes`).
 - Pruebas: `npm run prueba:trimestres` · `npm run prueba:tablas`.
+
+## Toda la bolsa de EE. UU., chat y trabajo de noche
+- **Empresas:** busca entre ~6.300 empresas de Nasdaq/NYSE/CBOE (nombre o ticker); las 16 destacadas con toda su historia desde 2009, las demás con los últimos 3 años al elegirlas. Último año con **detalle fino** (líneas propias de gasto e ingresos por producto/segmento). `docs/TRIMESTRES.md`.
+- **Chat** (botón «Chat» abajo a la derecha): edita la pieza abierta en vivo («pásalo a vertical», «pon el trimestre anterior», «ahora en cascada»). Usa tu Claude Code; `servidor/chat.mjs`.
+- **Mapa de datos** (`docs/MAPA_DE_DATOS.md`), **prioridades** (`docs/PRIORIDADES.md`) y **trabajo de noche** (`docs/TRABAJO_NOCTURNO.md`).

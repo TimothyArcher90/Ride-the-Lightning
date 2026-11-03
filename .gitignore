@@ -8,3 +8,4 @@ datos/
 catalogo/estado-vivo.json
 catalogo/actualizaciones.jsonl
 catalogo/verificado.json
+specs/_chat_actual.json

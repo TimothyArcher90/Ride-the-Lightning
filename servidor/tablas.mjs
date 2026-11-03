@@ -111,7 +111,7 @@ export function cargarCategorias(id, d, t, informe) {
     items.forEach((it2, k) => {
       if (k === 0 || it2.tipo === 'inicio') { it2.tipo = 'inicio'; acum = it2.valor; return; }
       if (it2.tipo === 'total') {
-        const dif = Math.abs(acum - it2.valor), rel = dif / (Math.abs(it2.valor) || 1);
+        const dif = Math.abs(acum - it2.valor), rel = dif / Math.max(Math.abs(items[0].valor), Math.abs(it2.valor), 1);   // la tolerancia es relativa a la escala de la cascada (el punto de partida), no al subtotal, que puede ser pequeño
         if (rel > 0.05) err(`el total «${it2.nombre}» (${it2.valor.toLocaleString('es-CO')}) no cuadra con la suma de lo anterior (${acum.toLocaleString('es-CO')}) · fila ${it2.fila}.`);
         else if (rel > 0.005) aviso(`el total «${it2.nombre}» difiere ${(rel * 100).toFixed(1)} % de la suma de lo anterior (redondeo de la fuente); se dibuja el total tal como viene.`);
         acum = it2.valor;

@@ -727,7 +727,7 @@ function disenarSankey(env, capa, tab, B) {
   const cols = Array.from({length: ncol}, (_, c) => nodos.filter((n) => n.nivel === c));
   const f1 = fnt(700, 23 * u * k), f2 = fnt(500, 19 * u * k, true);
   const det = (n) => `${fmtNum(n.valor, tab.fmt)}${n === byName.get(tab.baseNodo) ? '' : ` · ${pctTxt((n.valor / base) * 100)}`}`;
-  nodos.forEach((n) => { n.l1 = n.nombre; n.l2 = det(n); n.l3 = variacionTxt(n.valor, n.anterior); });
+  nodos.forEach((n) => { ctx.font = f1; n.l1 = cortar(ctx, n.nombre, B.w * 0.27); n.l2 = det(n); n.l3 = variacionTxt(n.valor, n.anterior); });
   const ancho = (n) => { ctx.font = f1; const a = ctx.measureText(n.l1).width; ctx.font = f2; return Math.max(a, ctx.measureText(n.l2).width, n.l3 ? ctx.measureText(n.l3).width : 0); };
   const LW = clamp(Math.max(...cols[0].map(ancho)) + 30 * u, 120 * u, B.w * 0.3), RW = clamp(Math.max(...cols[ncol - 1].map(ancho)) + 30 * u, 120 * u, B.w * 0.3);
   const nw = 26 * u * k, px0 = B.x + LW, px1 = B.x + B.w - RW, paso = (px1 - px0 - nw) / (ncol - 1);
@@ -770,11 +770,12 @@ function disenarSankey(env, capa, tab, B) {
     const {w, alto: al} = medida(n), cxn = n.x + nw / 2, ccy = n.y + n.h / 2;
     const opts = n.nivel === 0 ? [['izq']] : n.nivel === ncol - 1 ? [['der']] : (n.tipo === 'costo' ? ['abajo', 'arriba', 'der', 'izq'] : ['arriba', 'abajo', 'izq', 'der']).map((x) => [x]);
     let mejor = null, mejorPen = Infinity;
-    for (const [lado] of opts) {
+    const intentos = opts.flatMap(([lado]) => (lado === 'arriba' || lado === 'abajo' ? [0, 1, 2].map((k) => [lado, k]) : [[lado, 0]]));   // arriba/abajo, y si no cabe, apilado más lejos
+    for (const [lado, kk] of intentos) {
       let x, aling, yTop;
       if (lado === 'izq') { x = n.x - 14 * u; aling = 'right'; yTop = ccy - al / 2; }
       else if (lado === 'der') { x = n.x + nw + 14 * u; aling = 'left'; yTop = ccy - al / 2; }
-      else { x = clamp(cxn, B.x + w / 2, B.x + B.w - w / 2); aling = 'center'; yTop = lado === 'arriba' ? n.y - 10 * u - al : n.y + n.h + 8 * u; }
+      else { x = clamp(cxn, B.x + w / 2, B.x + B.w - w / 2); aling = 'center'; yTop = lado === 'arriba' ? n.y - 10 * u - al - kk * (al + 6 * u) : n.y + n.h + 8 * u + kk * (al + 6 * u); }
       const x0 = aling === 'right' ? x - w : aling === 'center' ? x - w / 2 : x, caja = [x0, yTop, x0 + w, yTop + al];
       const pen = cajas.reduce((s, o) => s + solape(caja, o), 0) + (caja[0] < B.x - 2 || caja[2] > B.x + B.w + 2 ? 1e9 : 0);   // si no hay hueco libre, el que menos estorba
       if (pen < mejorPen) { mejorPen = pen; mejor = {x, aling, yTop, w, al, caja}; }

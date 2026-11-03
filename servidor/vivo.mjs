@@ -10,7 +10,7 @@ import {leerCatalogo, descargar, cache} from './catalogo.mjs';
 import {combinar} from './biblioteca.mjs';
 import {compilar, RAIZ} from './compilar.mjs';
 import {renderizar} from './render.mjs';
-import {vigilar as vigilarSec, itemTrimestre} from './trimestres.mjs';
+import {vigilar as vigilarSec, itemTrimestre, construirUniverso} from './trimestres.mjs';
 import {generar} from './plantillas.mjs';
 
 export const eventos = new EventEmitter();
@@ -121,6 +121,16 @@ export async function vigilarTrimestres({forzar = false} = {}) {
 }
 const leerIdx = (t) => JSON.parse(fs.readFileSync(path.join(RAIZ, 'datos', 'trimestres', t, 'indice.json'), 'utf8'));
 
+/** Trabajo de noche (1:00–6:00): baja a la biblioteca las empresas de la bolsa de EE. UU. que aún faltan, de las más grandes a las más pequeñas. Retoma donde quedó. */
+let universoEnMarcha = false;
+export async function trabajoNocturno({forzar = false} = {}) {
+  const h = new Date().getHours(); if ((!forzar && (h < 1 || h >= 6)) || universoEnMarcha) return null;
+  universoEnMarcha = true; log({tipo: 'inicio', nota: 'trabajo nocturno: construyendo la biblioteca de la bolsa de EE. UU.'});
+  try { const r = await construirUniverso({minutos: forzar ? 180 : Math.max(5, (6 - h) * 60 - 10)}); log({tipo: 'universo', ...r}); return r; }
+  catch (e) { log({tipo: 'error', id: 'universo', error: String(e.message ?? e)}); return null; }
+  finally { universoEnMarcha = false; }
+}
+
 /** Un ciclo: actualiza lo vencido (o todo con forzar), reconstruye derivados y lanza renders vivos. */
 export async function ciclo({forzar = false, ids = null} = {}) {
   for (const k of Object.keys(cache)) delete cache[k];                        // el Pink Sheet / Shiller se vuelven a bajar frescos
@@ -136,7 +146,7 @@ let timer = null, corriendo = false;
 /** Arranca el actualizador permanente. Seguro de llamar una vez por proceso. */
 export function iniciarVivo({cadaSeg = 60} = {}) {
   if (timer) return;
-  const tick = async () => { if (corriendo) return; corriendo = true; try { await ciclo(); } catch (e) { log({tipo: 'error', id: 'ciclo', error: String(e.message ?? e)}); } finally { corriendo = false; } };
+  const tick = async () => { trabajoNocturno().catch(() => {}); if (corriendo) return; corriendo = true; try { await ciclo(); } catch (e) { log({tipo: 'error', id: 'ciclo', error: String(e.message ?? e)}); } finally { corriendo = false; } };
   setTimeout(tick, 5000); timer = setInterval(tick, cadaSeg * 1000);
   log({tipo: 'inicio', nota: `actualizador vivo activo; series monitoreadas: ${leerCatalogo().filter((e) => descargada(e.id)).length}`});
 }

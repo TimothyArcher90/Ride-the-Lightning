@@ -100,6 +100,26 @@
   progress { width:100%; height:14px; accent-color:var(--oro); }
   .experto { display:none; } body.exp .experto { display:block; }
   .tag { font:600 12px "Geist Mono"; letter-spacing:.06em; text-transform:uppercase; color:var(--suave); }
+
+  /* chat para editar la pieza hablando */
+  #chatBtn { position:fixed; right:24px; bottom:24px; z-index:40; display:flex; gap:8px; align-items:center; padding:12px 18px; border-radius:999px; background:var(--oro); color:var(--oro-t); border:0; font:700 15px Geist,system-ui,sans-serif; cursor:pointer; box-shadow:0 8px 28px #0008; }
+  #chatBtn[aria-expanded="true"] { display:none; }
+  #chat { position:fixed; right:24px; bottom:24px; z-index:41; width:min(420px, calc(100vw - 32px)); height:min(620px, calc(100vh - 110px)); display:flex; flex-direction:column; background:var(--tarjeta); border:1px solid var(--linea2); border-radius:14px; box-shadow:0 14px 48px #000a; }
+  #chat header { padding:12px 14px; border-bottom:1px solid var(--linea); display:flex; align-items:center; gap:8px; position:static; background:none; }
+  #chat header strong { font-size:15px; }
+  #chatMsgs { flex:1; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:10px; }
+  .cm { max-width:92%; padding:9px 12px; border-radius:12px; font-size:14.5px; line-height:1.45; word-wrap:break-word; }
+  .cm.yo { align-self:flex-end; background:var(--oro); color:var(--oro-t); border-bottom-right-radius:4px; }
+  .cm.ia { align-self:flex-start; background:#ffffff12; border-bottom-left-radius:4px; }
+  .cm.acc { align-self:flex-start; background:none; color:var(--suave); font-size:13px; padding:0 4px; display:flex; gap:6px; align-items:center; }
+  .cm.mal { align-self:flex-start; background:#5a2a2a; color:#ffd7d7; }
+  #chatSug { padding:0 14px 8px; display:flex; flex-wrap:wrap; gap:6px; }
+  #chatSug button { background:#ffffff10; border:1px solid var(--linea2); color:var(--texto); border-radius:999px; padding:6px 11px; font:500 13px Geist,system-ui,sans-serif; cursor:pointer; }
+  #chatSug button:hover { background:#ffffff1c; }
+  #chatForm { display:flex; gap:8px; padding:10px 14px 14px; border-top:1px solid var(--linea); }
+  #chatIn { flex:1; resize:none; background:var(--prof); color:var(--texto); border:1px solid var(--linea2); border-radius:10px; padding:10px 12px; font:15px/1.4 Geist,system-ui,sans-serif; min-height:44px; max-height:120px; }
+  .pulso { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--oro); animation:pul 1s infinite; }
+  @keyframes pul { 0%,100% { opacity:.25 } 50% { opacity:1 } }
 </style>
 </head>
 <body>
@@ -137,6 +157,13 @@
     </div>
   </aside>
 </main>
+<button id="chatBtn" aria-expanded="false" aria-controls="chat"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Chat</button>
+<section id="chat" hidden aria-label="Chat para editar la animación">
+  <header><strong>Edita hablando</strong><span class="esp" style="flex:1"></span><button class="btn" id="chatNuevo" title="Empezar una conversación nueva" style="padding:6px 10px;font-size:13px">Nuevo</button><button class="btn" id="chatCerrar" aria-label="Cerrar el chat" style="padding:6px 10px">✕</button></header>
+  <div id="chatMsgs" role="log" aria-live="polite"></div>
+  <div id="chatSug"></div>
+  <form id="chatForm"><label class="sr" for="chatIn">Tu mensaje</label><textarea id="chatIn" rows="1" placeholder="Ej.: pásalo a vertical, pon el trimestre anterior, quita los impuestos…"></textarea><button class="btn p" id="chatEnviar" type="submit">Enviar</button></form>
+</section>
 <div id="ejemplos" hidden style="position:fixed;top:64px;right:24px;z-index:30;background:var(--tarjeta);border:1px solid var(--linea2);border-radius:var(--r);padding:var(--s2);min-width:280px"></div>
 <script type="module" src="/web/estudio.js"></script>
 </body>

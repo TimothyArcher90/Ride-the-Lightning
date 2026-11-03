@@ -93,7 +93,7 @@ function armarDatos(items, {comun = false} = {}) {
   }
   if (arch.some((a) => a.ruta !== a0.ruta || (a.hoja ?? '') !== (a0.hoja ?? ''))) throw new Error('Con tus propios datos, todas las series deben ser columnas del mismo archivo (y la misma hoja).');
   if (!a0.fuente?.nombre) throw new Error('Cuéntanos de dónde vienen tus datos (por ejemplo «Banco Central de Chile, 2026»). Sin fuente no se puede garantizar la exactitud.');
-  const columnas = arch.map((a, k) => ({col: a.col, nombre: a.nombre ?? a.col, color: COLORES[k % 4], decimales: 'auto', ...(a.unidad ? {unidad: a.unidad} : {}), ...(a.divisor ? {divisor: a.divisor} : {})}));
+  const columnas = arch.map((a, k) => ({col: a.col, nombre: a.nombre ?? a.col, color: COLORES[k % 4], decimales: a.decimales ?? 'auto', ...(a.prefijo ? {prefijo: a.prefijo} : {}), ...(a.sufijo ? {sufijo: a.sufijo} : {}), ...(a.unidad ? {unidad: a.unidad} : {}), ...(a.divisor ? {divisor: a.divisor} : {})}));
   return {datos: {d: {archivo: a0.ruta, ...(a0.hoja ? {hoja: a0.hoja} : {}), ...(a0.filaEncabezado ? {filaEncabezado: a0.filaEncabezado} : {}), x: a0.x, tipoX: a0.tipoX ?? 'fecha', ...(a0.decimal ? {decimal: a0.decimal} : {}), ...(a0.formatoFecha ? {formatoFecha: a0.formatoFecha} : {}),
     ...(a0.fechaSerial ? {fechaSerial: true} : {}), fuente: a0.fuente, columnas}}, nombres: columnas.map((c) => c.nombre), notas, desdeBiblioteca: false};
 }

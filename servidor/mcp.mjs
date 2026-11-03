@@ -11,7 +11,7 @@ import {buscar, descargar, leerCatalogo} from './catalogo.mjs';
 import {descargarAdHoc, combinar} from './biblioteca.mjs';
 import {inspeccionar} from './datos.mjs';
 import {PLANTILLAS, CAMARAS, analizar, generar} from './plantillas.mjs';
-import {empresas as empresasCat, listarEmpresas, leerIndice, actualizarEmpresa, itemTrimestre, vigilar as vigilarSec} from './trimestres.mjs';
+import {buscarEmpresas, asegurarEmpresa, itemTrimestre, vigilar as vigilarSec} from './trimestres.mjs';
 
 const server = new McpServer({name: 'ride-the-lightning', version: '0.1.0'},
   {instructions: 'Ride the Lightning anima gráficas de datos con cifras 100 % trazables. Antes de dirigir una pieza llama a guia_de_direccion. Flujo: buscar_series → descargar_serie → compilar_spec → vista_previa (mira las imágenes) → exportar_video. Nunca escribas cifras a mano en los textos: usa marcadores.'});
@@ -85,23 +85,51 @@ server.tool('estado_render', 'Estado de un render lanzado con exportar_video.', 
 
 // ── trimestres (SEC EDGAR): biblioteca de estados de resultados por Q + agente vigilante ───────────────────────────
 server.tool('listar_trimestres', 'Biblioteca de trimestres por empresa (SEC EDGAR, datos oficiales desde 2009). Sin «ticker» lista las empresas; con «ticker» (AMZN, AAPL…) sus trimestres y cuáles admiten Sankey. Si la empresa aún no está bajada, la baja.',
-  {ticker: z.string().optional()}, async ({ticker}) => {
-    if (!ticker) return texto(listarEmpresas());
-    const t = ticker.toUpperCase(); if (!empresasCat().some((e) => e.ticker === t)) return texto({error: `Empresa desconocida. Disponibles: ${empresasCat().map((e) => e.ticker).join(', ')}`});
-    if (!leerIndice(t)) await actualizarEmpresa(t);
-    const i = leerIndice(t); return texto({ticker: t, nombre: i.nombre, actualizado: i.actualizado, trimestres: i.trimestres.map((x) => ({fin: x.fin, etiqueta: x.etiqueta, ingresos: x.ingresos, utilidadNeta: x.utilidadNeta, sankey: !!x.archivo, q4Calculado: x.q4Calculado, notas: x.notas})), omitidos: i.omitidos});
+  {ticker: z.string().optional(), buscar: z.string().optional().describe('Texto para buscar una empresa por nombre o ticker en TODA la bolsa de EE. UU.')}, async ({ticker, buscar}) => {
+    if (!ticker) return texto(buscarEmpresas(buscar ?? ''));
+    const t = ticker.toUpperCase();
+    let i; try { i = await asegurarEmpresa(t); } catch (e) { return texto({error: e.message}); }
+    return texto({ticker: t, nombre: i.nombre, actualizado: i.actualizado, trimestres: i.trimestres.map((x) => ({fin: x.fin, etiqueta: x.etiqueta, ingresos: x.ingresos, utilidadNeta: x.utilidadNeta, sankey: !!x.archivo, q4Calculado: x.q4Calculado, notas: x.notas})), omitidos: i.omitidos});
   });
 server.tool('generar_trimestre', 'Genera la spec de UN trimestre de una empresa (Sankey «de dónde viene y adónde va», o cascada) y la guarda en specs/. Luego usa vista_previa y exportar_video. «fin» = fecha de cierre (AAAA-MM-DD) o «ultimo».',
-  {ticker: z.string(), fin: z.string().default('ultimo'), uso: z.enum(['sankey', 'puente']).default('sankey'), formato: z.enum(['horizontal', 'vertical']).default('horizontal'), tema: z.enum(['oscuro', 'harris', 'carbon']).default('oscuro')},
+  {ticker: z.string(), fin: z.string().default('ultimo'), uso: z.enum(['sankey', 'puente']).default('sankey'), formato: z.enum(['horizontal', 'vertical']).default('horizontal'), tema: z.enum(['oscuro', 'harris', 'carbon']).default('oscuro'), como_actual: z.boolean().default(false).describe('true = reemplaza la pieza que el usuario tiene abierta en el estudio (chat)')},
   async (a) => {
-    const t = a.ticker.toUpperCase(); if (!leerIndice(t)) await actualizarEmpresa(t);
-    const idx = leerIndice(t), tr = a.fin === 'ultimo' ? idx.trimestres.find((x) => (a.uso === 'sankey' ? x.archivo : true)) : idx.trimestres.find((x) => x.fin === a.fin);
+    const t = a.ticker.toUpperCase(); let idx; try { idx = await asegurarEmpresa(t); } catch (e) { return texto({error: e.message}); }
+    const tr = a.fin === 'ultimo' ? idx.trimestres.find((x) => (a.uso === 'sankey' ? x.archivo : true)) : idx.trimestres.find((x) => x.fin === a.fin);
     if (!tr) return texto({error: `No hay ese trimestre. Usa listar_trimestres con ticker ${t}.`});
     const r = generar({plantilla: a.uso === 'sankey' ? 'resultados' : 'puente', series: [itemTrimestre(t, tr.fin, a.uso)], formato: a.formato, tema: a.tema});
-    const nombre = `trimestre-${t}-${tr.etiqueta.replace(/\s+/g, '-')}${a.uso === 'puente' ? '-cascada' : ''}`, ruta = path.join('specs', nombre + '.json');
+    const nombre = `trimestre-${t}-${tr.etiqueta.replace(/\s+/g, '-')}${a.uso === 'puente' ? '-cascada' : ''}`, ruta = a.como_actual ? path.join('specs', '_chat_actual.json') : path.join('specs', nombre + '.json');
     fs.writeFileSync(path.join(RAIZ, ruta), JSON.stringify(r.spec, null, 2));
     return texto({spec: ruta, etiqueta: tr.etiqueta, errores: r.informe.errores, avisos: r.informe.avisos, notas: r.notas});
   });
 server.tool('vigilar_reportes', 'Pregunta a la SEC si alguna empresa de la biblioteca publicó un 10-Q/10-K nuevo; si sí, suma el trimestre a la biblioteca. (El actualizador 24/7 ya lo hace cada 4 h.)', {}, async () => texto(await vigilarSec()));
+
+// ── chat del estudio: editar en vivo la pieza que el usuario tiene abierta ────────────────────────────────────────
+const ACTUAL = path.join(RAIZ, 'specs', '_chat_actual.json');
+const leerActual = () => { if (!fs.existsSync(ACTUAL)) throw new Error('No hay una pieza abierta en el estudio. Pídele al usuario que elija un dato primero, o genera una con generar_trimestre/generar_pieza (como_actual: true).'); return JSON.parse(fs.readFileSync(ACTUAL, 'utf8')); };
+const resumenPieza = (spec) => { const c = compilar(spec); return {titulo: spec.titulo, duracion: spec.duracion, formato: spec.formato, tema: spec.tema ?? 'oscuro', capas: (spec.capas ?? []).map((x, i) => `${i}: ${x.tipo}${x.id ? ' #' + x.id : ''}${x.texto ? ' «' + String(x.texto).slice(0, 40) + '»' : ''}${x.t ? ' t=' + JSON.stringify(x.t) : ''}`), datos: Object.fromEntries(Object.entries(spec.datos ?? {}).map(([k, d]) => [k, {archivo: d.archivo, tipo: d.tipo ?? 'serie', fuente: d.fuente?.nombre}])), errores: c.informe.errores, avisos: c.informe.avisos.slice(0, 8)}; };
+function aplicar(obj, ruta, valor, eliminar) {   // «capas[1].t», «tema»: pone (o borra) un valor
+  const pasos = String(ruta).replace(/\[(\d+)\]/g, '.$1').split('.').filter(Boolean); let o = obj;
+  for (let i = 0; i < pasos.length - 1; i++) { o = o[pasos[i]]; if (o == null) throw new Error(`La ruta «${ruta}» no existe (falla en «${pasos[i]}»).`); }
+  const k = pasos[pasos.length - 1];
+  if (eliminar) { if (Array.isArray(o)) o.splice(+k, 1); else delete o[k]; } else o[k] = valor;
+}
+server.tool('pieza_actual', 'La pieza que el usuario tiene abierta en el estudio: su spec completa y si compila. Empieza SIEMPRE por aquí cuando el usuario pida un cambio («cámbialo a vertical», «quita los impuestos», «pon otro color»).', {}, async () => {
+  const spec = leerActual(); return texto({spec, ...resumenPieza(spec)});
+});
+server.tool('editar_pieza', 'Edita la pieza abierta: lista de cambios {ruta, valor} (pone), {ruta, eliminar:true} (borra) o {ruta:"capas", insertar:{…capa…}}. Rutas como «tema», «formato», «duracion», «titulo», «capas[1].t». Valida antes de guardar: si no compila, NO se guarda y te dice por qué. El estudio se actualiza solo.',
+  {cambios: z.array(z.object({ruta: z.string(), valor: z.any().optional(), eliminar: z.boolean().optional(), insertar: z.any().optional()})).min(1)}, async ({cambios}) => {
+    const spec = leerActual(), copia = JSON.parse(JSON.stringify(spec));
+    try {
+      for (const c of cambios) {
+        if (c.insertar !== undefined) { const lista = String(c.ruta).replace(/\[(\d+)\]/g, '.$1').split('.').filter(Boolean).reduce((o, k) => o[k], copia); if (!Array.isArray(lista)) throw new Error(`«${c.ruta}» no es una lista.`); lista.push(c.insertar); }
+        else aplicar(copia, c.ruta, c.valor, c.eliminar);
+      }
+    } catch (e) { return texto({guardado: false, error: e.message}); }
+    const r = resumenPieza(copia);
+    if (r.errores.length) return texto({guardado: false, motivo: 'La pieza editada no compila: no se guardó.', errores: r.errores});
+    fs.writeFileSync(ACTUAL, JSON.stringify(copia, null, 2));
+    return texto({guardado: true, ...r});
+  });
 
 await server.connect(new StdioServerTransport());

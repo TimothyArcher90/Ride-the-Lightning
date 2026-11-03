@@ -111,6 +111,11 @@ function paso1Serie() {
     <div class="chips" id="chips" role="group" aria-label="Categorías"></div>
     <div id="lista"></div>
     <div class="seleccion" id="seleccion"></div>
+    <h3>Resultados de una empresa en el tiempo</h3>
+    <p class="ayuda">Ingresos, utilidad y margen trimestre a trimestre, con datos oficiales de la SEC. Marca una o varias métricas de la misma empresa (para comparar empresas entre sí, usa «Una empresa, un trimestre» o tu propia tabla).</p>
+    <label class="etq" for="busS">Busca una empresa de la bolsa de EE. UU.</label>
+    <input id="busS" type="search" placeholder="Amazon, Apple, NVIDIA…" autocomplete="off">
+    <div id="empSerie"></div>
     <h3>¿Tienes tus propios datos?</h3>
     <p class="ayuda">Suelta un Excel (xlsx, xls, xlsb, ods), un CSV, TSV o JSON. Te preguntamos solo lo necesario.</p>
     <div id="drop" tabindex="0">${ic('up')} Suelta aquí tu archivo o <label for="arch" style="color:var(--oro);text-decoration:underline;cursor:pointer">elígelo</label><input id="arch" type="file" class="sr"></div>
@@ -119,7 +124,36 @@ function paso1Serie() {
   const drop = $('#drop'); drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('sobre'); }; drop.ondragleave = () => drop.classList.remove('sobre');
   drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('sobre'); subir(e.dataTransfer.files[0]); };
   $('#arch').onchange = (e) => subir(e.target.files[0]);
-  pintarSeleccion(); pintarSubida(); if (S.bib) pintarLista(); else cargarBiblioteca();
+  pintarSeleccion(); pintarSubida(); iniciarEmpSerie(); if (S.bib) pintarLista(); else cargarBiblioteca();
+}
+
+// ── resultados de una empresa como series de tiempo (se mezclan con el resto de la biblioteca) ─────────────────────
+let empSeriesDeb, empSeriesSel = null;
+function iniciarEmpSerie() {
+  const inp = $('#busS'); if (!inp) return;
+  const buscar = async () => {
+    const l = (await api('/api/empresas?q=' + encodeURIComponent(inp.value))).empresas.slice(0, 16), box = $('#empSerie'); if (!box) return;
+    box.innerHTML = `<div class="chips">${l.map((e) => `<button type="button" class="chip" data-t="${esc(e.ticker)}" aria-pressed="${empSeriesSel?.ticker === e.ticker}">${esc(e.nombre)} <small style="opacity:.6">${esc(e.ticker)}</small></button>`).join('')}</div><div id="empMetricas"></div>`;
+    box.querySelectorAll('.chip').forEach((b) => (b.onclick = async () => {
+      $('#empMetricas').innerHTML = '<p class="ayuda"><span class="pulso"></span> Trayendo los resultados de la SEC (10–20 s la primera vez)…</p>';
+      try { empSeriesSel = await api('/api/serie-empresa?ticker=' + b.dataset.t); pintarMetricas(); } catch (e) { $('#empMetricas').innerHTML = `<div class="aviso mal">${ic('warn')}<div>${esc(e.message)}</div></div>`; }
+    }));
+    if (empSeriesSel) pintarMetricas();
+  };
+  inp.oninput = () => { clearTimeout(empSeriesDeb); empSeriesDeb = setTimeout(buscar, 250); };
+  buscar();
+}
+function pintarMetricas() {
+  const box = $('#empMetricas'); if (!box || !empSeriesSel) return;
+  if (!empSeriesSel.series.length) { box.innerHTML = `<div class="aviso">${ic('info')}<div>${esc(empSeriesSel.nombre)} no presenta resultados como empresa industrial o de servicios (bancos, aseguradoras y empresas nuevas suelen quedar fuera).</div></div>`; return; }
+  const on = (s) => S.series.some((x) => x.ruta === s.ruta && x.col === s.col);
+  box.innerHTML = `<p class="ayuda" style="margin:10px 0 4px"><strong>${esc(empSeriesSel.nombre)}</strong> · de ${esc(empSeriesSel.desde)} a ${esc(empSeriesSel.hasta)}. Marca lo que quieras graficar:</p><div class="chips">${empSeriesSel.series.map((s, k) => `<button type="button" class="chip" data-k="${k}" aria-pressed="${on(s)}">${esc(s.nombre.split(' · ')[1])}</button>`).join('')}</div>`;
+  box.querySelectorAll('.chip').forEach((b) => (b.onclick = () => {
+    const s = empSeriesSel.series[+b.dataset.k], i = S.series.findIndex((x) => x.ruta === s.ruta && x.col === s.col);
+    if (S.series.some((x) => x.tabla || x.origen === "biblioteca" || x.ruta !== s.ruta)) S.series = [];   // una sola empresa a la vez
+    if (i >= 0) S.series.splice(i, 1); else { if (S.series.length >= 10) { aviso('Puedes combinar hasta 10 datos.'); return; } S.series.push(s); }
+    S.sel = null; S.analisis = null; S.modo = 'guiado'; S.tituloEditado = false; guardar(); pintarMetricas(); pintarSeleccion(); pintarPasos(); regenerar();
+  }));
 }
 
 // ── historias con tablas: empresa + trimestre (SEC), o tu propia tabla ──────────────────────────────────────────────
@@ -133,8 +167,8 @@ function paso1Tabla() {
   $('#bloque').innerHTML = `
     ${conEmpresa ? `<h3>Una empresa, un trimestre</h3>
       <p class="ayuda">Los números salen del <strong>reporte oficial</strong> que la empresa entrega a la SEC (10-Q / 10-K). Cuando publique el siguiente, aparece aquí solo.</p>
-      <label class="etq" for="busE">Busca una empresa</label>
-      <input id="busE" type="search" placeholder="Amazon, Apple, NVIDIA, Tesla…" value="${esc(S.empQ)}" autocomplete="off">
+      <label class="etq" for="busE">Busca entre las más de 7.000 empresas de la bolsa de EE. UU. (nombre o ticker)</label>
+      <input id="busE" type="search" placeholder="Amazon, Apple, NVIDIA, SoFi, Uber…" value="${esc(S.empQ)}" autocomplete="off">
       <div id="listaE"></div><div id="trims"></div>` : ''}
     <h3>${conEmpresa ? 'O usa tu propia tabla' : 'Tu tabla'}</h3>
     <p class="ayuda">${a.cols} Excel (xlsx, xls, ods) o CSV.</p>
@@ -165,12 +199,13 @@ async function cargarEmpresas() {
 }
 function pintarEmpresas() {
   const c = $('#listaE'); if (!c) return;
-  const l = S.empresas ?? []; if (!l.length) { c.innerHTML = '<p class="ayuda">No tengo esa empresa todavía. Prueba con otra o sube tu propia tabla abajo.</p>'; return; }
-  c.innerHTML = `<div class="chips" role="radiogroup" aria-label="Empresas">${l.map((e) => `<button type="button" class="chip" role="radio" data-t="${esc(e.ticker)}" aria-checked="${S.emp === e.ticker}" aria-pressed="${S.emp === e.ticker}" title="${e.trimestres ? e.trimestres + ' trimestres · último ' + esc(e.ultimo) : 'Se descarga al elegirla'}">${esc(e.nombre)}</button>`).join('')}</div>`;
+  const l = S.empresas ?? []; if (!l.length) { c.innerHTML = '<p class="ayuda">No encuentro esa empresa en la bolsa de EE. UU. Prueba con otro nombre o con su ticker, o sube tu propia tabla abajo.</p>'; return; }
+  c.innerHTML = `<p class="ayuda" style="margin:8px 0 4px">${S.empQ.trim() ? `${l.length} resultado${l.length === 1 ? '' : 's'}` : 'Empresas destacadas (con toda su historia desde 2009)'}. Las demás se traen de la SEC al elegirlas (unos segundos).</p>
+    <div class="chips" role="radiogroup" aria-label="Empresas">${l.map((e) => `<button type="button" class="chip" role="radio" data-t="${esc(e.ticker)}" aria-checked="${S.emp === e.ticker}" aria-pressed="${S.emp === e.ticker}" title="${e.trimestres ? e.trimestres + ' trimestres · último ' + esc(e.ultimo) : 'Se descarga al elegirla'}">${esc(e.nombre)} <small style="opacity:.6">${esc(e.ticker)}</small></button>`).join('')}</div>`;
   c.querySelectorAll('.chip').forEach((b) => (b.onclick = () => elegirEmpresa(b.dataset.t)));
 }
 async function elegirEmpresa(t) {
-  S.emp = t; S.trims = null; pintarEmpresas(); const box = $('#trims'); if (box) box.innerHTML = '<p class="ayuda">Trayendo los trimestres de la SEC…</p>';
+  S.emp = t; S.trims = null; pintarEmpresas(); const box = $('#trims'); if (box) box.innerHTML = '<p class="ayuda"><span class="pulso"></span> Trayendo los trimestres de la SEC (la primera vez de una empresa tarda 10–20 s)…</p>';
   try { S.trims = await api('/api/trimestres?ticker=' + t); } catch (e) { if (box) box.innerHTML = `<div class="aviso mal">${ic('warn')}<div>${esc(e.message)}</div></div>`; return; }
   guardar(); pintarTrims();
 }
@@ -178,7 +213,8 @@ const fmtMM = (v) => (v >= 1e9 ? 'US$ ' + (v / 1e9).toLocaleString('es-CO', {max
 function pintarTrims() {
   const box = $('#trims'); if (!box || !S.trims) return;
   const T = S.trims, flujo = S.intento === 'flujos', sel = S.series[0]?.trimestre, esSel = (t) => sel && sel.ticker === T.ticker && sel.fin === t.fin;
-  const chip = (t) => { const off = flujo && !t.sankey; return `<button type="button" class="chip" data-fin="${t.fin}" aria-pressed="${esSel(t)}" ${off ? 'disabled' : ''} title="${esc(off ? 'Trimestre con pérdida: el flujo no puede dibujarlo. Usa «Qué sumó y qué restó».' : `Reporte ${t.form} del ${t.publicado} · ingresos ${fmtMM(t.ingresos)}${t.q4Calculado ? ' · Q4 calculado: año − 9 meses' : ''}`)}">${esc(t.etiqueta.replace(' FY', ' · '))}</button>`; };
+  const chip = (t) => { const off = flujo && !t.sankey; return `<button type="button" class="chip" data-fin="${t.fin}" aria-pressed="${esSel(t)}" ${off ? 'disabled' : ''} title="${esc(off ? 'Trimestre con pérdida: el flujo no puede dibujarlo. Usa «Qué sumó y qué restó».' : `Reporte ${t.form} del ${t.publicado} · ingresos ${fmtMM(t.ingresos)}${t.q4Calculado ? ' · Q4 calculado: año − 9 meses' : ''}${t.conSegmentos ? ' · con ingresos por producto' : ''}`)}">${esc(t.etiqueta.replace(' FY', ' · '))}${t.conSegmentos ? ' <span title="Incluye ingresos por producto o segmento" style="color:var(--oro)">●</span>' : ''}</button>`; };
+  if (T.sinDatos) { box.innerHTML = `<h3 style="margin-top:14px">${esc(T.nombre)}</h3><div class="aviso">${ic('info')}<div>${esc(T.sinDatos)}</div></div>`; return; }
   const recientes = T.trimestres.slice(0, 8), resto = T.trimestres.slice(8), porAnio = {};
   resto.forEach((t) => (porAnio[t.fy] ??= []).push(t));
   box.innerHTML = `<h3 style="margin-top:14px">${esc(T.nombre)} · elige un trimestre</h3>
@@ -492,6 +528,55 @@ $('#btnEjemplos').onclick = async () => {
     Object.assign(S, {spec, plano: r.informe.ok ? r.spec : null, informe: r.informe, notas: [], error: '', modo: 'ejemplo', titulo: spec.titulo ?? ''}); $('#specTxt').value = JSON.stringify(spec, null, 2); await mostrarVista(); ir(3);
   }));
 };
+
+// ── chat: editar la animación hablando (Claude Code con las herramientas del estudio; ver servidor/chat.mjs) ──────────
+const chatEl = $('#chat'), chatMsgs = $('#chatMsgs'), chatIn = $('#chatIn');
+let chatOcupado = false;
+const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<span class="mono">$1</span>').replace(/\n/g, '<br>');
+function burbuja(clase, html) { const d = document.createElement('div'); d.className = 'cm ' + clase; d.innerHTML = html; chatMsgs.append(d); chatMsgs.scrollTop = chatMsgs.scrollHeight; return d; }
+function sugerencias() {
+  const box = $('#chatSug'); if (!box) return;
+  const tri = S.series[0]?.trimestre, lista = tri
+    ? ['Pásalo a vertical', 'Ponlo en negro y rosa-rojo', 'Muéstrame el trimestre anterior', 'Ahora en cascada', 'Hazlo más corto']
+    : S.plano ? ['Pásalo a vertical', 'Cambia los colores', 'Hazlo más corto', 'Pon un título más claro']
+    : ['Muéstrame Amazon, último trimestre', 'Cómo gana dinero NVIDIA', 'Compara el balance de la Fed con el oro'];
+  box.innerHTML = lista.map((t) => `<button type="button">${esc(t)}</button>`).join('');
+  box.querySelectorAll('button').forEach((b) => (b.onclick = () => enviarChat(b.textContent)));
+}
+function abrirChat(on) {
+  chatEl.hidden = !on; $('#chatBtn').setAttribute('aria-expanded', String(on));
+  if (!on) return;
+  if (!chatMsgs.children.length) burbuja('ia', 'Hola. Dime qué quieres **cambiar** en la animación (colores, formato, otro trimestre, otra empresa…) y lo hago aquí mismo. Si tocas los pasos de la izquierda, la pieza se rehace desde cero.');
+  sugerencias(); chatIn.focus();
+}
+function aplicarPiezaChat({spec, plano, informe}) {
+  Object.assign(S, {spec, plano: informe.ok ? plano : null, informe, notas: [], error: informe.ok ? '' : (informe.errores[0] ?? ''), modo: 'manual', titulo: spec.titulo ?? S.titulo, tituloEditado: true});
+  $('#specTxt').value = JSON.stringify(spec, null, 2); mostrarVista(); pintarPasos(); if (S.paso === 3) paso4();
+  burbuja('acc', `${ic('check')}<span>Vista previa actualizada</span>`);
+}
+function eventoChat(ev, espera) {
+  if (ev.tipo === 'texto') burbuja('ia', md(ev.texto));
+  else if (ev.tipo === 'accion') espera.innerHTML = `<span class="pulso"></span> ${esc(ev.texto)}…`;
+  else if (ev.tipo === 'error') burbuja('mal', md(ev.texto));
+  else if (ev.tipo === 'pieza') aplicarPiezaChat(ev);
+}
+async function enviarChat(texto) {
+  texto = String(texto ?? '').trim(); if (!texto || chatOcupado) return;
+  chatOcupado = true; burbuja('yo', esc(texto)); chatIn.value = ''; chatIn.style.height = ''; $('#chatSug').innerHTML = '';
+  const espera = burbuja('acc', '<span class="pulso"></span> Pensando…');
+  try {
+    const r = await fetch('/api/chat', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({mensaje: texto, spec: S.spec})});
+    const lector = r.body.getReader(), dec = new TextDecoder(); let resto = '';
+    for (;;) { const {done, value} = await lector.read(); if (done) break; resto += dec.decode(value, {stream: true}); const ls = resto.split('\n'); resto = ls.pop() ?? ''; for (const l of ls) if (l.trim()) { try { eventoChat(JSON.parse(l), espera); } catch { /* línea a medias */ } } }
+  } catch (e) { burbuja('mal', esc(e.message)); }
+  espera.remove(); chatOcupado = false; sugerencias();
+}
+$('#chatBtn').onclick = () => abrirChat(true);
+$('#chatCerrar').onclick = () => abrirChat(false);
+$('#chatNuevo').onclick = async () => { try { await api('/api/chat-nuevo'); } catch { /* sin servidor */ } chatMsgs.innerHTML = ''; abrirChat(true); };
+$('#chatForm').onsubmit = (e) => { e.preventDefault(); enviarChat(chatIn.value); };
+chatIn.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarChat(chatIn.value); } };
+chatIn.oninput = () => { chatIn.style.height = 'auto'; chatIn.style.height = Math.min(120, chatIn.scrollHeight) + 'px'; };
 
 (async () => {
   const pl = await api('/api/plantillas'); S.plantillas = pl.plantillas; S.camaras = pl.camaras;
