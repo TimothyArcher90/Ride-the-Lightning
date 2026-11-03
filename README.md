@@ -13,12 +13,16 @@ Después de la primera vez: **doble clic en «Ride the Lightning» en el escrito
 
 Todo corre en tu equipo; el servidor solo escucha en `127.0.0.1`.
 
+## Para quien no sabe de código ni de finanzas
+Abre el estudio y sigue los **4 pasos**: tus datos → cómo verlo → cámara y ritmo → revisar y exportar. Guía: [`docs/GUIA_USUARIO.md`](docs/GUIA_USUARIO.md). Qué se pidió y qué está hecho (con límites): [`docs/CUMPLIMIENTO.md`](docs/CUMPLIMIENTO.md). Cómo trabajan Johnny Harris y Caspian Report: [`docs/REFERENCIAS_ESTILO.md`](docs/REFERENCIAS_ESTILO.md).
+
 ## Qué hace
 | Necesidad | Cómo |
 |---|---|
 | **Historia completa**, desde el primer dato | Biblioteca de ~170 series (commodities, mercados, macro, cripto, Polonia, historia larga). Se descargan completas y se mide el inicio real. |
 | **Tus datos** | Suelta en el estudio Excel (`xlsx xls xlsb ods`), `csv tsv txt`, `json`, e imágenes. |
 | **Datos vivos 24/7** | El actualizador refresca cada serie según su frecuencia y re-renderiza las piezas marcadas `"vivo"`. |
+| **Plantillas** | 5 estilos (historia de una cifra, una contra las demás, panel, carrera, correlación) × 4 cámaras × 2 estilos de momento × horizontal/vertical. Los momentos clave se detectan **en los datos**. |
 | **Tipos de gráfica** | `linea` (multi-serie, doble eje, escala log, área) · `barras` · `carrera` · `dispersion` (OLS y R²) · `calor` (matriz de correlación). |
 | **Pantalla múltiple** | Cada capa gráfica tiene su `caja`: paneles 2×2, ranking + línea, etc. |
 | **Entregables** | MP4 de referencia (h264, crf 17, yuv420p) **y** `.mov` ProRes 4444 con alfa para Premiere. Sin subtítulos quemados. |

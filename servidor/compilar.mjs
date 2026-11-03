@@ -54,7 +54,7 @@ function cargarDataset(id, d, informe) {
   }
   if (!fuente?.nombre) { err('sin fuente. Declara "fuente":{"nombre","url","obtenido"} o descarga la serie con el catálogo (escribe su .meta.json).'); return null; }
   if (!fuente.url) aviso('la fuente no tiene url: queda como "datos del usuario"; no verificable por terceros.');
-  if (/NC|uso personal|no redistribuir|investigaci/i.test(fuente.licencia ?? '')) aviso(`LICENCIA: «${fuente.licencia}». Si la pieza se monetiza (YouTube, clientes), esta fuente puede NO permitirlo: confirma la licencia o sustitúyela por una fuente oficial.`);
+  if (/\bNC\b|uso personal|no redistribuir|investigaci/i.test(fuente.licencia ?? '')) aviso(`LICENCIA: «${fuente.licencia}». Si la pieza se monetiza (YouTube, clientes), esta fuente puede NO permitirlo: confirma la licencia o sustitúyela por una fuente oficial.`);
 
   const tipoX = d.tipoX ?? 'fecha';
   let x, tipoFinal = tipoX === 'anio' ? 'fecha' : tipoX;
@@ -114,6 +114,20 @@ function cargarDataset(id, d, informe) {
     tipoX: tipoFinal, x: filas.map((i) => x[i]),
     series: series.map((s) => ({...s, y: filas.map((i) => s.y[i])})),
   };
+  // Índice base 100: permite comparar series de unidades o magnitudes distintas. Se declara, se explica y cada cifra conserva su valor crudo.
+  if (d.base100) {
+    let b = d.base100 === true || d.base100 === 'primero' ? tab.x.findIndex((_, k) => tab.series.every((s) => s.y[k] != null && s.y[k] > 0)) : tab.x.findIndex((v) => v >= fechaSpec(d.base100));
+    if (b < 0) { err('base100: no hay una fecha en la que todas las series tengan un valor positivo para usar de base.'); return null; }
+    const fb = tipoFinal === 'fecha' ? iso(tab.x[b]) : String(tab.x[b]);
+    tab.series.forEach((s) => {
+      const base = s.y[b];
+      if (!(base > 0)) { err(`base100: la serie «${s.nombre}» no tiene un valor positivo en ${fb}.`); return; }
+      s.y = s.y.map((v) => (v == null ? null : (v / base) * 100));
+      s.divisor = (base / 100) * s.divisor;
+      s.fmt = {prefijo: '', sufijo: '', decimales: 1, unidad: `Índice (100 = ${tipoFinal === 'fecha' ? fmtFecha(tab.x[b], 'mes') : fb})`};
+    });
+    informe.metodos.push(`datos.${id}: series expresadas como ÍNDICE BASE 100 en ${fb} (valor / valor en esa fecha × 100), para poder compararlas aunque tengan unidades o tamaños distintos. El valor original de cada cifra se conserva en el informe.`);
+  }
   informe.datos.push({
     id, archivo: d.archivo, formato: t.formato, hoja: t.hoja ?? null, sha256: t.hash, filas: tab.x.length, filasEnArchivo: total,
     inicio: tipoFinal === 'fecha' ? iso(tab.x[0]) : tab.x[0], fin: tipoFinal === 'fecha' ? iso(tab.x[tab.x.length - 1]) : tab.x[tab.x.length - 1],

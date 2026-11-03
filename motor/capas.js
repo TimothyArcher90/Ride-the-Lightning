@@ -175,8 +175,10 @@ function linea(env, capa) {
   ctx.save();
   ctx.beginPath(); ctx.rect(B.x - 2, B.y - 12 * u, B.w + 4, B.h + 24 * u); ctx.clip();
   const cabezas = [];
-  idxs.forEach((si, k) => {
-    const s = tab.series[si], color = colorDe(s.color, si), py = der.has(si) ? pyR : pyL;
+  // «foco»: una serie protagonista y las demás atenuadas (la técnica de Johnny Harris: una sola línea manda y el resto da contexto)
+  const foco = capa.foco ?? null, orden = foco != null ? [...idxs.filter((i) => i !== foco), foco] : idxs;
+  orden.forEach((si, k) => {
+    const s = tab.series[si], color = colorDe(s.color, si), py = der.has(si) ? pyR : pyL, mudo = foco != null && si !== foco;
     const a = Math.max(0, lowerBound(tab.x, cam.x[0]) - 1), b = Math.min(n - 1, lowerBound(tab.x, Math.min(cam.x[1], xh)));
     const P = new Path2D();
     let abierto = false, x0p = null, ult = null;
@@ -192,7 +194,7 @@ function linea(env, capa) {
     const yh = log ? (yo > 0 ? Math.log10(yo) : null) : yo;
     if (yh != null && ult && xh > ult[0]) { P.lineTo(px(xh), py(yh)); }
     if (yh == null || x0p === null) return;
-    if (capa.area) {
+    if (capa.area && !mudo) {
       const A = new Path2D(P);
       A.lineTo(px(xh), B.y + B.h); A.lineTo(x0p, B.y + B.h); A.closePath();
       const g = ctx.createLinearGradient(0, B.y, 0, B.y + B.h);
@@ -200,15 +202,23 @@ function linea(env, capa) {
       ctx.fillStyle = g; ctx.fill(A);
     }
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 22 * u; ctx.strokeStyle = rgba(color, 0.55); ctx.lineWidth = 7 * u; ctx.stroke(P); ctx.restore();
-    ctx.strokeStyle = color; ctx.lineWidth = 3.4 * u; ctx.stroke(P);
-    cabezas.push({si, color, x: px(xh), y: py(yh), valor: yo, nombre: s.nombre, fmt: s.fmt, s});
+    if (mudo) { ctx.save(); ctx.globalAlpha *= 0.42; ctx.strokeStyle = color; ctx.lineWidth = 2.4 * u; ctx.stroke(P); ctx.restore(); }
+    else {
+      ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 22 * u; ctx.strokeStyle = rgba(color, 0.55); ctx.lineWidth = 7 * u; ctx.stroke(P); ctx.restore();
+      ctx.strokeStyle = color; ctx.lineWidth = 3.4 * u; ctx.stroke(P);
+    }
+    cabezas.push({si, color, x: px(xh), y: py(yh), valor: yo, nombre: s.nombre, fmt: s.fmt, s, mudo});
   });
   ctx.restore();
 
   // cabezas: punto + ondas + etiqueta
   for (const h of cabezas) {
     if (reveal <= 0 || h.x < B.x - 4 || h.x > B.x + B.w + 4) continue;
+    if (h.mudo) {   // serie de contexto: punto pequeño y nombre tenue, sin ondas
+      ctx.fillStyle = rgba(h.color, 0.6); ctx.beginPath(); ctx.arc(h.x, h.y, 4.5 * u, 0, 7); ctx.fill();
+      if (capa.etiquetas !== false) texto(ctx, h.nombre, Math.min(h.x + 12 * u, env.W - 40 * u), h.y + 7 * u, fnt(500, 20 * u), rgba(h.color, 0.75), h.x + 12 * u + 160 * u > env.W - 40 * u ? 'right' : 'left');
+      continue;
+    }
     const ciclo = (t * 0.9) % 1;
     ctx.strokeStyle = rgba(h.color, (1 - ciclo) * 0.55 * (reveal < 1 ? 1 : 0.6)); ctx.lineWidth = 2 * u;
     ctx.beginPath(); ctx.arc(h.x, h.y, (9 + 30 * ciclo) * u, 0, 7); ctx.stroke();
@@ -416,10 +426,17 @@ const chocan = (a, b, m = 0) => a[0] < b[2] + m && a[2] + m > b[0] && a[1] < b[3
 const solape = (a, b) => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
 
 function cajaTitulo(env, capa) {
-  const {ctx, u, W, H} = env, tam = (capa.tam ?? 60) * u, pos = capa.pos ?? (H > W ? [0.08, 0.085] : [0.065, 0.115]);
+  const {ctx, u, W, H} = env, pos = capa.pos ?? (H > W ? [0.08, 0.085] : [0.065, 0.115]), x = pos[0] * W, y = pos[1] * H;
+  // el título se ajusta solo al ancho libre (no invade el contador del año): primero encoge, y si aun así no cabe, se acorta con «…»
+  const cont = env.capasTodas.find((k) => k.tipo === 'contador' && (k.alinea ?? (H > W ? 'left' : 'right')) === 'right' && k.modo !== 'compacto');
+  const libre = (cont && H <= W ? cajaContador(env, cont).caja[0] - 28 * u : W * 0.92) - x;
+  let tam = (capa.tam ?? 60) * u, texto = String(capa.texto ?? '');
   ctx.font = fnt(800, tam);
-  const w = ctx.measureText(capa.texto).width, x = pos[0] * W, y = pos[1] * H;
-  return {x, y, w, tam, caja: [x - 6 * u, y - tam, x + w + 6 * u, y + 24 * u + (capa.sub ? 46 * u : 0)]};
+  while (ctx.measureText(texto).width > libre && tam > 30 * u) { tam -= 2 * u; ctx.font = fnt(800, tam); }
+  while (ctx.measureText(texto).width > libre && texto.length > 4) texto = texto.slice(0, -2);
+  if (texto.length < String(capa.texto ?? '').length) texto = texto.trimEnd() + '…';
+  const w = ctx.measureText(texto).width;
+  return {x, y, w, tam, texto, caja: [x - 6 * u, y - tam, x + w + 6 * u, y + 24 * u + (capa.sub ? 46 * u : 0)]};
 }
 function cajaContador(env, capa) {
   const {u, W, H} = env, vert = H > W;
@@ -494,6 +511,23 @@ function llamada(env, capa) {
   const P = [V.px(capa.x), V.py(capa.y, capa.serie ?? 0)];
   if (P[0] < B.x - 10 * u || P[0] > B.x + B.w + 10 * u || P[1] < B.y - 40 * u || P[1] > B.y + B.h + 40 * u) return;
   const color = colorDe(capa.color, capa.serie ?? 0), k = clamp(B.w / (0.62 * W), 0.62, 1);
+  // estilo «barra»: sin tarjeta. Una barra vertical que crece hasta el dato y el año arriba; la voz (o el título) lleva el resto.
+  if (capa.estilo === 'barra') {
+    const g = ease.out3(clamp(tt / 0.8)), yB = B.y + B.h, yT = lerp(yB, B.y + 8 * u, g), a0 = ctx.globalAlpha;
+    ctx.save(); ctx.globalAlpha = a0 * fin * V.ap;
+    ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 16 * u; ctx.strokeStyle = color; ctx.lineWidth = 4 * u; ctx.beginPath(); ctx.moveTo(P[0], yB); ctx.lineTo(P[0], yT); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = PALETA.blanco; ctx.beginPath(); ctx.arc(P[0], P[1], 6.5 * u, 0, 7); ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 3 * u; ctx.beginPath(); ctx.arc(P[0], P[1], 10 * u, 0, 7); ctx.stroke();
+    if (g > 0.7 && capa.anioTxt) {
+      ctx.font = fnt(800, 40 * u, true);
+      const w = ctx.measureText(capa.anioTxt).width + 28 * u, x0 = clamp(P[0] - w / 2, B.x, B.x + B.w - w), y0 = B.y + 14 * u, al = clamp((g - 0.7) / 0.3);
+      ctx.globalAlpha *= al; ctx.fillStyle = PALETA.tarjeta; ctx.fillRect(x0, y0, w, 56 * u); ctx.fillStyle = color; ctx.fillRect(x0, y0, w, 5 * u);
+      texto(ctx, capa.anioTxt, x0 + w / 2, y0 + 44 * u, fnt(800, 40 * u, true), PALETA.blanco, 'center');
+      reg(env, 'tarjeta', [x0, y0, x0 + w, y0 + 56 * u], capa.id);
+    }
+    ctx.restore();
+    return;
+  }
   // contenido de la tarjeta: año grande · qué pasó (corto) · el dato. Nada más.
   const L = [];
   if (capa.anioTxt) L.push({s: capa.anioTxt, f: fnt(800, 60 * u * k, true), c: color, h: 64 * u * k});
@@ -567,11 +601,11 @@ function titulo(env, capa) {
   const {ctx, u, t} = env;
   const [t0, t1] = capa.t ?? [0, 4];
   const sal = 1 - prog(t, t1, t1 + 0.4, ease.in2); if (t < t0 || sal <= 0) return;
-  const T = cajaTitulo(env, capa), {x, y, w, tam} = T, color = colorDe(capa.color, 0);
+  const T = cajaTitulo(env, capa), {x, y, w, tam, texto: txt} = T, color = colorDe(capa.color, 0);
   ctx.save(); ctx.globalAlpha *= sal;
   const p = prog(t, t0, t0 + 0.55, ease.io3);
   ctx.save(); ctx.beginPath(); ctx.rect(x - 4 * u, y - tam, (w + 8 * u) * p, tam * 1.5); ctx.clip();
-  texto(ctx, capa.texto, x, y, fnt(800, tam), PALETA.blanco); ctx.restore();
+  texto(ctx, txt, x, y, fnt(800, tam), PALETA.blanco); ctx.restore();
   if (p < 1) { ctx.fillStyle = color; ctx.fillRect(x + w * p, y - tam * 0.9, 12 * u, tam * 1.05); }
   const r = prog(t, t0 + 0.2, t0 + 0.9, ease.out3);
   ctx.fillStyle = color; ctx.fillRect(x, y + 16 * u, Math.min(w, 200 * u) * r, 4 * u);

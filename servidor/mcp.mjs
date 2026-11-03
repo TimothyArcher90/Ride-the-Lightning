@@ -10,6 +10,7 @@ import {vistaPrevia, renderizar} from './render.mjs';
 import {buscar, descargar, leerCatalogo} from './catalogo.mjs';
 import {descargarAdHoc, combinar} from './biblioteca.mjs';
 import {inspeccionar} from './datos.mjs';
+import {PLANTILLAS, CAMARAS, analizar, generar} from './plantillas.mjs';
 
 const server = new McpServer({name: 'ride-the-lightning', version: '0.1.0'},
   {instructions: 'Ride the Lightning anima gráficas de datos con cifras 100 % trazables. Antes de dirigir una pieza llama a guia_de_direccion. Flujo: buscar_series → descargar_serie → compilar_spec → vista_previa (mira las imágenes) → exportar_video. Nunca escribas cifras a mano en los textos: usa marcadores.'});
@@ -36,6 +37,23 @@ server.tool('descargar_serie_adhoc', 'Descarga una serie fuera del catálogo: ad
 
 server.tool('combinar_series', 'Une series ya descargadas en una tabla ancha por fecha EXACTA (sin remuestrear). Se reconstruye sola cuando cambia un componente. Úsala para paneles múltiples y matrices de correlación.',
   {ids: z.array(z.string()).min(2), nombre: z.string(), id: z.string()}, async (a) => { const r = combinar(a); return texto({archivo: path.relative(RAIZ, r.archivo), filas: r.filas, filasConTodas: r.filasConTodas, inicio: r.inicio, fin: r.fin, fuente: r.fuente.nombre}); });
+
+server.tool('listar_plantillas', 'Plantillas de animación (historia, comparar, panel, carrera, correlación) y presets de cámara disponibles.', {}, async () => texto({plantillas: PLANTILLAS, camaras: Object.entries(CAMARAS).map(([id, c]) => ({id, nombre: c.nombre, descripcion: c.descripcion}))}));
+
+server.tool('analizar_serie', 'Resumen de una serie de la biblioteca y MOMENTOS CLAVE detectados en los datos (máximo, mayor subida/caída, primero, último), con su explicación. Úsalo antes de generar una historia.',
+  {id: z.string()}, async ({id}) => { const e = leerCatalogo().find((x) => x.id === id); if (e && !fs.existsSync(path.join(RAIZ, 'datos', 'biblioteca', id + '.csv'))) await descargar(e); return texto(analizar([{origen: 'biblioteca', id}])); });
+
+server.tool('generar_pieza', 'Genera la spec COMPLETA de una pieza a partir de una plantilla (cámara, ritmo, tiempos y colores resueltos) y la guarda en specs/<nombre>.json. Luego usa vista_previa y exportar_video con esa ruta.',
+  {nombre: z.string(), plantilla: z.enum(['historia', 'comparar', 'panel', 'carrera', 'correlacion']), series: z.array(z.string()), momentos: z.array(z.object({tipo: z.enum(['primero', 'subida', 'caida', 'max', 'min', 'ultimo']), etiqueta: z.string().max(30).optional()})).optional(),
+    camara: z.enum(['cinematico', 'documental', 'dinamico', 'estatico']).default('documental'), formato: z.enum(['horizontal', 'vertical']).default('horizontal'), titulo: z.string().optional(), foco: z.number().optional(), estiloMomento: z.enum(['tarjeta', 'barra']).default('tarjeta'), vivo: z.boolean().default(false)},
+  async (a) => {
+    const cat = leerCatalogo(); for (const id of a.series) { const e = cat.find((x) => x.id === id); if (e && !fs.existsSync(path.join(RAIZ, 'datos', 'biblioteca', id + '.csv'))) await descargar(e); }
+    const items = a.series.map((id) => ({origen: 'biblioteca', id})), an = a.plantilla === 'historia' && items.length === 1 ? analizar(items) : null;
+    const momentos = (a.momentos ?? an?.momentos?.filter((x) => x.seleccionado) ?? []).map((m) => { const c = an?.momentos?.find((x) => x.tipo === m.tipo); return {tipo: m.tipo, ancla: c?.ancla ?? {max: true}, etiqueta: m.etiqueta ?? c?.etiqueta}; });
+    const r = generar({plantilla: a.plantilla, series: items, momentos, camara: a.camara, formato: a.formato, titulo: a.titulo, foco: a.foco, estiloMomento: a.estiloMomento, vivo: a.vivo ? {render: 'final', alfa: true, minEntreRendersMin: 360} : null});
+    const ruta = path.join('specs', a.nombre.replace(/[^w-]+/g, '_') + '.json'); fs.writeFileSync(path.join(RAIZ, ruta), JSON.stringify(r.spec, null, 2));
+    return texto({ruta, duracion: r.spec.duracion, notas: r.notas, ...resumen(r.informe)});
+  });
 
 server.tool('inspeccionar_datos', 'Inspecciona un archivo de datos (xlsx, xls, xlsb, ods, csv, tsv, txt, json): hojas, columnas, tipos, rangos, vacíos, hash. Úsalo antes de escribir la spec.',
   {archivo: z.string(), hoja: z.string().optional(), filaEncabezado: z.number().optional()}, async ({archivo, hoja, filaEncabezado}) => texto(inspeccionar(rutaSegura(archivo), {hoja, filaEncabezado})));

@@ -9,12 +9,21 @@ import {renderizar} from './render.mjs';
 import {buscar, descargar, leerCatalogo} from './catalogo.mjs';
 import {inspeccionar, FORMATOS} from './datos.mjs';
 import {iniciarVivo, eventos, estadoVivo} from './vivo.mjs';
+import {salud, licencia} from './analisis.mjs';
+import {PLANTILLAS, CAMARAS, analizar, generar} from './plantillas.mjs';
 
 const PUERTO = Number(process.env.RTL_PUERTO ?? 5180);
 const trabajos = new Map();
 const json = (res, obj, code = 200) => { res.writeHead(code, {'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store'}); res.end(JSON.stringify(obj)); return true; };
 const cuerpo = (req, max = 200e6) => new Promise((ok, mal) => { const c = []; let n = 0; req.on('data', (d) => { n += d.length; if (n > max) { mal(new Error('Archivo demasiado grande')); req.destroy(); } else c.push(d); }); req.on('end', () => ok(Buffer.concat(c))); req.on('error', mal); });
 const nombreSeguro = (n) => String(n).replace(/[^\w.\- ()áéíóúñÁÉÍÓÚÑ]+/g, '_').slice(0, 120);
+
+
+const metaDe = (id) => { const f = path.join(RAIZ, 'datos', 'biblioteca', `${id}.csv.meta.json`); return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null; };
+const ficha = (e) => { const m = metaDe(e.id); return {id: e.id, nombre: e.nombre, categoria: e.categoria, unidad: m?.fuente?.unidad ?? e.unidad ?? '', frecuencia: e.frecuencia, fuente: e.fuente_original, url: m?.fuente?.url ?? null, licencia: licencia(e), salud: salud(e, m),
+  descargada: !!m, inicio: m?.inicio ?? null, fin: m?.fin ?? null, filas: m?.filas ?? null, etiquetas: e.etiquetas ?? [], nota: e.nota ?? null}; };
+/** Descarga (historia completa) lo que falte de la biblioteca antes de usarlo: la persona nunca baja un archivo. */
+const asegurar = async (series) => { const cat = leerCatalogo(); for (const s of series ?? []) if (s.origen === 'biblioteca' && !metaDe(s.id)) { const en = cat.find((x) => x.id === s.id); if (en) await descargar(en); } };
 
 async function api(req, res) {
   const url = new URL(req.url, 'http://x');
@@ -68,6 +77,20 @@ async function api(req, res) {
         const ping = setInterval(() => res.write(': ping\n\n'), 25000);
         req.on('close', () => { clearInterval(ping); hs.forEach(([t, h]) => eventos.off(t, h)); });
         return true;
+      }
+      case '/api/biblioteca': {
+        const cat = leerCatalogo(), qq = (q.get('q') ?? '').toLowerCase().split(/s+/).filter(Boolean), c = q.get('categoria');
+        const lista = cat.filter((e) => (!c || e.categoria === c) && qq.every((p) => `${e.id} ${e.nombre} ${e.categoria} ${(e.etiquetas ?? []).join(' ')}`.toLowerCase().includes(p))).slice(0, 60).map(ficha);
+        const cats = [...cat.reduce((m, e) => m.set(e.categoria, (m.get(e.categoria) ?? 0) + 1), new Map())].map(([nombre, n]) => ({nombre, n})).sort((a, b) => b.n - a.n);
+        return json(res, {series: lista, categorias: cats, total: cat.length});
+      }
+      case '/api/plantillas': return json(res, {plantillas: PLANTILLAS, camaras: Object.entries(CAMARAS).map(([id, c]) => ({id, ...c}))});
+      case '/api/analizar': { const {series} = JSON.parse((await cuerpo(req)).toString('utf8')); await asegurar(series); return json(res, analizar(series)); }
+      case '/api/generar': { const ent = JSON.parse((await cuerpo(req)).toString('utf8')); await asegurar(ent.series); const r = generar(ent); return json(res, {...r, spec: r.spec}); }
+      case '/api/abrir': {
+        const {ruta} = JSON.parse((await cuerpo(req)).toString('utf8')), abs = path.resolve(ruta);
+        if (!abs.startsWith(path.join(RAIZ, 'salidas'))) return json(res, {error: 'Solo se pueden abrir carpetas de salidas.'}, 400);
+        spawn('explorer.exe', [fs.existsSync(abs) && fs.statSync(abs).isFile() ? `/select,${abs}` : abs], {detached: true, stdio: 'ignore'}).unref(); return json(res, {ok: true});
       }
       case '/api/trabajo': return json(res, trabajos.get(q.get('id')) ?? {estado: 'desconocido'});
       default: return json(res, {error: 'Ruta desconocida'}, 404);
