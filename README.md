@@ -69,3 +69,6 @@ node scripts/prueba.mjs                     # formatos, reglas de exactitud, 5 t
 - Datos de Coin Metrics: CC BY-NC (no comercial). Yahoo: uso personal. Revisa antes de monetizar.
 
 Licencia del código: MIT. Fuentes Geist: SIL OFL (`fuentes/OFL-Geist.txt`).
+
+## Estilo Harris / Caspian (novedades)
+- **Cámara «seguir»**, **píldora** y **círculo** para marcar momentos, **bandas** de periodo y **temas** de color (`oscuro`, `harris`, `carbon`). Se eligen en el paso 3 del estudio o en la spec (`camara`, `estilo`, `tema`). Detalle y límites: `docs/REFERENCIAS_ESTILO.md` §7.6.

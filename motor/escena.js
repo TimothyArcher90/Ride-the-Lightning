@@ -1,6 +1,6 @@
 // Escena: ordena las capas por z y las pinta para un instante t. Determinista: sin Math.random, sin Date.now.
 import {DIBUJO, Z} from './capas.js';
-import {PALETA, rgba, clamp} from './nucleo.js';
+import {PALETA, TEMA, rgba, clamp, aplicarTema} from './nucleo.js';
 
 const ANOTACION = new Set(['llamada', 'contador', 'titulo', 'cortina', 'sello']);
 const GRAFICA = new Set(['linea', 'barras', 'carrera', 'dispersion', 'calor', 'zona', 'imagen']);
@@ -15,6 +15,7 @@ export class Escena {
   constructor(spec, imgs = {}) {
     this.spec = spec;
     this.imgs = imgs;
+    aplicarTema(spec.tema);
     this.capas = spec.capas
       .map((c, i) => ({...c, _i: i}))
       .sort((a, b) => (a.z ?? Z[a.tipo] ?? 10) - (b.z ?? Z[b.tipo] ?? 10) || a._i - b._i);
@@ -30,7 +31,7 @@ export class Escena {
       ctx.fillStyle = rgba(PALETA.fondo, f.tono ?? 0.78); ctx.fillRect(0, 0, W, H);
     } else {
       const g = ctx.createRadialGradient(W * (0.3 + 0.05 * Math.sin(t * 0.2)), H * 0.35, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.8);
-      g.addColorStop(0, rgba('#C9A84C', 0.07)); g.addColorStop(1, rgba('#C9A84C', 0));
+      g.addColorStop(0, rgba(TEMA.brillo, 0.07)); g.addColorStop(1, rgba(TEMA.brillo, 0));
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     }
     if (f.puntos !== false) {
@@ -39,7 +40,7 @@ export class Escena {
       for (let y = paso / 2; y < H; y += paso) for (let x = paso / 2; x < W; x += paso) ctx.fillRect(x, y, 1.6 * u, 1.6 * u);
     }
     const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75);
-    v.addColorStop(0, 'rgba(12,12,20,0)'); v.addColorStop(1, 'rgba(12,12,20,0.6)');
+    v.addColorStop(0, rgba(PALETA.profundo, 0)); v.addColorStop(1, rgba(PALETA.profundo, 0.6));
     ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
   }
 

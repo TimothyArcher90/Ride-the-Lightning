@@ -38,3 +38,8 @@ En «La historia de una cifra» verás **momentos propuestos** (el máximo, la m
 - **Dice «Uso restringido».** La licencia de esa fuente (por ejemplo Coin Metrics o Yahoo) puede no permitir uso comercial. Si vas a monetizar, confírmalo o usa una fuente oficial.
 - **¿Qué es la «escala logarítmica»?** Cuando un dato crece miles de veces (Bitcoin), en escala normal los primeros años se verían planos; la logarítmica los muestra a todos con claridad. Se activa sola y te avisamos.
 - **¿Puedo cambiar cualquier detalle?** Sí: **Modo experto** (arriba a la derecha) muestra la receta completa de la pieza para editarla.
+
+## Estilos nuevos (paso 3)
+- **Cámara «Sigue la línea»**: la cámara acompaña la punta mientras se dibuja y al final se abre al plano completo.
+- **Cómo se marcan los momentos**: además de tarjeta y barra, hay **píldora amarilla** (la frase se escribe letra a letra) y **círculo** sobre el dato.
+- **Aspecto**: MacroWise (oscuro cálido), **negro y rosa-rojo** o **gris carbón y teal**.

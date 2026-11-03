@@ -14,6 +14,7 @@ export const CAMARAS = {
   cinematico: {nombre: 'Cinemático', descripcion: 'Trazo lento y zooms suaves a cada momento. Para videos largos y documentales.', dibujo: 10, mov: 1.8, mantener: 2.4, zoom: 0.18, respiro: 1.8, inicio: 1.2},
   documental: {nombre: 'Documental', descripcion: 'Ritmo de editorial: trazo medio, un zoom claro por idea. El punto medio para casi todo.', dibujo: 7, mov: 1.3, mantener: 1.9, zoom: 0.14, respiro: 1.3, inicio: 1.0},
   dinamico: {nombre: 'Dinámico (Reels y Shorts)', descripcion: 'Rápido y directo: trazo corto, zooms enérgicos. Pensado para vertical.', dibujo: 4.5, mov: 0.9, mantener: 1.4, zoom: 0.12, respiro: 0.9, inicio: 0.6},
+  seguir: {nombre: 'Sigue la línea (estilo Johnny Harris)', descripcion: 'La cámara acompaña la punta de la línea mientras se dibuja, reescala el eje y al final se abre al plano completo. Luego marca los momentos.', dibujo: 8, mov: 0, mantener: 1.9, zoom: 1, respiro: 1.2, inicio: 0.8, seguir: true},
   estatico: {nombre: 'Sin movimiento de cámara', descripcion: 'La gráfica se dibuja completa y los momentos aparecen sobre ella. Sencillo y sobrio.', dibujo: 6, mov: 0, mantener: 1.9, zoom: 1, respiro: 1.2, inicio: 0.8},
 };
 
@@ -101,7 +102,7 @@ function historia({datos, tab, nombre, titulo, momentosElegidos, camara, escala,
   const ordenados = [...momentosElegidos].sort((a, b) => (a.x ?? 0) - (b.x ?? 0));
   const capas = [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, 9999]}];
   const camaraKf = [{t: 0, x: 'auto', y: 'auto'}], llamadas = [];
-  let cursor = P.inicio + P.dibujo + 0.5;
+  let cursor = P.inicio + P.dibujo + (P.seguir ? 1.9 : 0.5);   // con cámara «seguir» esperamos a que se abra al plano completo (t1+0.3…t1+1.6)
   for (const m of ordenados) {
     const kfT = cursor + P.mov;
     if (P.mov > 0 && esFecha) {
@@ -110,14 +111,14 @@ function historia({datos, tab, nombre, titulo, momentosElegidos, camara, escala,
       camaraKf.push({t: +kfT.toFixed(2), x: [Math.max(x0, a), Math.min(x1, b)], y: 'ajustar', mov: P.mov});
     }
     const t0 = P.mov > 0 ? kfT + 0.15 : cursor + 0.2;
-    llamadas.push({tipo: 'llamada', capa: 'g1', serie: 0, ancla: m.ancla, t: [+t0.toFixed(2), +(t0 + P.mantener).toFixed(2)], texto: m.etiqueta, color: COLOR_MOMENTO[m.tipo] ?? 'oro', ...(estilo === 'barra' ? {estilo: 'barra'} : {})});
+    llamadas.push({tipo: 'llamada', capa: 'g1', serie: 0, ancla: m.ancla, t: [+t0.toFixed(2), +(t0 + P.mantener).toFixed(2)], texto: m.etiqueta, color: ['pildora', 'circulo'].includes(estilo) ? 'amarillo' : (COLOR_MOMENTO[m.tipo] ?? 'oro'), ...(['barra', 'pildora', 'circulo'].includes(estilo) ? {estilo} : {})});
     cursor = t0 + P.mantener + 0.25;
   }
   let fin = cursor + P.respiro;
   if (P.mov > 0 && ordenados.length) { camaraKf.push({t: +(cursor + P.mov).toFixed(2), x: 'auto', y: 'auto', mov: P.mov}); fin = cursor + P.mov + P.respiro; }
   const duracion = +fin.toFixed(1);
   capas[0].t = [0.2, duracion - 0.1];
-  capas.push({tipo: 'linea', id: 'g1', datos: 'd', area: true, ...(usaLog ? {escala: 'log'} : {}), t: [P.inicio, P.inicio + P.dibujo], ...(camaraKf.length > 1 ? {camara: camaraKf} : {})});
+  capas.push({tipo: 'linea', id: 'g1', datos: 'd', area: true, ...(usaLog ? {escala: 'log'} : {}), t: [P.inicio, P.inicio + P.dibujo], ...(P.seguir && esFecha ? {camara: 'seguir'} : camaraKf.length > 1 ? {camara: camaraKf} : {})});
   capas.push({tipo: 'contador', capa: 'g1', serie: 0, t: [0, duracion - 0.1]}, ...llamadas);
   return {duracion, capas, notas: usaLog ? [`Escala logarítmica activada automáticamente: la serie varía más de ${Math.round(res.razonMaxMin)} veces, y en escala normal los primeros años se verían planos.`] : [], ...(vivo ? {vivo} : {})};
 }
@@ -176,7 +177,7 @@ export function generar(entrada) {
   else if (plantilla === 'comparar') g = comparar({titulo, camara, foco: entrada.foco, n: nombres.length});
   else if (plantilla === 'carrera') g = carrera({datos, titulo, tab});
   else g = correlacion({titulo});
-  const spec = {version: 1, titulo, formato, fps: 30, duracion: g.duracion, datos, capas: g.capas, ...(g.vivo ? {vivo: g.vivo} : {})};
+  const spec = {version: 1, titulo, formato, fps: 30, duracion: g.duracion, datos, capas: g.capas, ...(entrada.tema && entrada.tema !== 'oscuro' ? {tema: entrada.tema} : {}), ...(g.vivo ? {vivo: g.vivo} : {})};
   const comp = compilar(spec);
   return {spec, plano: comp.spec, informe: comp.informe, notas: [...n0, ...(g.notas ?? [])]};
 }

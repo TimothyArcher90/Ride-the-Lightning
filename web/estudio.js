@@ -18,11 +18,11 @@ const api = async (u, o) => {
   return j;
 };
 const post = (u, body) => api(u, {method: 'POST', body: JSON.stringify(body)});
-const guardar = () => { try { localStorage.setItem('rtl', JSON.stringify({series: S.series, plantilla: S.plantilla, titulo: S.titulo, formato: S.formato, camara: S.camara, vivo: S.vivo, foco: S.foco, estiloMomento: S.estiloMomento, tituloEditado: S.tituloEditado, paso: Math.min(S.paso, 3), etiquetas: S.etiquetas, sel: S.sel})); } catch {} };
+const guardar = () => { try { localStorage.setItem('rtl', JSON.stringify({series: S.series, plantilla: S.plantilla, titulo: S.titulo, formato: S.formato, camara: S.camara, vivo: S.vivo, foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, tituloEditado: S.tituloEditado, paso: Math.min(S.paso, 3), etiquetas: S.etiquetas, sel: S.sel})); } catch {} };
 const cargarGuardado = () => { try { return JSON.parse(localStorage.getItem('rtl') ?? 'null'); } catch { return null; } };
 
 const PASOS = ['Tus datos', 'Cómo verlo', 'Cámara y ritmo', 'Revisar y exportar'];
-const S = Object.assign({estiloMomento: 'tarjeta', foco: 0, paso: 0, series: [], plantilla: 'historia', titulo: '', tituloAuto: true, formato: 'horizontal', camara: 'documental', vivo: false, etiquetas: {}, sel: null,
+const S = Object.assign({estiloMomento: 'tarjeta', tema: 'oscuro', foco: 0, paso: 0, series: [], plantilla: 'historia', titulo: '', tituloAuto: true, formato: 'horizontal', camara: 'documental', vivo: false, etiquetas: {}, sel: null,
   bib: null, q: '', cat: '', plantillas: [], camaras: [], analisis: null, spec: null, plano: null, informe: null, notas: [], error: '', generando: false, modo: 'guiado', render: null, subida: null}, cargarGuardado() ?? {});
 S.tituloEditado = !!S.tituloEditado && !!S.titulo;
 
@@ -199,13 +199,15 @@ function paso3() {
     <p class="ayuda">Define cómo se mueve la cámara y qué tan rápido se cuenta. Puedes cambiarlo y ver el resultado a la derecha al instante.</p>
     <div class="rejilla" role="radiogroup" aria-label="Estilos de cámara">${S.camaras.map((c) => `<button type="button" class="carta" role="radio" aria-checked="${S.camara === c.id}" data-id="${c.id}"><span class="marca">${ic('check')}</span><span class="tit">${esc(c.nombre)}</span><span class="sub">${esc(c.descripcion)}</span><span class="meta">Trazo ${c.dibujo} s${c.mov ? ` · zoom ${c.mov} s` : ' · sin zoom'}</span></button>`).join('')}</div>
     ${S.plantilla !== 'historia' ? `<div class="aviso">${ic('info')}<div>Este estilo (${esc((S.plantillas.find((p) => p.id === S.plantilla) ?? {}).nombre ?? '')}) usa su propia cámara fija; el ritmo cambia solo en «La historia de una cifra».</div></div>` : ''}
-    ${S.plantilla === 'historia' ? `<h3>Cómo se marcan los momentos</h3><div class="seg" role="group" aria-label="Estilo de los momentos"><button type="button" data-em="tarjeta" aria-pressed="${S.estiloMomento === 'tarjeta'}">Tarjeta: año · qué pasó · dato</button><button type="button" data-em="barra" aria-pressed="${S.estiloMomento === 'barra'}">Solo barra con el año (la voz cuenta el resto)</button></div>` : ''}
+    ${S.plantilla === 'historia' ? `<h3>Cómo se marcan los momentos</h3><div class="seg" role="group" aria-label="Estilo de los momentos"><button type="button" data-em="tarjeta" aria-pressed="${S.estiloMomento === 'tarjeta'}">Tarjeta: año · qué pasó · dato</button><button type="button" data-em="barra" aria-pressed="${S.estiloMomento === 'barra'}">Solo barra con el año (la voz cuenta el resto)</button><button type="button" data-em="pildora" aria-pressed="${S.estiloMomento === 'pildora'}">Píldora amarilla con la frase</button><button type="button" data-em="circulo" aria-pressed="${S.estiloMomento === 'circulo'}">Círculo sobre el dato</button></div>` : ''}
+    <h3>Aspecto</h3><div class="seg" role="group" aria-label="Aspecto de color"><button type="button" data-tema="oscuro" aria-pressed="${S.tema === 'oscuro'}">MacroWise (oscuro cálido)</button><button type="button" data-tema="harris" aria-pressed="${S.tema === 'harris'}">Negro y rosa-rojo</button><button type="button" data-tema="carbon" aria-pressed="${S.tema === 'carbon'}">Gris carbón y teal</button></div>
     <h3>¿Mantenerlo siempre al día?</h3>
     <label class="conmuta"><input type="checkbox" id="vivo" ${S.vivo ? 'checked' : ''}><span><strong>Actualizar el video solo cuando la fuente publique datos nuevos</strong><br><span class="ayuda" style="margin:0">Los datos se actualizan siempre. Con esto, además, se genera una versión nueva del video (v2, v3…) cada vez que haya un dato nuevo, como mucho cada 6 horas. Requiere que el actualizador esté encendido.</span></span></label>
     ${S.plano ? `<p class="ayuda" style="margin-top:16px">Duración de esta versión: <strong>${S.plano.duracion.toFixed(1)} segundos</strong>.</p>` : ''}
     ${barraNav(true, true, 'Siguiente: revisar y exportar')}`;
   $('#paso').querySelectorAll('.carta').forEach((b) => (b.onclick = () => { S.camara = b.dataset.id; guardar(); paso3(); regenerar(); }));
   $('#paso').querySelectorAll('[data-em]').forEach((b) => (b.onclick = () => { S.estiloMomento = b.dataset.em; guardar(); paso3(); regenerar(); }));
+  $('#paso').querySelectorAll('[data-tema]').forEach((b) => (b.onclick = () => { S.tema = b.dataset.tema; guardar(); paso3(); regenerar(); }));
   $('#vivo').onchange = (e) => { S.vivo = e.target.checked; guardar(); regenerar(); };
   enlazarNav(2);
 }
@@ -269,7 +271,7 @@ async function regenerar() {
   try {
     if (S.plantilla === 'historia' && S.series.length === 1 && !S.analisis) { S.analisis = await post('/api/analizar', {series: S.series.map(limpio)}); if (S.analisis.ok && !S.sel) S.sel = Object.fromEntries(S.analisis.momentos.map((m) => [m.id, m.seleccionado])); }
     const momentos = (S.analisis?.momentos ?? []).filter((m) => S.sel?.[m.id]).map((m) => ({tipo: m.tipo, ancla: m.ancla, etiqueta: (S.etiquetas[m.id] || m.etiqueta).slice(0, 30)}));
-    const r = await post('/api/generar', {plantilla: S.plantilla, series: S.series.map(limpio), momentos, camara: S.camara, formato: S.formato, titulo: S.tituloEditado ? S.titulo : '', foco: S.foco, estiloMomento: S.estiloMomento, vivo: S.vivo ? {render: 'final', alfa: true, minEntreRendersMin: 360} : null});
+    const r = await post('/api/generar', {plantilla: S.plantilla, series: S.series.map(limpio), momentos, camara: S.camara, formato: S.formato, titulo: S.tituloEditado ? S.titulo : '', foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, vivo: S.vivo ? {render: 'final', alfa: true, minEntreRendersMin: 360} : null});
     if (seq !== genSeq) return;
     Object.assign(S, {spec: r.spec, plano: r.plano ?? null, informe: r.informe, notas: r.notas ?? []});
     if (!S.tituloEditado) S.titulo = r.spec.titulo ?? '';

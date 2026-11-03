@@ -152,3 +152,80 @@ Fuente de lo que «ya tenemos»: `README.md`, `docs/CAPAS.md`, `servidor/guia-de
 - Boone Loves Video (curso, freelancer de mapas para Harris): https://boonelovesvideo.teachable.com/
 - Glasp, resumen automático de «How to Create Animated Maps with AfterEffects» (rumor, no verificado): https://glasp.co/youtube/GsojLuJpe_0
 - Repo del motor: `README.md`, `docs/CAPAS.md`, `servidor/guia-de-direccion.md`
+
+---
+
+## 7. Segunda ronda (2026-11-03): 8 videos con gráficas protagonistas
+
+Método: búsqueda con `yt-dlp ytsearch` (WebSearch no devolvió videos útiles), descarga de solo video a 480p, hoja de contactos (1 fotograma/10 s) y, sobre los tramos con gráfica, fotogramas a 4 fps (12 s) o 2 fps (24 s) con marca de tiempo. Frames y videos en carpeta temporal fuera del repo. Cortes = detección de escena (umbral 0,3).
+
+### 7.1 Videos revisados
+
+| # | Canal | Título (URL) | Duración | Gráficas (minuto aprox.) | Uso |
+|---|---|---|---|---|---|
+| 1 | Johnny Harris | Why Recessions Happen (https://www.youtube.com/watch?v=EhyOQ0QMINg) | 15:43 | 0:50-1:10 puntos y línea de PIB; 3:20-4:30 PIB Inglaterra; 5:00-5:40 PIB y barras USA; 7:20-7:50 línea + etiqueta «Recession»; ≈13:00 desempleo | **Tramos 0:52-1:04 (4 fps) y 5:00-5:24 (2 fps)** |
+| 2 | Caspian Report | How France is becoming a "third-world" economy (https://www.youtube.com/watch?v=mC5NdpSMDks) | 18:23 | ≈15 gráficas (bonos ≈11:35, partidos ≈10:00, déficit ≈14:00, deuda/PIB ≈15:00) | **Tramo 11:35-11:59 (2 fps)** |
+| 3 | Caspian Report | Why global debt keeps growing (https://www.youtube.com/watch?v=EzCiEv1IqiA) | 15:43 | Barras de deuda mundial ≈0:30; intereses ≈9:00 | Solo hoja de contactos; el tramo elegido cayó en un mapa |
+| 4 | Caspian Report | US National Debt, Part 1 (https://www.youtube.com/watch?v=WWCoDORgs3A) | 11:36 | Pastel y barras (2018) | Solo hoja de contactos (estilo antiguo) |
+| 5 | Johnny Harris | INFLATION, Explained in 6 Minutes (https://www.youtube.com/watch?v=zIbNJCSCEjk) | 8:44 | Barras «movie ticket prices» ≈1:50 | Solo hoja de contactos (2021, collage) |
+| 6 | Johnny Harris | Our New Global Economy (https://www.youtube.com/watch?v=pQCJmxEOzhs) | 21:16 | Capítulo «Global Trade Explodes» 3:48 | Descargado, **no analizado** |
+| 7 | Caspian Report | How Putinomics works (https://www.youtube.com/watch?v=nhu3n8vkJSg) | 12:29 | — | Descargado, solo conteo de cortes |
+| 8 | Caspian Report | UK "third-world" economy (https://www.youtube.com/watch?v=OTWDzMjgsEY) | 15:36 | — | Solo localizado |
+
+Candidatos sin tocar: 1955 vs 2025 (https://www.youtube.com/watch?v=J4qqIJ312zI), Why most of our money isn't real (https://www.youtube.com/watch?v=E_VKZ6dzauo), Caspian US National Debt Parte 2 y 3.
+
+### 7.2 Hallazgos
+
+**Johnny Harris (estilo actual; medido en 2 tramos del video 1)**
+1. **Fondo casi negro, línea rosa-roja.** Histograma de color: fondo ≈ #101010-#181818; línea y puntos rosa-rojo (≈ #C05040 en los píxeles más saturados). Difiere del fondo crema de la sección 1 (otro video). Confianza: **alta** (colores), media (que sea la paleta de toda la serie).
+2. **La línea se construye punto a punto.** Tramo 0:52-1:04: cada punto entra rebotando desde la derecha, aterriza y se conecta con segmento en ≈0,5 s; cadencia ≈1-1,5 s por punto. En «GDP USA» (≈5:08-5:12) la línea se dibuja de izquierda a derecha en ≈3,5 s mientras la cámara reescala el eje. Confianza: **alta** (4 fps, ±0,25 s).
+3. **Cámara viva todo el rato.** Zoom/pan continuo que reencuadra la línea mientras crece (el eje Y se reescala ≈3 veces en 12 s); luego punch-in a las barras de recesión en ≈4 s (barras finas a bandas anchas, ≈5:16-5:22). Confianza: **alta**.
+4. **Etiqueta = píldora amarilla.** Nace como punto amarillo, se alarga a píldora en ≈0,5 s y el texto («GDP», «Recession», «GDP USA») se escribe letra a letra en ≈0,75 s; serif negrita sobre amarillo; se queda fija. Confianza: **alta**.
+5. **Recesiones = barras verticales naranja translúcidas** que aparecen escalonadas en ≈1 s sobre la línea; después la cámara las ensancha. Un **círculo amarillo** se dibuja en arco (≈0,5-1 s) alrededor del bache concreto. Confianza: **alta**.
+6. **Línea base discontinua** blanca que entra al inicio y acompaña el reencuadre; **caja roja** pequeña con texto monoespaciado, sin cifra grande. Confianza: media.
+7. **Ritmo.** Cortes: Recessions 214 en 942 s = **1 cada ≈4,4 s**; Inflation (2021) 150 en 523 s = ≈3,5 s. Las gráficas duran 6-25 s continuas: el movimiento es de cámara dentro de la gráfica, no corte. Confianza: media (umbral 0,3).
+8. **El estilo evolucionó.** 2021: collage crema/salmón con recortes y etiquetas «$1350»; casi sin gráficas de datos. 2025: gráficas de datos oscuras, línea roja y píldoras. No es una sola estética. Confianza: media (2 puntos en el tiempo).
+
+**Caspian Report (France y Global debt)**
+9. **Fondo gris oscuro (≈ #404040-#505050) con viñeta; series teal y gris; ejes en blanco diminuto.** No es el navy con puntos de la sección 1. El video de deuda global usa **papel arrugado claro** con teal/azul. Confianza: **alta** (hoja de contactos de 2 videos).
+10. **Gráfica quieta ≈7 s antes de actuar.** Bonos a 10 años (≈11:35): 7 s de gráfica completa con 4-5 países; luego las series secundarias bajan a gris tenue en ≈1,5 s (técnica de foco); a ≈11,5 s del tramo se dibuja una **elipse amarilla** en el bache de 2008-2012 (≈1 s) y a ≈12-13 s se escribe «Eurozone sovereign debt crisis» al lado; la anotación se queda ≈10 s. Confianza: **alta**.
+11. **Tipos de gráfica repetidos:** línea con banderas al final de cada serie, barras horizontales de ranking, donut/semi-donut grande, rejilla de pictogramas (retirados vs. población activa, 1997/2025/2040), mapa 3D con tarjetas negras de datos. Confianza: **alta**.
+12. **Artículos como prueba con la frase resaltada en verde lima** (no azul/amarillo). Confianza: media.
+13. **Cortes:** France 181 en 1103 s ≈ 6,1 s; Debt P1 (2018) 38 en 696 s ≈ 18 s (estilo antiguo, plano largo); Global debt 278 en 943 s ≈ 3,4 s (cuenta fundidos de papel, poco fiable). Confianza: baja.
+14. **Marca fija** (logo de torre blanco) abajo-izquierda en todo el video. Confianza: alta.
+
+### 7.3 Correcciones a la sección 1
+- «Navy con puntos» (Caspian) **no es general**: en 2025-26 usa gris carbón o papel claro, con teal como color de dato. Confianza: media-alta.
+- El amarillo de Harris sigue siendo el color del «momento», pero en Recessions se manifiesta como píldora y círculo en arco, no solo como barra vertical. Confianza: media.
+
+### 7.4 Brechas nuevas para el motor
+1. **Construcción punto a punto** (`modo:"puntos"`): cada punto entra con rebote corto y conecta la línea en ≈0,5 s; cadencia 1-1,5 s por punto configurable.
+2. **Cámara que sigue el extremo de la línea** con eje auto-reescalado (`camara:"seguir"`), además del `camara:[{t,x,y}]` manual.
+3. **Píldora de etiqueta**: punto, píldora, texto escrito letra a letra (≈1,25 s), color «momento» con serif negrita.
+4. **Círculo en arco** dibujado sobre un bache o pico (≈0,7 s) con anotación que se escribe al lado.
+5. **Bandas de recesión/periodo** translúcidas que aparecen escalonadas en ≈1 s, más zoom que las ensancha.
+6. **Foco temporal medido:** ≈7 s de plano general y luego las series secundarias a gris en ≈1,5 s (concreta el `foco` de la sección 3).
+7. **Línea base discontinua** que acompaña el reencuadre.
+8. **Banderas/etiquetas al final de cada serie** (cabeza de línea con nombre o icono).
+9. **Tres temas nuevos:** casi negro + línea rosa-roja, gris carbón + teal, y papel claro (además del oscuro actual).
+10. **Ranking horizontal y donut/semi-donut** como tipos nativos; pictogramas por periodo.
+11. **Marca fija con logo** en esquina (confirmada en Caspian).
+12. **Guion de escena de gráfica:** 6-25 s continuos sin cortes con 2-3 acciones encadenadas (línea, etiqueta, círculo), una acción cada 4-6 s.
+
+### 7.5 Qué NO pude verificar
+- **Sonido, música y whoosh:** no analizados (videos descargados sin audio).
+- **Transcripción:** no usé la skill `watch` ni extraje subtítulos; los minutos de gráficas salen de la hoja de contactos (±10 s) y de los capítulos de YouTube.
+- **Videos 3-8:** solo hoja de contactos (3, 4, 5) o ni eso (6, 7, 8); el tramo de «Global debt» cayó en un mapa, así que no medí sus barras.
+- **Easing exacto y duración del rebote del punto:** a 4 fps solo hay ±0,25 s.
+- **Fuente tipográfica:** sin identificar (la píldora parece serif tipo Playfair o DM Serif; sin comprobar).
+- Resolución 480p; colores por histograma de 1 fotograma, no muestreo exhaustivo.
+- Si es el estilo estable de cada canal o solo de estos videos.
+
+### 7.6 Qué ya está implementado (2026-11-03)
+Lo medido en 7.2 se aplicó al motor. Cada punto sale de una brecha de 7.4:
+- **Cámara que sigue la línea** (brecha 2): `"camara": "seguir"` en una capa `linea`. Ventana que acompaña la punta, eje Y reescalado (envolvente de unos instantes alrededor, así la línea nunca se sale), y al terminar se abre al plano completo. En el estudio: «Sigue la línea (estilo Johnny Harris)».
+- **Píldora de etiqueta** (brecha 3): `"estilo": "pildora"` en una `llamada`. Punto → píldora amarilla → frase escrita letra a letra (≈1,25 s), serif negrita. Va anclada a una fila de datos como todas las llamadas.
+- **Círculo en arco** (brecha 4): `"estilo": "circulo"`. Elipse dibujada en ≈0,7 s sobre el dato y anotación escrita al lado.
+- **Bandas de periodo** (brecha 5): `"estilo": "banda"` en una `zona` (relleno más visible, sin guías discontinuas).
+- **Temas** (brecha 9, parcial): `"tema": "oscuro" | "harris" | "carbon"` en la spec. `harris` = casi negro + línea rosa-roja + amarillo de momento; `carbon` = gris carbón + teal. **Sigue pendiente el tema «papel claro»** (cambia el color de todos los textos).
+- **Pendientes de 7.4:** modo punto a punto (1), foco temporal medido (6), línea base discontinua (7), banderas al final de cada serie (8), ranking horizontal/donut/pictogramas (10), marca fija con logo (11), guion de 6-25 s por gráfica (12).

@@ -79,7 +79,7 @@ async function api(req, res) {
         return true;
       }
       case '/api/biblioteca': {
-        const cat = leerCatalogo(), qq = (q.get('q') ?? '').toLowerCase().split(/s+/).filter(Boolean), c = q.get('categoria');
+        const cat = leerCatalogo(), qq = (q.get('q') ?? '').toLowerCase().split(/\s+/).filter(Boolean), c = q.get('categoria');
         const lista = cat.filter((e) => (!c || e.categoria === c) && qq.every((p) => `${e.id} ${e.nombre} ${e.categoria} ${(e.etiquetas ?? []).join(' ')}`.toLowerCase().includes(p))).slice(0, 60).map(ficha);
         const cats = [...cat.reduce((m, e) => m.set(e.categoria, (m.get(e.categoria) ?? 0) + 1), new Map())].map(([nombre, n]) => ({nombre, n})).sort((a, b) => b.n - a.n);
         return json(res, {series: lista, categorias: cats, total: cat.length});

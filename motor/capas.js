@@ -17,7 +17,7 @@ function caja(env, capa, def) {
   const c = capa.caja ?? def;
   return {x: c[0] * env.W, y: c[1] * env.H, w: c[2] * env.W, h: c[3] * env.H};
 }
-const CAJA_DEF = (env) => (env.H > env.W ? [0.08, 0.27, 0.82, 0.5] : [0.065, 0.24, 0.87, 0.6]);
+const CAJA_DEF = (env) => (env.H > env.W ? [0.14, 0.33, 0.78, 0.46] : [0.065, 0.24, 0.87, 0.6]);   // vertical: margen izquierdo para que las cifras del eje Y no salgan del cuadro
 const aparece = (env, capa, t0) => prog(env.t, (capa.aparece ?? t0 - 0.5), (capa.aparece ?? t0 - 0.5) + 0.5, ease.out3);
 
 function texto(ctx, s, x, y, font, color, align = 'left', base = 'alphabetic', alpha = 1) {
@@ -54,7 +54,24 @@ function estadosCamara(capa, tab, idxs) {
     return {t: k.t, mov: k.mov ?? 1.1, x, y};
   }));
 }
+// Cámara «seguir» (Johnny Harris): una ventana que acompaña la cabeza de la línea y reescala el eje Y a lo que se ve;
+// al terminar de dibujar se abre al plano completo. Pura función de t: el eje Y promedia 5 instantes recientes para no dar saltos.
+function ventanaSeguir(capa, tab, idxs, t) {
+  const dom = dominioAuto(capa, tab, idxs), [t0, t1] = capa.t ?? [0.5, 6], span = (dom.x[1] - dom.x[0]) * (capa.ventana ?? 0.28);
+  const en = (tt) => {
+    const xh = lerp(dom.x[0], dom.x[1], prog(tt, t0, t1, ease.io2));
+    const a = Math.max(dom.x[0], xh - span * 0.85), b = Math.min(dom.x[1], a + span);
+    return {x: [a, b], xh};
+  };
+  const w = en(Math.min(t, t1)), ys = [];
+  // envolvente de unos instantes alrededor (algo hacia adelante): contiene siempre la cabeza de la línea y cambia suavemente
+  for (const d of [-0.3, 0, 0.3, 0.6, 0.9]) { const q = en(clamp(t + d, t0, t1)); const y = ajustarY(tab, idxs, [q.x[0], Math.max(q.x[0] + span * 0.1, q.xh)]); if (y) ys.push(y); }
+  const y = ys.length ? [Math.min(...ys.map((v) => v[0])), Math.max(...ys.map((v) => v[1]))] : dom.y;
+  const abre = ease.io2(clamp((t - (t1 + 0.3)) / 1.3));
+  return abre > 0 ? {x: mezclaRango(w.x, dom.x, abre), y: mezclaRango(y, dom.y, abre)} : {x: w.x, y};
+}
 function camaraEn(capa, tab, idxs, t) {
+  if (capa.camara === 'seguir') return ventanaSeguir(capa, tab, idxs, t);
   const E = estadosCamara(capa, tab, idxs);
   let cur = E[0];
   let x = cur.x, y = cur.y;
@@ -411,9 +428,13 @@ function zona(env, capa) {
   if (xb - xa < 2) return;
   const w = (xb - xa);
   ctx.save(); ctx.globalAlpha *= V.ap;
+  if (capa.estilo === 'banda') {   // banda de recesión/periodo: relleno más visible, sin guías discontinuas; entra de izquierda a derecha
+    ctx.fillStyle = rgba(color, 0.26 * g); ctx.fillRect(xa, B.y, w * Math.min(1, g * 1.2), B.h);
+  } else {
   ctx.fillStyle = rgba(color, 0.13 * g); ctx.fillRect(xa, B.y, w * Math.min(1, g * 1.2), B.h);
   ctx.strokeStyle = rgba(color, 0.7 * g); ctx.lineWidth = 2 * u; ctx.setLineDash([10 * u, 8 * u]);
   ctx.beginPath(); ctx.moveTo(xa, B.y); ctx.lineTo(xa, B.y + B.h); ctx.moveTo(xb, B.y); ctx.lineTo(xb, B.y + B.h); ctx.stroke();
+  }
   if (capa.texto) texto(ctx, capa.texto.toUpperCase(), xa + w / 2, B.y + 30 * u, fnt(700, 21 * u, true), color, 'center', 'alphabetic', g);
   ctx.restore();
 }
@@ -524,6 +545,46 @@ function llamada(env, capa) {
       ctx.globalAlpha *= al; ctx.fillStyle = PALETA.tarjeta; ctx.fillRect(x0, y0, w, 56 * u); ctx.fillStyle = color; ctx.fillRect(x0, y0, w, 5 * u);
       texto(ctx, capa.anioTxt, x0 + w / 2, y0 + 44 * u, fnt(800, 40 * u, true), PALETA.blanco, 'center');
       reg(env, 'tarjeta', [x0, y0, x0 + w, y0 + 56 * u], capa.id);
+    }
+    ctx.restore();
+    return;
+  }
+  // estilos «píldora» y «círculo» (Johnny Harris / Caspian): el dato se marca con un punto que se alarga a píldora con el
+  // texto escrito letra a letra, o con un círculo dibujado en arco y la anotación escrita al lado. Sin tarjeta de varias líneas.
+  if (capa.estilo === 'pildora' || capa.estilo === 'circulo') {
+    const pil = capa.estilo === 'pildora', col = pil || !capa.color ? colorDe(capa.color ?? 'amarillo') : color;
+    const msg = String(capa.texto ?? capa.anioTxt ?? ''), serif = `700 ${Math.round(30 * u * k)}px "DM Serif Display", Georgia, "Times New Roman", serif`;
+    ctx.font = serif;
+    const tw = ctx.measureText(msg).width, px_ = 22 * u * k, cw = tw + px_ * 2, ch = 56 * u * k;
+    const off = (capa._off ??= colocar(env, capa, pil ? cw : tw + 16 * u, pil ? ch : 44 * u * k, k));
+    let cx = P[0] + off[0], cy = P[1] + off[1];
+    const lw = pil ? cw : tw + 16 * u, lh = pil ? ch : 44 * u * k, lim = k < 1 ? {x0: B.x, x1: B.x + B.w, y0: B.y, y1: B.y + B.h + 4 * u} : {x0: 28 * u, x1: W - 28 * u, y0: 28 * u, y1: H - 70 * u};
+    cx = clamp(cx, lim.x0, Math.max(lim.x0, lim.x1 - lw)); cy = clamp(cy, lim.y0, Math.max(lim.y0, lim.y1 - lh));
+    ctx.save(); ctx.globalAlpha *= fin * V.ap;
+    const rad = (capa.radio ?? 44) * u * k;
+    if (pil) {
+      const dot = ease.outBack(clamp(tt / 0.3)), alarga = ease.out3(clamp((tt - 0.3) / 0.5));
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(P[0], P[1], 9 * u * dot, 0, 7); ctx.fill();
+      const w = lerp(ch, cw, alarga), izq = P[0] < cx + cw / 2, x0 = izq ? cx : cx + cw - w;
+      if (alarga > 0) {
+        ctx.strokeStyle = col; ctx.lineWidth = 2.5 * u; ctx.beginPath(); ctx.moveTo(P[0], P[1]);
+        ctx.lineTo(lerp(P[0], clamp(P[0], cx, cx + cw), alarga), lerp(P[1], clamp(P[1], cy, cy + ch), alarga)); ctx.stroke();
+        ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(x0, cy, w, ch, ch / 2); ctx.fill();
+        const tp = clamp((tt - 0.8) / 1.25);
+        if (tp > 0) texto(ctx, msg.slice(0, Math.ceil(msg.length * tp)), cx + px_, cy + ch * 0.68, serif, '#161412');
+        if (alarga > 0.3) reg(env, 'tarjeta', [cx, cy, cx + cw, cy + ch], capa.id);
+      }
+    } else {
+      const arco = ease.io2(clamp(tt / 0.7)), a0 = -Math.PI / 2 - 0.35;
+      ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 12 * u; ctx.strokeStyle = col; ctx.lineWidth = 4 * u; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.ellipse(P[0], P[1], rad * 1.25, rad, 0, a0, a0 + Math.PI * 2.15 * arco); ctx.stroke(); ctx.restore();
+      const tp = clamp((tt - 0.7) / 1.0);
+      if (tp > 0) {
+        ctx.save(); ctx.font = serif; ctx.lineJoin = 'round'; ctx.lineWidth = 6 * u; ctx.strokeStyle = rgba(PALETA.fondo, 0.9);
+        const s = msg.slice(0, Math.ceil(msg.length * tp)); ctx.strokeText(s, cx + 8 * u, cy + lh * 0.72); ctx.restore();
+        texto(ctx, s, cx + 8 * u, cy + lh * 0.72, serif, col);
+        reg(env, 'tarjeta', [cx, cy, cx + lw, cy + lh], capa.id);
+      }
     }
     ctx.restore();
     return;

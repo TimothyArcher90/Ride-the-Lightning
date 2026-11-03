@@ -39,6 +39,18 @@ const mixta = await pieza('comparar con frecuencias distintas (diaria + mensual)
 ok(mixta.notas.some((n) => /frecuencias distintas/.test(n)), 'avisa que llevó las series a una frecuencia común, con el método');
 ok(mixta.informe.metodos.some((m) => /BASE 100/.test(m)), 'declara el índice base 100 en el informe');
 
+console.log('\n2b) Estilo Harris/Caspian: cámara «seguir», píldora, círculo y temas');
+for (const id of ['fed_balance', 'cm_btc_precio']) {
+  const a = analizar(bib(id)), mom = a.momentos.filter((m) => m.seleccionado).map((m) => ({tipo: m.tipo, ancla: m.ancla, etiqueta: m.etiqueta}));
+  for (const estiloMomento of ['pildora', 'circulo']) for (const tema of ['oscuro', 'harris', 'carbon']) {
+    const r = await pieza(`${id} · seguir · ${estiloMomento} · tema ${tema}`, {plantilla: 'historia', series: bib(id), momentos: mom, camara: 'seguir', estiloMomento, tema}, {paso: 0.4});
+    ok(r.spec.capas.find((c) => c.tipo === 'linea').camara === 'seguir', '   la línea usa la cámara que sigue la punta');
+  }
+}
+await pieza('historia vertical con píldora (dinámico)', {plantilla: 'historia', series: bib('fed_balance'), momentos: analizar(bib('fed_balance')).momentos.filter((m) => m.seleccionado).map((m) => ({tipo: m.tipo, ancla: m.ancla, etiqueta: m.etiqueta})), camara: 'dinamico', formato: 'vertical', estiloMomento: 'pildora', tema: 'harris'}, {paso: 0.4});
+let errT = ''; try { const r = generar({plantilla: 'historia', series: bib('fed_balance'), momentos: [], tema: 'inventado'}); if (r.informe.errores.length) errT = r.informe.errores[0]; } catch (e) { errT = e.message; }
+ok(/tema/.test(errT), 'un tema inexistente se rechaza con mensaje claro');
+
 console.log('\n3) Reglas de seguridad de las plantillas');
 let err = ''; try { generar({plantilla: 'carrera', series: bib('bm_gold')}); } catch (e) { err = e.message; }
 ok(/necesita/.test(err), 'una plantilla rechaza una cantidad de datos que no le sirve, con mensaje claro');

@@ -28,11 +28,31 @@ export const PALETA = {
 /** Nombres de color admitidos en las specs -> hex. */
 export const COLOR = {
   oro: PALETA.oro, teal: PALETA.teal, purpura: '#A24FB0', piedra: PALETA.piedra, blanco: PALETA.blanco,
+  rosa: '#E4584A', amarillo: '#F2C230',
 };
+/** Orden en que se asignan colores a las series que no declaran uno, y color del resplandor de fondo. Lo cambia el tema. */
+export const TEMA = {nombre: 'oscuro', orden: ['oro', 'teal', 'purpura', 'piedra'], brillo: '#C9A84C'};
+const TEMAS = {
+  // marca MacroWise (por defecto)
+  oscuro: {paleta: {}, orden: ['oro', 'teal', 'purpura', 'piedra'], brillo: '#C9A84C'},
+  // casi negro + línea rosa-roja + amarillo de «momento» (referencia: Johnny Harris 2025)
+  harris: {paleta: {fondo: '#121212', tarjeta: '#1E1E1E', profundo: '#050505'}, orden: ['rosa', 'teal', 'amarillo', 'piedra'], brillo: '#E4584A', color: {oro: '#E4584A'}},   // aquí «oro» (el color de la serie principal en las plantillas) es el rosa-rojo; el amarillo de momento es «amarillo»
+  // gris carbón + teal como color de dato (referencia: Caspian Report 2025)
+  carbon: {paleta: {fondo: '#3B3C3D', tarjeta: '#2C2D2E', profundo: '#18191A'}, orden: ['teal', 'piedra', 'oro', 'purpura'], brillo: '#50B5A2'},
+};
+export const TEMAS_DISPONIBLES = Object.keys(TEMAS);
+const BASE = {paleta: {...PALETA}, color: {...COLOR}};
+/** Aplica un tema (colores de fondo, orden de series, resplandor). Se llama al construir cada escena. */
+export function aplicarTema(nombre = 'oscuro') {
+  const t = TEMAS[nombre] ?? TEMAS.oscuro;
+  Object.assign(PALETA, BASE.paleta, t.paleta);
+  Object.assign(COLOR, BASE.color, t.color ?? {});
+  TEMA.nombre = TEMAS[nombre] ? nombre : 'oscuro'; TEMA.orden = t.orden; TEMA.brillo = t.brillo;
+}
 export const colorDe = (c, i = 0) => {
   if (c && COLOR[c]) return COLOR[c];
   if (c && /^#[0-9a-f]{6}$/i.test(c)) return c;
-  return [COLOR.oro, COLOR.teal, COLOR.purpura, COLOR.piedra][i % 4];
+  return COLOR[TEMA.orden[i % TEMA.orden.length]];
 };
 const h2r = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 export const mezcla = (a, b, k) => {

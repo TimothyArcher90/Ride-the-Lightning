@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {leerTabla, columnaNumeros, columnaFechas, indiceColumna} from './datos.mjs';
-import {fmtNum, fmtSigno, fmtPct, fmtFecha, colorDe, utc} from '../motor/nucleo.js';
+import {fmtNum, fmtSigno, fmtPct, fmtFecha, colorDe, utc, TEMAS_DISPONIBLES} from '../motor/nucleo.js';
 
 export const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TIPOS_GRAFICA = ['linea', 'barras', 'carrera', 'dispersion', 'calor'];
@@ -242,7 +242,10 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
       const tab = tablas[capa.datos];
       if (!tab) { E(`${donde}: "datos":"${capa.datos}" no existe o no compiló.`); return; }
       (capa.series ?? []).forEach((s) => { if (!tab.series[s]) E(`${donde}: serie ${s} no existe (hay ${tab.series.length}).`); });
-      if (capa.camara) {
+      if (capa.camara === 'seguir') {
+        if (capa.tipo !== 'linea') E(`${donde}: la cámara "seguir" solo existe en gráficas de línea.`);
+        else if (tab.tipoX !== 'fecha' && tab.tipoX !== 'num') E(`${donde}: la cámara requiere eje X numérico o de fechas.`);
+      } else if (capa.camara) {
         if (tab.tipoX !== 'fecha' && tab.tipoX !== 'num' && capa.tipo === 'linea') E(`${donde}: la cámara requiere eje X numérico o de fechas.`);
         capa.camara = capa.camara.map((k) => ({...k, x: Array.isArray(k.x) ? k.x.map((v) => (tab.tipoX === 'fecha' ? fechaSpec(v) : +v)) : 'auto'}));
       }
@@ -334,6 +337,7 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
   }
   if (spec.fondo?.imagen) { try { if (!fs.existsSync(rutaSegura(spec.fondo.imagen, raiz))) E(`fondo: no existe ${spec.fondo.imagen}`); else imagenes.add(spec.fondo.imagen); } catch (e) { E(`fondo: ${e.message}`); } }
 
+  if (spec.tema && !TEMAS_DISPONIBLES.includes(spec.tema)) E(`tema "${spec.tema}" no existe. Disponibles: ${TEMAS_DISPONIBLES.join(', ')}.`);
   // sello de fuente automático (todas las fuentes distintas)
   if (spec.sello !== false && informe.datos.length) {
     const f = [...new Set(informe.datos.map((d) => `${d.fuente.corto ?? d.fuente.nombre}${d.fuente.obtenido ? ` (obtenido ${d.fuente.obtenido})` : ''}`))].join(' · ');
@@ -341,7 +345,7 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
   }
 
   const plano = {
-    version: 1, titulo: spec.titulo ?? '', ancho, alto, fps, duracion, formato, fondo: spec.fondo ?? {},
+    version: 1, titulo: spec.titulo ?? '', ancho, alto, fps, duracion, formato, fondo: spec.fondo ?? {}, tema: spec.tema ?? 'oscuro',
     tablas: Object.fromEntries(Object.entries(tablas).map(([k, t]) => [k, {tipoX: t.tipoX, x: t.x, series: t.series.map((s) => ({nombre: s.nombre, y: s.y, color: colorDe(s.color, 0) && s.color, fmt: s.fmt}))}])),
     capas, imagenes: [...imagenes],
   };
