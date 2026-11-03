@@ -3,6 +3,6 @@ REM Arranca Ride the Lightning: se actualiza, abre el estudio en el navegador y 
 REM Deja esta ventana abierta mientras lo usas. Para apagarlo, cierrala.
 cd /d "%~dp0"
 title Ride the Lightning
-node servidorctualizar.mjs
-node servidorstudio.mjs
+node servidor\actualizar.mjs
+node servidor\estudio.mjs
 if errorlevel 1 pause
