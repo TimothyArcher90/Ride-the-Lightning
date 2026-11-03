@@ -38,9 +38,9 @@ La escala `log` es obligatoria para series de varios órdenes de magnitud (Bitco
 ## Anotaciones (se anclan a una gráfica con `capa:"id"`; la gráfica va antes)
 | tipo | campos |
 |---|---|
-| `llamada` | `ancla:{fecha\|x\|max\|min\|ultimo\|primero\|indice, rango?}`, `serie`, `texto`, `detalle`, `lado:"arriba\|abajo"`, `dx`, `dy`, `color`, `t:[in,out]` |
+| `llamada` | `ancla:{fecha\|x\|max\|min\|ultimo\|primero\|indice, rango?}`, `serie`, `texto` (3-4 palabras), `color`, `t:[in,out]`. **El año y el dato salen solos de la fila anclada.** Opcionales: `lado` (solo preferencia: el motor busca el primer hueco libre), `sinValor`, `detalle` (desaconsejado: añade una línea) |
 | `zona` | `desde`, `hasta` (fechas), `texto`, `color`, `t` |
-| `contador` | `serie`, `etiqueta`, `pos:[fx,fy]`, `formatoX` — sigue la cabeza de la línea |
+| `contador` | `serie`, `modo:"completo|fecha|compacto"`, `pos:[fx,fy]`, `alinea`. Completo = año grande + dato + unidad; `fecha` = solo el año; `compacto` = nombre + dato + unidad (paneles). Sigue la cabeza y se aparta mientras hay una tarjeta |
 
 Marcadores en `texto`/`detalle`/`sub`: `{valor}` `{fecha[:dia\|mes\|anio]}` `{cambio:N}` `{pct:N}` `{max}` `{min}` `{desde[:fmt]}` `{hasta[:fmt]}` `{n}` `{serie}`. `N` = número de filas hacia atrás (en datos semanales, 52 ≈ un año: el informe indica la fila base).
 

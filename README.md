@@ -5,6 +5,8 @@ Estudio **local** para animar gráficas financieras y de datos con el lenguaje v
 Nace de [Electric Eye](https://github.com/TimothyArcher90/Electric_Eye) (mapas animados): reutiliza su arquitectura probada —render determinista en un navegador sin ventana, control por MCP, revisión por fotogramas— y cambia el motor de dibujo por uno de gráficas.
 
 ## Instalar y abrir (Windows)
+Después de la primera vez: **doble clic en «Ride the Lightning» en el escritorio** (junto a Electric Eye). Mismo proceso: se actualiza solo desde GitHub, abre el estudio en el navegador y deja el actualizador de datos en marcha.
+
 1. Instala [Node.js](https://nodejs.org) 22+ y [FFmpeg](https://ffmpeg.org) (debe estar en el PATH). Necesitas Edge o Chrome.
 2. Doble clic en `Instalar Ride the Lightning.bat` (una sola vez).
 3. Doble clic en `Iniciar Ride the Lightning.bat` → se abre el estudio en `http://127.0.0.1:5180`.
@@ -30,6 +32,12 @@ Todo corre en tu equipo; el servidor solo escucha en `127.0.0.1`.
 5. **Informe de verificación** en cada compilación y junto a cada render (`salidas/<pieza>/<pieza>_vN.json`): cada cifra → serie, columna, fecha, fila, valor crudo.
 6. **Licencias:** si la fuente restringe el uso comercial (p. ej. CC BY-NC, Yahoo) el compilador lo avisa.
 
+## Diseño: limpio, un héroe por fecha
+- **Menos texto.** Título corto, sin subtítulos. La tarjeta de una llamada son tres cosas: **año · qué pasó (3-4 palabras) · el dato**. Nada de párrafos ni dos cifras por tarjeta.
+- **El año nunca se pierde:** año grande arriba a la derecha que sigue a la cabeza de la línea, marca dorada con el año bajo la cabeza, y la tarjeta lleva su propio año.
+- **Una idea a la vez:** el contador se aparta mientras hay una tarjeta; el compilador avisa si dos llamadas de una gráfica coinciden.
+- **Sin choques (aprendizaje de Electric Eye):** cada texto reserva su caja; las tarjetas se colocan en el primer hueco libre —sin pisar título, contador, ejes, fuente ni la línea— y `auditar` recorre toda la pieza. El render se **niega** a salir con textos que se pisen.
+
 ## Capas (cómo se monta una animación)
 Una pieza es una spec JSON: `datos` (de dónde) + `capas` (qué se ve y cuándo). Orden de apilado por `z`: fondo → imágenes → zonas → **gráficas** → **llamadas** → contador → título → cortina → sello de fuente.
 Las gráficas publican su proyección datos→píxel; las anotaciones (`llamada`, `zona`, `contador`) se **anclan a datos** (`{"fecha":"2020-06-03"}`, `{"max":true}`, `{"ultimo":true}`), nunca a píxeles. La cámara es de keyframes en el espacio de los datos (`camara:[{t,x:[a,b],y:"ajustar"}]`), así que el texto siempre queda nítido. Referencia completa: [`docs/CAPAS.md`](docs/CAPAS.md). Guía de dirección: [`servidor/guia-de-direccion.md`](servidor/guia-de-direccion.md).
@@ -40,6 +48,7 @@ node servidor/cli.mjs buscar oro            # buscar en la biblioteca
 node servidor/cli.mjs bajar bm_gold         # historia completa + procedencia
 node servidor/cli.mjs compilar specs/fed-balance.json
 node servidor/cli.mjs vista specs/fed-balance.json 4,12,18   # PNG de esos segundos
+node servidor/cli.mjs auditar specs/fed-balance.json          # ningún texto debe pisar a otro (se comprueba cada 0,2 s)
 node servidor/cli.mjs render specs/fed-balance.json           # MP4 + ProRes alfa (--borrador, --sin-alfa)
 node servidor/cli.mjs vivo                  # actualizador permanente
 node scripts/prueba.mjs                     # formatos, reglas de exactitud, 5 tipos de gráfica

@@ -17,6 +17,9 @@ Herramienta local para animar gráficas de datos. Lee `servidor/guia-de-direccio
 - `catalogo/series.json` se **genera** con `scripts/construir-catalogo.mjs`; `datos/` no se versiona (licencias de las fuentes).
 
 ## Aprendizajes
+- **2026-11-03 — Los textos se pisan si se colocan a ojo; en Electric Eye ya estaba resuelto:** cada texto reserva una caja (`rotulosBajo`/`ocupadas`), el nuevo elige el primer hueco libre y una auditoría recorre la pieza. Aquí: registro `env.registro`, `colocar()` (decide con la cámara de referencia, no con el instante dibujado, para que sea función pura) y `auditarColisiones` como compuerta del render. **Por qué importa:** una tarjeta que salta de lugar entre fotogramas es peor que una que choca; la decisión debe ser determinista.
+- **2026-11-03 — David pide limpieza, no densidad:** «la gente no tiene tiempo»; por fecha clave solo año + qué pasó + dato. Subtítulos, etiquetas repetidas y dos cifras por tarjeta se eliminaron. **Por qué importa:** si se ve lleno de datos, no se ve profesional.
+- **2026-11-03 — Marcas de eje que mienten:** con pasos de 2,5 y cero decimales, 2,5 se rotulaba «3». Los pasos de eje son solo 1-2-5-10.
 - **2026-11-03 — Stooq bloquea descargas automáticas (403 «Access denied»):** no se elude; el camino es exportar en el navegador y subir el archivo. **Por qué importa:** un adaptador que depende de una fuente que bloquea scripts se rompe en silencio; mejor declararlo.
 - **2026-11-03 — Las fechas de Excel de SheetJS salen en hora local al ESCRIBIR:** al probar, los datos del test se desplazaron un día. El lector es correcto; el escritor de pruebas debe usar el número de serie. **Por qué importa:** nunca validar la ingesta con archivos escritos con la misma librería sin verificar la fecha civil.
 - **2026-11-03 — Un `$'` en `String.replace` corrompe el archivo:** «US$» dentro de la cadena de reemplazo se interpreta como patrón especial. Usar funciones de reemplazo o la herramienta Edit.

@@ -44,14 +44,27 @@ window.RTL = {
   /** Dibuja el instante t. Con muestras>1 promedia subfotogramas dentro del obturador: desenfoque de movimiento real. */
   cuadro(t, {sinFondo = false, muestras = 1, obturador = 0.0167} = {}) {
     if (muestras <= 1) { escena.dibujar(ctx, W, H, t, {sinFondo}); return true; }
-    ctx.clearRect(0, 0, W, H);
-    // gráficas y fondo: promedio de subfotogramas (desenfoque real); texto y anotaciones: un solo dibujo, siempre nítido
-    for (let k = 0; k < muestras; k++) {
-      escena.dibujar(tctx, W, H, t + (k / muestras - 0.5) * obturador, {sinFondo, modo: 'graficas'});
-      ctx.globalAlpha = 1 / (k + 1);
-      ctx.drawImage(trabajo, 0, 0);
+    // Desenfoque adaptativo: se mide cuánto se mueve la cámara dentro del obturador (en píxeles). Quieto → un solo dibujo (nítido y
+    // más rápido); moviéndose → tantos subfotogramas como hagan falta para que no se vean copias fantasma.
+    const env0 = escena.dibujar(tctx, W, H, t, {sinFondo, modo: 'graficas'});
+    let mov = 0;
+    for (const proy of Object.values(env0.proy)) {
+      const s0 = proy(t - obturador / 2), s1 = proy(t + obturador / 2), B = s0.B;
+      const dx = (r0, r1) => (Math.abs(r1[0] - r0[0]) + Math.abs(r1[1] - r0[1])) / Math.max(1e-9, r0[1] - r0[0]);
+      mov = Math.max(mov, dx(s0.cam.x, s1.cam.x) * B.w, dx(s0.cam.y, s1.cam.y) * B.h);
     }
-    ctx.globalAlpha = 1;
+    ctx.clearRect(0, 0, W, H);
+    if (mov < 1.5) ctx.drawImage(trabajo, 0, 0);
+    else {
+      const n = Math.max(2, Math.min(muestras, Math.ceil(mov / 1.5)));
+      for (let k = 0; k < n; k++) {
+        escena.dibujar(tctx, W, H, t + (k / (n - 1) - 0.5) * obturador, {sinFondo, modo: 'graficas'});
+        ctx.globalAlpha = 1 / (k + 1);
+        ctx.drawImage(trabajo, 0, 0);
+      }
+      ctx.globalAlpha = 1;
+    }
+    // texto y anotaciones: un solo dibujo, siempre nítido
     escena.dibujar(tctx, W, H, t, {sinFondo: true, modo: 'texto'});
     ctx.drawImage(trabajo, 0, 0);
     return true;
