@@ -61,7 +61,7 @@ function camaraEn(capa, tab, idxs, t) {
   for (let i = 1; i < E.length; i++) {
     const ini = E[i].t - E[i].mov;
     if (t <= ini) break;
-    const k = ease.io3(clamp((t - ini) / E[i].mov));
+    const k = ease.io2(clamp((t - ini) / E[i].mov));   // curva suave: velocidad pico 2× la media (io3 daba 3× y la línea se volvía una banda)
     x = mezclaRango(E[i - 1].x, E[i].x, k); y = mezclaRango(E[i - 1].y, E[i].y, k);
     if (k < 1) break;
     x = E[i].x; y = E[i].y;
@@ -541,7 +541,7 @@ function contador(env, capa) {
   const [, t1] = capa.t ?? [0, 99];
   // mientras una tarjeta está activa, la tarjeta lleva el año y el dato: el contador se aparta (una idea a la vez)
   let activa = 0;
-  for (const l of env.capasTodas) if (l.tipo === 'llamada' && l.capa === capa.capa) activa = Math.max(activa, prog(t, l.t[0], l.t[0] + 0.2, ease.lin) * (1 - prog(t, l.t[1], l.t[1] + 0.25, ease.lin)));
+  for (const l of env.capasTodas) if (l.tipo === 'llamada' && l.capa === capa.capa) activa = Math.max(activa, prog(t, l.t[0], l.t[0] + 0.2, ease.lin) * (1 - prog(t, l.t[1] + 0.3, l.t[1] + 0.55, ease.lin)));   // el contador vuelve cuando la tarjeta ya se ha ido del todo
   const g = H.ap * (1 - prog(t, t1, t1 + 0.3, ease.lin)) * (1 - activa); if (g <= 0.01) { reg(env, 'contador-oculto', [0, 0, 0, 0], capa.id); return; }
   const C = cajaContador(env, capa), {x, y, al} = C;
   ctx.save(); ctx.globalAlpha *= g;

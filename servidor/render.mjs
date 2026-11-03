@@ -102,7 +102,7 @@ async function pasada(spec, {tipo, salida, calidad, puerto, navegador, ancho, al
   const cerrado = new Promise((ok) => ff.on('close', ok));
   ff.stdin.on('error', () => {});
   for (let i = 0; i < total; i++) {
-    const url = await pag.evaluate(([t, o]) => { window.RTL.cuadro(t, o); return window.RTL.png(); }, [i / fps, {sinFondo: tipo === 'alfa', muestras, obturador: 0.6 / fps}]);
+    const url = await pag.evaluate(([t, o]) => { window.RTL.cuadro(t, o); return window.RTL.png(); }, [i / fps, {sinFondo: tipo === 'alfa', muestras, obturador: 0.4 / fps}]);
     if (!ff.stdin.write(datosPng(url))) await new Promise((r) => ff.stdin.once('drain', r));
     if (onProgreso && i % 5 === 0) onProgreso({tipo, cuadro: i + 1, total});
   }
