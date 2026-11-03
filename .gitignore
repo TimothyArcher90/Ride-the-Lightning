@@ -1,0 +1,10 @@
+node_modules/
+salidas/
+entradas/*
+!entradas/.gitkeep
+.tmp/
+*.log
+datos/
+catalogo/estado-vivo.json
+catalogo/actualizaciones.jsonl
+catalogo/verificado.json

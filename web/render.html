@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ride the Lightning · render</title>
+<style>
+  @font-face { font-family: "Geist"; src: url(/fuentes/Geist.ttf); font-weight: 100 900; }
+  @font-face { font-family: "Geist Mono"; src: url(/fuentes/GeistMono.ttf); font-weight: 100 900; }
+  html, body { margin: 0; background: transparent; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script type="module">
+import {Escena} from '/motor/escena.js';
+
+const lienzo = document.getElementById('c');
+const ctx = lienzo.getContext('2d');
+const trabajo = document.createElement('canvas');
+const tctx = trabajo.getContext('2d');
+let escena = null, W = 0, H = 0;
+
+async function cargarImagenes(spec) {
+  const out = {};
+  const rutas = new Set((spec.imagenes ?? []));
+  await Promise.all([...rutas].map((r) => new Promise((ok, mal) => {
+    const im = new Image();
+    im.onload = () => { out[r] = im; ok(); };
+    im.onerror = () => mal(new Error('No se pudo cargar la imagen ' + r));
+    im.src = '/archivos/' + r.split('/').map(encodeURIComponent).join('/');
+  })));
+  return out;
+}
+
+window.RTL = {
+  async cargar(spec, ancho, alto) {
+    await Promise.all([document.fonts.load('800 40px Geist'), document.fonts.load('500 20px "Geist Mono"'), document.fonts.load('400 20px Geist')]);
+    W = lienzo.width = trabajo.width = ancho ?? spec.ancho;
+    H = lienzo.height = trabajo.height = alto ?? spec.alto;
+    escena = new Escena(spec, await cargarImagenes(spec));
+    return {ancho: W, alto: H};
+  },
+  /** Dibuja el instante t. Con muestras>1 promedia subfotogramas dentro del obturador: desenfoque de movimiento real. */
+  cuadro(t, {sinFondo = false, muestras = 1, obturador = 0.0167} = {}) {
+    if (muestras <= 1) { escena.dibujar(ctx, W, H, t, {sinFondo}); return true; }
+    ctx.clearRect(0, 0, W, H);
+    // gráficas y fondo: promedio de subfotogramas (desenfoque real); texto y anotaciones: un solo dibujo, siempre nítido
+    for (let k = 0; k < muestras; k++) {
+      escena.dibujar(tctx, W, H, t + (k / muestras - 0.5) * obturador, {sinFondo, modo: 'graficas'});
+      ctx.globalAlpha = 1 / (k + 1);
+      ctx.drawImage(trabajo, 0, 0);
+    }
+    ctx.globalAlpha = 1;
+    escena.dibujar(tctx, W, H, t, {sinFondo: true, modo: 'texto'});
+    ctx.drawImage(trabajo, 0, 0);
+    return true;
+  },
+  png() { return lienzo.toDataURL('image/png'); },
+};
+window.RTL_LISTO = true;
+</script>
+</body>
+</html>

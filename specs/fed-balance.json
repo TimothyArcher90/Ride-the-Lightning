@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "titulo": "El balance de la Fed",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 20,
+  "datos": {
+    "fed": {
+      "archivo": "datos/biblioteca/fed_balance.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "WALCL",
+          "nombre": "Activos totales de la Fed",
+          "color": "oro",
+          "divisor": 1000000,
+          "prefijo": "US$ ",
+          "sufijo": " bill.",
+          "decimales": 2,
+          "unidad": "billones de US$"
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "El balance de la Fed",
+      "sub": "Activos totales · semanal · {desde} – {hasta}",
+      "t": [
+        0.2,
+        19.6
+      ],
+      "color": "oro"
+    },
+    {
+      "tipo": "linea",
+      "id": "g1",
+      "datos": "fed",
+      "area": true,
+      "t": [
+        1,
+        9
+      ],
+      "ejeDer": [],
+      "camara": [
+        {
+          "t": 0,
+          "x": "auto",
+          "y": "auto"
+        },
+        {
+          "t": 11.4,
+          "x": [
+            "2007-06",
+            "2015-06"
+          ],
+          "y": "ajustar",
+          "mov": 1.6
+        },
+        {
+          "t": 14,
+          "x": [
+            "2019-06",
+            "2023-09"
+          ],
+          "y": "ajustar",
+          "mov": 1.6
+        },
+        {
+          "t": 17.2,
+          "x": "auto",
+          "y": "auto",
+          "mov": 1.6
+        }
+      ]
+    },
+    {
+      "tipo": "contador",
+      "capa": "g1",
+      "serie": 0,
+      "etiqueta": "Activos totales",
+      "t": [
+        0,
+        19.6
+      ]
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g1",
+      "serie": 0,
+      "ancla": {
+        "fecha": "2008-12-31"
+      },
+      "t": [
+        11.5,
+        13.9
+      ],
+      "lado": "arriba",
+      "dx": -190,
+      "texto": "Crisis financiera global",
+      "detalle": "{valor} · {cambio:17} desde septiembre",
+      "color": "oro"
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g1",
+      "serie": 0,
+      "ancla": {
+        "fecha": "2020-06-03"
+      },
+      "t": [
+        14.2,
+        17
+      ],
+      "lado": "abajo",
+      "dx": -150,
+      "dy": 150,
+      "texto": "Respuesta a la pandemia",
+      "detalle": "{cambio:12} en doce semanas",
+      "color": "teal"
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g1",
+      "serie": 0,
+      "ancla": {
+        "max": true
+      },
+      "t": [
+        14.9,
+        17
+      ],
+      "lado": "abajo",
+      "dy": 95,
+      "texto": "Máximo de la serie",
+      "detalle": "{valor} · {fecha}",
+      "color": "oro",
+      "dx": 130
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g1",
+      "serie": 0,
+      "ancla": {
+        "ultimo": true
+      },
+      "t": [
+        18,
+        19.8
+      ],
+      "lado": "abajo",
+      "dx": -120,
+      "dy": 110,
+      "texto": "Último dato",
+      "detalle": "{valor} · {fecha}",
+      "color": "oro"
+    }
+  ]
+}

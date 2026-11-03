@@ -1,0 +1,209 @@
+{
+  "version": 1,
+  "titulo": "Commodities panel múltiple",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 14,
+  "datos": {
+    "cm": {
+      "archivo": "datos/derivados/commodities_mensual.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "bm_gold",
+          "nombre": "Oro",
+          "color": "oro",
+          "prefijo": "US$ ",
+          "decimales": "auto",
+          "unidad": "US$ ($/troy oz)"
+        },
+        {
+          "col": "bm_copper",
+          "nombre": "Cobre",
+          "color": "teal",
+          "prefijo": "US$ ",
+          "decimales": "auto",
+          "unidad": "US$ ($/mt)"
+        },
+        {
+          "col": "bm_crude_oil_wti",
+          "nombre": "Petróleo WTI",
+          "color": "purpura",
+          "prefijo": "US$ ",
+          "decimales": "auto",
+          "unidad": "US$ ($/bbl)"
+        },
+        {
+          "col": "bm_wheat_us_hrw",
+          "nombre": "Trigo HRW",
+          "color": "piedra",
+          "prefijo": "US$ ",
+          "decimales": "auto",
+          "unidad": "US$ ($/mt)"
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Cuatro materias primas, desde {desde}",
+      "sub": "Precio nominal mensual · {desde} – {hasta}",
+      "t": [
+        0.2,
+        13.6
+      ],
+      "color": "oro",
+      "tam": 54
+    },
+    {
+      "tipo": "linea",
+      "id": "g1",
+      "datos": "cm",
+      "series": [
+        0
+      ],
+      "area": true,
+      "caja": [
+        0.075,
+        0.27,
+        0.4,
+        0.27
+      ],
+      "t": [
+        0.9,
+        8.5
+      ]
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g1",
+      "serie": 0,
+      "ancla": {
+        "max": true
+      },
+      "t": [
+        10,
+        13.4
+      ],
+      "lado": "abajo",
+      "dy": 70,
+      "dx": -60,
+      "texto": "Máximo: Oro",
+      "detalle": "{valor} · {fecha:mes}",
+      "color": "oro"
+    },
+    {
+      "tipo": "linea",
+      "id": "g2",
+      "datos": "cm",
+      "series": [
+        1
+      ],
+      "area": true,
+      "caja": [
+        0.575,
+        0.27,
+        0.4,
+        0.27
+      ],
+      "t": [
+        1.25,
+        8.85
+      ]
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g2",
+      "serie": 1,
+      "ancla": {
+        "max": true
+      },
+      "t": [
+        10.55,
+        13.4
+      ],
+      "lado": "abajo",
+      "dy": 70,
+      "dx": -60,
+      "texto": "Máximo: Cobre",
+      "detalle": "{valor} · {fecha:mes}",
+      "color": "teal"
+    },
+    {
+      "tipo": "linea",
+      "id": "g3",
+      "datos": "cm",
+      "series": [
+        2
+      ],
+      "area": true,
+      "caja": [
+        0.075,
+        0.64,
+        0.4,
+        0.27
+      ],
+      "t": [
+        1.6,
+        9.2
+      ]
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g3",
+      "serie": 2,
+      "ancla": {
+        "max": true
+      },
+      "t": [
+        11.1,
+        13.4
+      ],
+      "lado": "arriba",
+      "dy": 90,
+      "dx": -60,
+      "texto": "Máximo: Petróleo WTI",
+      "detalle": "{valor} · {fecha:mes}",
+      "color": "purpura"
+    },
+    {
+      "tipo": "linea",
+      "id": "g4",
+      "datos": "cm",
+      "series": [
+        3
+      ],
+      "area": true,
+      "caja": [
+        0.575,
+        0.64,
+        0.4,
+        0.27
+      ],
+      "t": [
+        1.9499999999999997,
+        9.55
+      ]
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g4",
+      "serie": 3,
+      "ancla": {
+        "max": true
+      },
+      "t": [
+        11.65,
+        13.4
+      ],
+      "lado": "arriba",
+      "dy": 90,
+      "dx": -60,
+      "texto": "Máximo: Trigo HRW",
+      "detalle": "{valor} · {fecha:mes}",
+      "color": "piedra"
+    }
+  ]
+}

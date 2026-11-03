@@ -1,0 +1,138 @@
+{
+  "version": 1,
+  "titulo": "Bitcoin desde su primer precio",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 18,
+  "datos": {
+    "btc": {
+      "archivo": "datos/biblioteca/cm_btc_precio.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "PriceUSD",
+          "nombre": "Bitcoin",
+          "color": "oro",
+          "prefijo": "US$ ",
+          "decimales": "auto",
+          "unidad": "US$ · escala logarítmica"
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Bitcoin, desde su primer precio",
+      "sub": "Precio de referencia diario · {desde:dia} – {hasta:dia}",
+      "t": [
+        0.2,
+        17.6
+      ],
+      "color": "oro"
+    },
+    {
+      "tipo": "linea",
+      "id": "g1",
+      "datos": "btc",
+      "escala": "log",
+      "area": true,
+      "t": [
+        1,
+        11
+      ],
+      "camara": [
+        {
+          "t": 0,
+          "x": "auto",
+          "y": "auto"
+        },
+        {
+          "t": 13.4,
+          "x": [
+            "2020-06",
+            "2026-12"
+          ],
+          "y": "ajustar",
+          "mov": 1.8
+        },
+        {
+          "t": 16.4,
+          "x": "auto",
+          "y": "auto",
+          "mov": 1.6
+        }
+      ]
+    },
+    {
+      "tipo": "contador",
+      "capa": "g1",
+      "serie": 0,
+      "etiqueta": "Bitcoin",
+      "t": [
+        0,
+        17.6
+      ]
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g1",
+      "serie": 0,
+      "ancla": {
+        "primero": true
+      },
+      "t": [
+        1.8,
+        5.2
+      ],
+      "lado": "arriba",
+      "dy": 150,
+      "dx": 120,
+      "texto": "Primer precio de la serie",
+      "detalle": "{valor} · {fecha}",
+      "color": "teal"
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g1",
+      "serie": 0,
+      "ancla": {
+        "max": true
+      },
+      "t": [
+        13.9,
+        16.2
+      ],
+      "lado": "abajo",
+      "dy": 110,
+      "dx": -160,
+      "texto": "Máximo de la serie",
+      "detalle": "{valor} · {fecha}",
+      "color": "oro"
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g1",
+      "serie": 0,
+      "ancla": {
+        "ultimo": true
+      },
+      "t": [
+        16.8,
+        18
+      ],
+      "lado": "abajo",
+      "dy": 120,
+      "dx": -150,
+      "texto": "Último dato",
+      "detalle": "{valor} · {fecha}",
+      "color": "oro"
+    }
+  ],
+  "vivo": {
+    "render": "borrador",
+    "alfa": false,
+    "minEntreRendersMin": 360
+  }
+}

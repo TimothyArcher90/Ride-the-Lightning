@@ -1,0 +1,28 @@
+{
+  "name": "ride-the-lightning",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Estudio local para animar gráficas financieras y de datos (estilo Johnny Harris / Caspian Report) con datos 100% trazables.",
+  "type": "module",
+  "scripts": {
+    "iniciar": "node servidor/estudio.mjs",
+    "mcp": "node servidor/mcp.mjs",
+    "compilar": "node servidor/cli.mjs compilar",
+    "vista": "node servidor/cli.mjs vista",
+    "render": "node servidor/cli.mjs render",
+    "datos:fred": "node scripts/bajar-fred.mjs",
+    "prueba": "node scripts/prueba.mjs",
+    "vivo": "node servidor/cli.mjs vivo",
+    "actualizar": "node servidor/cli.mjs actualizar",
+    "bajar": "node servidor/cli.mjs bajar",
+    "buscar": "node servidor/cli.mjs buscar",
+    "catalogo": "node scripts/construir-catalogo.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "playwright-core": "1.63.0",
+    "xlsx": "0.18.5",
+    "zod": "^3.25.76"
+  },
+  "license": "MIT"
+}

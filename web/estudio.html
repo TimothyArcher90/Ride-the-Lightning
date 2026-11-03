@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ride the Lightning · estudio</title>
+<style>
+  @font-face { font-family: "Geist"; src: url(/fuentes/Geist.ttf); font-weight: 100 900; }
+  @font-face { font-family: "Geist Mono"; src: url(/fuentes/GeistMono.ttf); font-weight: 100 900; }
+  :root { --fondo:#1A1A17; --tarjeta:#232320; --prof:#0C0C14; --piedra:#CBC6BC; --clara:#D6D1C8; --osc:#B8B3A9; --oro:#C9A84C; --teal:#50B5A2; --purp:#A24FB0; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:var(--fondo); color:var(--clara); font:14px/1.45 Geist, system-ui, sans-serif; }
+  .mono { font-family:"Geist Mono", ui-monospace, monospace; }
+  header { display:flex; align-items:center; gap:16px; padding:10px 18px; border-bottom:1px solid #ffffff14; }
+  header h1 { margin:0; font-size:17px; font-weight:800; letter-spacing:.2px; } header h1 b { color:var(--oro); }
+  main { display:grid; grid-template-columns: 380px minmax(0,1fr) 380px; height:calc(100% - 50px); }
+  section { overflow:auto; padding:14px 16px; border-right:1px solid #ffffff10; }
+  section:last-child { border-right:0; }
+  h2 { margin:0 0 8px; font:600 11px "Geist Mono", monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--osc); }
+  textarea, input[type=search], select { width:100%; background:var(--prof); color:var(--clara); border:1px solid #ffffff1c; border-radius:6px; padding:8px; font:12px/1.4 "Geist Mono", monospace; }
+  textarea { height:46vh; resize:vertical; white-space:pre; tab-size:2; }
+  button { background:var(--tarjeta); color:var(--clara); border:1px solid #ffffff22; border-radius:6px; padding:7px 12px; font:600 12px Geist; cursor:pointer; }
+  button:hover { border-color:var(--oro); } button.p { background:var(--oro); color:#1A1A17; border-color:var(--oro); } button:disabled { opacity:.45; cursor:default; }
+  .fila { display:flex; gap:8px; align-items:center; margin:8px 0; flex-wrap:wrap; }
+  .lienzo { background:#000; border:1px solid #ffffff1a; border-radius:6px; width:100%; display:block; }
+  .item { background:var(--tarjeta); border:1px solid #ffffff12; border-radius:6px; padding:8px 10px; margin:6px 0; }
+  .item small { color:var(--osc); display:block; } .ok { color:var(--teal); } .mal { color:#ff8f8f; } .av { color:var(--oro); }
+  .cifra { font:12px "Geist Mono", monospace; } .tag { font:600 10px "Geist Mono"; color:var(--osc); }
+  input[type=range] { flex:1; accent-color:var(--oro); } #drop { border:1.5px dashed #ffffff33; border-radius:8px; padding:14px; text-align:center; color:var(--osc); }
+  #drop.sobre { border-color:var(--oro); color:var(--oro); }
+  a { color:var(--oro); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Ride the <b>Lightning</b></h1>
+  <span class="tag">ESTUDIO LOCAL · DATOS 100 % TRAZABLES</span>
+  <span style="flex:1"></span>
+  <select id="specs" style="width:220px"></select>
+  <button id="guardar">Guardar spec</button>
+</header>
+<main>
+  <section>
+    <h2>Spec (JSON)</h2>
+    <textarea id="spec" spellcheck="false"></textarea>
+    <div class="fila">
+      <button class="p" id="compilar">Compilar</button>
+      <button id="rBorrador">Render borrador</button>
+      <button id="rFinal">Render final + alfa</button>
+    </div>
+    <div id="estadoRender" class="mono" style="font-size:12px"></div>
+    <h2 style="margin-top:18px">Tus datos e imágenes</h2>
+    <div id="drop">Suelta aquí Excel (xlsx, xls, xlsb, ods), CSV/TSV, JSON o imágenes</div>
+    <input type="file" id="archivo" multiple style="margin-top:8px">
+    <div id="subidos"></div>
+  </section>
+  <section>
+    <canvas id="lienzo" class="lienzo"></canvas>
+    <div class="fila">
+      <button id="play">▶</button>
+      <input type="range" id="t" min="0" max="20" step="0.01" value="0">
+      <span id="tt" class="mono" style="width:90px;text-align:right"></span>
+    </div>
+    <div id="msg" class="mono" style="color:var(--osc)"></div>
+  </section>
+  <section>
+    <h2>Verificación</h2>
+    <div id="informe">Compila para ver de dónde sale cada cifra.</div>
+    <h2 style="margin-top:18px">Biblioteca de series históricas</h2>
+    <input type="search" id="q" placeholder="oro, bitcoin, petróleo, S&P, población, M2…">
+    <div id="resultados"></div>
+  </section>
+</main>
+<script type="module">
+import {Escena} from '/motor/escena.js';
+const $ = (s) => document.querySelector(s);
+const lienzo = $('#lienzo'), ctx = lienzo.getContext('2d');
+let escena = null, plano = null, t = 0, jugando = false, ult = 0;
+
+const api = async (u, o) => { const r = await fetch(u, o); const j = await r.json(); if (!r.ok && !j.informe) throw new Error(j.error ?? r.statusText); return j; };
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]));
+
+async function cargarListaSpecs() {
+  const l = await api('/api/specs'); $('#specs').innerHTML = l.map((n) => `<option>${esc(n)}</option>`).join('');
+  if (l.length) await abrirSpec(l[0]);
+}
+async function abrirSpec(n) { $('#spec').value = JSON.stringify(await api('/api/spec?n=' + encodeURIComponent(n)), null, 2); await compilar(); }
+$('#specs').onchange = (e) => abrirSpec(e.target.value);
+$('#guardar').onclick = async () => { await fetch('/api/spec?n=' + encodeURIComponent($('#specs').value), {method: 'POST', body: $('#spec').value}); $('#msg').textContent = 'Spec guardada.'; };
+
+async function cargarImagenes(spec) {
+  const out = {};
+  await Promise.all((spec.imagenes ?? []).map((r) => new Promise((ok) => { const im = new Image(); im.onload = () => { out[r] = im; ok(); }; im.onerror = ok; im.src = '/archivos/' + r.split('/').map(encodeURIComponent).join('/'); })));
+  return out;
+}
+async function compilar() {
+  let spec; try { spec = JSON.parse($('#spec').value); } catch (e) { $('#informe').innerHTML = `<div class="item mal">JSON inválido: ${esc(e.message)}</div>`; return; }
+  const {spec: p, informe} = await api('/api/compilar', {method: 'POST', body: JSON.stringify(spec)});
+  mostrarInforme(informe);
+  if (!informe.ok) return;
+  await document.fonts.load('800 40px Geist'); await document.fonts.load('500 20px "Geist Mono"');
+  plano = p; lienzo.width = p.formato === 'vertical' ? 540 : 960; lienzo.height = p.formato === 'vertical' ? 960 : 540;
+  escena = new Escena(p, await cargarImagenes(p));
+  $('#t').max = p.duracion; dibujar();
+}
+function mostrarInforme(i) {
+  const h = [];
+  h.push(`<div class="item ${i.ok ? 'ok' : 'mal'}"><b>${i.ok ? '✓ Compila sin errores' : '✗ No compila'}</b></div>`);
+  i.errores.forEach((e) => h.push(`<div class="item mal">✗ ${esc(e)}</div>`));
+  i.avisos.forEach((e) => h.push(`<div class="item av">! ${esc(e)}</div>`));
+  i.datos.forEach((d) => h.push(`<div class="item"><b>${esc(d.id)}</b> · ${d.filas} filas<small class="mono">${esc(d.inicio)} → ${esc(d.fin)}${d.recortada ? ' (recortada)' : ''}</small><small>${esc(d.fuente.nombre)}</small><small class="mono">sha256 ${d.sha256.slice(0, 16)}…</small>${d.fuente.url ? `<small><a href="${esc(d.fuente.url)}" target="_blank">${esc(d.fuente.url)}</a></small>` : ''}</div>`));
+  i.cifras.filter((c) => c.mostrado).forEach((c) => h.push(`<div class="item cifra">«${esc(c.mostrado)}»<small>← ${esc(c.serie ?? '')} · ${esc(c.fecha ?? '')} · fila ${c.fila ?? ''}</small></div>`));
+  i.metodos.forEach((m) => h.push(`<div class="item cifra">${esc(m)}</div>`));
+  $('#informe').innerHTML = h.join('');
+}
+function dibujar() { if (!escena) return; escena.dibujar(ctx, lienzo.width, lienzo.height, t); $('#tt').textContent = `${t.toFixed(2)} / ${plano.duracion} s`; $('#t').value = t; }
+$('#t').oninput = (e) => { t = +e.target.value; dibujar(); };
+$('#play').onclick = () => { jugando = !jugando; $('#play').textContent = jugando ? '❚❚' : '▶'; ult = performance.now(); if (jugando) requestAnimationFrame(tick); };
+function tick(ahora) { if (!jugando) return; t += (ahora - ult) / 1000; ult = ahora; if (t >= plano.duracion) t = 0; dibujar(); requestAnimationFrame(tick); }
+$('#compilar').onclick = compilar;
+let deb; $('#spec').oninput = () => { clearTimeout(deb); deb = setTimeout(compilar, 700); };
+
+async function render(calidad, alfa) {
+  $('#estadoRender').textContent = 'Compilando y enviando…';
+  try {
+    const {id} = await api('/api/render', {method: 'POST', body: JSON.stringify({spec: JSON.parse($('#spec').value), calidad, alfa})});
+    const bucle = async () => {
+      const j = await api('/api/trabajo?id=' + id);
+      if (j.estado === 'en curso') { $('#estadoRender').textContent = j.progreso ? `${j.progreso.tipo} ${j.progreso.cuadro}/${j.progreso.total}` : 'Preparando…'; return setTimeout(bucle, 1500); }
+      if (j.estado === 'error') return ($('#estadoRender').innerHTML = `<span class="mal">✗ ${esc(j.error)}</span>`);
+      const s = j.resultado.salidas;
+      $('#estadoRender').innerHTML = `<span class="ok">✓ Listo en ${j.resultado.segundos}s</span><br>` + Object.entries(s).map(([k, v]) => `${k}: ${esc(v)}`).join('<br>');
+    };
+    bucle();
+  } catch (e) { $('#estadoRender').innerHTML = `<span class="mal">✗ ${esc(e.message)}</span>`; }
+}
+$('#rBorrador').onclick = () => render('borrador', false);
+$('#rFinal').onclick = () => render('final', true);
+
+// ── subir archivos ──
+async function subir(files) {
+  for (const f of files) {
+    const j = await api('/api/subir?nombre=' + encodeURIComponent(f.name), {method: 'POST', body: await f.arrayBuffer()}).catch((e) => ({error: e.message}));
+    const d = document.createElement('div'); d.className = 'item';
+    if (j.error) d.innerHTML = `<span class="mal">✗ ${esc(f.name)}: ${esc(j.error)}</span>`;
+    else if (j.tipo === 'imagen') d.innerHTML = `<b>${esc(j.ruta)}</b><small>Imagen lista. Úsala con {"tipo":"imagen","archivo":"${esc(j.ruta)}", …} o como "fondo":{"imagen":"…"}.</small>`;
+    else {
+      const I = j.inspeccion, fecha = I.columnas.find((c) => c.tipo === 'fecha'), nums = I.columnas.filter((c) => c.tipo === 'número');
+      d.innerHTML = `<b>${esc(j.ruta)}</b> · ${I.filas} filas${I.hoja ? ' · hoja «' + esc(I.hoja) + '»' : ''}<small class="mono">${I.columnas.map((c) => esc(c.nombre) + ':' + c.tipo).join(' | ')}</small>${I.avisos.map((a) => `<small class="av">! ${esc(a)}</small>`).join('')}`;
+      if (nums.length) { const b = document.createElement('button'); b.textContent = 'Insertar dataset en la spec'; b.onclick = () => insertarDataset(j.ruta, fecha?.nombre, nums, I.hoja); d.append(b); }
+    }
+    $('#subidos').prepend(d);
+  }
+}
+function insertarDataset(ruta, x, nums, hoja) {
+  const s = JSON.parse($('#spec').value); s.datos ??= {};
+  const id = 'datos' + (Object.keys(s.datos).length + 1);
+  s.datos[id] = {archivo: ruta, ...(hoja ? {hoja} : {}), x: x ?? '', tipoX: x ? 'fecha' : 'num', fuente: {nombre: 'COMPLETAR: fuente de ' + ruta, url: '', obtenido: new Date().toISOString().slice(0, 10)},
+    columnas: nums.slice(0, 4).map((c, i) => ({col: c.nombre, nombre: c.nombre, color: ['oro', 'teal', 'purpura', 'piedra'][i], decimales: 2}))};
+  $('#spec').value = JSON.stringify(s, null, 2); compilar();
+}
+$('#archivo').onchange = (e) => subir(e.target.files);
+const drop = $('#drop'); drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('sobre'); }; drop.ondragleave = () => drop.classList.remove('sobre');
+drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('sobre'); subir(e.dataTransfer.files); };
+
+// ── biblioteca ──
+let dq; $('#q').oninput = () => { clearTimeout(dq); dq = setTimeout(buscarSeries, 250); };
+async function buscarSeries() {
+  const r = await api('/api/catalogo?q=' + encodeURIComponent($('#q').value));
+  $('#resultados').innerHTML = '';
+  for (const e of r.slice(0, 40)) {
+    const d = document.createElement('div'); d.className = 'item';
+    d.innerHTML = `<b>${esc(e.nombre)}</b><small>${esc(e.categoria)} · ${esc(e.frecuencia)} · ${esc(e.unidad)}</small><small class="mono ${e.verificado ? 'ok' : ''}">${e.verificado ? `✓ ${e.verificado.inicio} → ${e.verificado.fin} · ${e.verificado.filas} filas` : 'aún no descargada'}</small>`;
+    const b = document.createElement('button'); b.textContent = 'Usar (descarga completa)';
+    b.onclick = async () => {
+      b.disabled = true; b.textContent = 'Descargando…';
+      try {
+        const m = await api('/api/bajar?id=' + e.id), s = JSON.parse($('#spec').value); s.datos ??= {};
+        s.datos[e.id] = {archivo: m.archivo, x: 'fecha', tipoX: 'fecha', columnas: [{col: m.columnas[1], nombre: e.nombre.split(' — ')[0], color: 'oro', decimales: 2, unidad: e.unidad}]};
+        $('#spec').value = JSON.stringify(s, null, 2); b.textContent = `✓ ${m.meta.inicio} → ${m.meta.fin}`; compilar();
+      } catch (err) { b.textContent = '✗ ' + err.message; b.disabled = false; }
+    };
+    d.append(b); $('#resultados').append(d);
+  }
+}
+buscarSeries(); cargarListaSpecs();
+</script>
+</body>
+</html>

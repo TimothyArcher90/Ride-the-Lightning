@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "ride-the-lightning": {
+      "command": "node",
+      "args": [
+        "servidor/mcp.mjs"
+      ]
+    }
+  }
+}

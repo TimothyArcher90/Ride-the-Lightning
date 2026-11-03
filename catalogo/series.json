@@ -1,0 +1,3463 @@
+[
+  {
+    "id": "fed_balance",
+    "nombre": "Balance de la Reserva Federal (activos totales)",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "fed",
+      "liquidez",
+      "qe",
+      "qt",
+      "balance"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "WALCL"
+    },
+    "unidad": "Millones de US$",
+    "frecuencia": "Semanal (miércoles)",
+    "fuente_original": "Board of Governors of the Federal Reserve System (US), vía FRED",
+    "titulo_fuente": "Total Assets (Less Eliminations from Consolidation): Wednesday Level (WALCL)",
+    "licencia": "Dominio público (FRED)",
+    "fuente_corto": "Fed (Board of Governors) vía FRED · serie WALCL"
+  },
+  {
+    "id": "bm_crude_oil_average",
+    "nombre": "Petróleo crudo (promedio) — precio nominal mensual",
+    "categoria": "Energía",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "crude oil, average"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Crude oil, average"
+    },
+    "unidad": "US$ ($/bbl)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Crude oil, average",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_crude_oil_brent",
+    "nombre": "Petróleo Brent — precio nominal mensual",
+    "categoria": "Energía",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "crude oil, brent"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Crude oil, Brent"
+    },
+    "unidad": "US$ ($/bbl)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Crude oil, Brent",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_crude_oil_dubai",
+    "nombre": "Petróleo Dubái — precio nominal mensual",
+    "categoria": "Energía",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "crude oil, dubai"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Crude oil, Dubai"
+    },
+    "unidad": "US$ ($/bbl)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Crude oil, Dubai",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_crude_oil_wti",
+    "nombre": "Petróleo WTI — precio nominal mensual",
+    "categoria": "Energía",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "crude oil, wti"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Crude oil, WTI"
+    },
+    "unidad": "US$ ($/bbl)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Crude oil, WTI",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_coal_australian",
+    "nombre": "Carbón australiano — precio nominal mensual",
+    "categoria": "Energía",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "coal, australian"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Coal, Australian"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Coal, Australian",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_coal_south_african",
+    "nombre": "Carbón sudafricano — precio nominal mensual",
+    "categoria": "Energía",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "coal, south african"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Coal, South African"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Coal, South African",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_natural_gas_us",
+    "nombre": "Gas natural EE. UU. — precio nominal mensual",
+    "categoria": "Energía",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "natural gas, us"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Natural gas, US"
+    },
+    "unidad": "US$ ($/mmbtu)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Natural gas, US",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_natural_gas_europe",
+    "nombre": "Gas natural Europa — precio nominal mensual",
+    "categoria": "Energía",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "natural gas, europe"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Natural gas, Europe"
+    },
+    "unidad": "US$ ($/mmbtu)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Natural gas, Europe",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_liquefied_natural_gas_japan",
+    "nombre": "GNL Japón — precio nominal mensual",
+    "categoria": "Energía",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "liquefied natural gas, japan"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Liquefied natural gas, Japan"
+    },
+    "unidad": "US$ ($/mmbtu)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Liquefied natural gas, Japan",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_cocoa",
+    "nombre": "Cacao — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "cocoa"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Cocoa"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Cocoa",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_coffee_arabica",
+    "nombre": "Café arábica — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "coffee, arabica"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Coffee, Arabica"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Coffee, Arabica",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_coffee_robusta",
+    "nombre": "Café robusta — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "coffee, robusta"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Coffee, Robusta"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Coffee, Robusta",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_tea_avg_3_auctions",
+    "nombre": "Tea, avg 3 auctions — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "tea, avg 3 auctions"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Tea, avg 3 auctions"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Tea, avg 3 auctions",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_tea_colombo",
+    "nombre": "Tea, Colombo — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "tea, colombo"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Tea, Colombo"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Tea, Colombo",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_tea_kolkata",
+    "nombre": "Tea, Kolkata — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "tea, kolkata"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Tea, Kolkata"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Tea, Kolkata",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_tea_mombasa",
+    "nombre": "Tea, Mombasa — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "tea, mombasa"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Tea, Mombasa"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Tea, Mombasa",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_coconut_oil",
+    "nombre": "Coconut oil — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "coconut oil"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Coconut oil"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Coconut oil",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_groundnuts",
+    "nombre": "Groundnuts — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "groundnuts"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Groundnuts"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Groundnuts",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_fish_meal",
+    "nombre": "Fish meal — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "fish meal"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Fish meal"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Fish meal",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_groundnut_oil",
+    "nombre": "Groundnut oil — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "groundnut oil"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Groundnut oil"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Groundnut oil",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_palm_oil",
+    "nombre": "Aceite de palma — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "palm oil"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Palm oil"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Palm oil",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_palm_kernel_oil",
+    "nombre": "Palm kernel oil — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "palm kernel oil"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Palm kernel oil"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Palm kernel oil",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_soybeans",
+    "nombre": "Soya — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "soybeans"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Soybeans"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Soybeans",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_soybean_oil",
+    "nombre": "Soybean oil — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "soybean oil"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Soybean oil"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Soybean oil",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_soybean_meal",
+    "nombre": "Soybean meal — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "soybean meal"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Soybean meal"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Soybean meal",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_rapeseed_oil",
+    "nombre": "Rapeseed oil — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "rapeseed oil"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Rapeseed oil"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Rapeseed oil",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_sunflower_oil",
+    "nombre": "Sunflower oil — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "sunflower oil"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Sunflower oil"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Sunflower oil",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_barley",
+    "nombre": "Cebada — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "barley"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Barley"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Barley",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_maize",
+    "nombre": "Maíz — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "maize"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Maize"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Maize",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_sorghum",
+    "nombre": "Sorghum — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "sorghum"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Sorghum"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Sorghum",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_rice_thai_5",
+    "nombre": "Arroz tailandés 5 % — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "rice, thai 5%"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Rice, Thai 5%"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Rice, Thai 5%",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_rice_thai_25",
+    "nombre": "Rice, Thai 25% — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "rice, thai 25%"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Rice, Thai 25%"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Rice, Thai 25%",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_rice_thai_a_1",
+    "nombre": "Rice, Thai A.1 — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "rice, thai a.1"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Rice, Thai A.1"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Rice, Thai A.1",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_rice_viet_namese_5",
+    "nombre": "Rice, Viet Namese 5% — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "rice, viet namese 5%"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Rice, Viet Namese 5%"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Rice, Viet Namese 5%",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_wheat_us_srw",
+    "nombre": "Trigo SRW (EE. UU.) — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "wheat, us srw"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Wheat, US SRW"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Wheat, US SRW",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_wheat_us_hrw",
+    "nombre": "Trigo HRW (EE. UU.) — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "wheat, us hrw"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Wheat, US HRW"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Wheat, US HRW",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_banana_europe",
+    "nombre": "Banana, Europe — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "banana, europe"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Banana, Europe"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Banana, Europe",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_banana_us",
+    "nombre": "Banana, US — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "banana, us"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Banana, US"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Banana, US",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_orange",
+    "nombre": "Naranja — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "orange"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Orange"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Orange",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_beef",
+    "nombre": "Beef — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "beef"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Beef"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Beef",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_chicken",
+    "nombre": "Chicken — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "chicken"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Chicken"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Chicken",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_lamb",
+    "nombre": "Lamb — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "lamb"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Lamb"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Lamb",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_shrimps_mexican",
+    "nombre": "Shrimps, Mexican — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "shrimps, mexican"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Shrimps, Mexican"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Shrimps, Mexican",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_sugar_eu",
+    "nombre": "Sugar, EU — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "sugar, eu"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Sugar, EU"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Sugar, EU",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_sugar_us",
+    "nombre": "Sugar, US — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "sugar, us"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Sugar, US"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Sugar, US",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_sugar_world",
+    "nombre": "Azúcar (mundial) — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "sugar, world"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Sugar, world"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Sugar, world",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_tobacco_us_import_u_v",
+    "nombre": "Tobacco, US import u.v. — precio nominal mensual",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "tobacco, us import u.v."
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Tobacco, US import u.v."
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Tobacco, US import u.v.",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_logs_cameroon",
+    "nombre": "Logs, Cameroon — precio nominal mensual",
+    "categoria": "Materiales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "logs, cameroon"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Logs, Cameroon"
+    },
+    "unidad": "US$ ($/cubic meter)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Logs, Cameroon",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_logs_malaysian",
+    "nombre": "Logs, Malaysian — precio nominal mensual",
+    "categoria": "Materiales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "logs, malaysian"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Logs, Malaysian"
+    },
+    "unidad": "US$ ($/cubic meter)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Logs, Malaysian",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_sawnwood_cameroon",
+    "nombre": "Sawnwood, Cameroon — precio nominal mensual",
+    "categoria": "Materiales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "sawnwood, cameroon"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Sawnwood, Cameroon"
+    },
+    "unidad": "US$ ($/cubic meter)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Sawnwood, Cameroon",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_sawnwood_malaysian",
+    "nombre": "Sawnwood, Malaysian — precio nominal mensual",
+    "categoria": "Materiales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "sawnwood, malaysian"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Sawnwood, Malaysian"
+    },
+    "unidad": "US$ ($/cubic meter)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Sawnwood, Malaysian",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_plywood",
+    "nombre": "Plywood — precio nominal mensual",
+    "categoria": "Materiales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "plywood"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Plywood"
+    },
+    "unidad": "US$ (cents/sheet)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Plywood",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_rubber_tsr20",
+    "nombre": "Rubber, TSR20 — precio nominal mensual",
+    "categoria": "Materiales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "rubber, tsr20"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Rubber, TSR20"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Rubber, TSR20",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_rubber_rss3",
+    "nombre": "Caucho RSS3 — precio nominal mensual",
+    "categoria": "Materiales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "rubber, rss3"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Rubber, RSS3"
+    },
+    "unidad": "US$ ($/kg)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Rubber, RSS3",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_phosphate_rock",
+    "nombre": "Roca fosfórica — precio nominal mensual",
+    "categoria": "Fertilizantes",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "phosphate rock"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Phosphate rock"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Phosphate rock",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_dap",
+    "nombre": "Fosfato diamónico (DAP) — precio nominal mensual",
+    "categoria": "Fertilizantes",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "dap"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "DAP"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · DAP",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_tsp",
+    "nombre": "TSP — precio nominal mensual",
+    "categoria": "Fertilizantes",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "tsp"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "TSP"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · TSP",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_urea",
+    "nombre": "Urea — precio nominal mensual",
+    "categoria": "Fertilizantes",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "urea"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Urea"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Urea",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_potassium_chloride",
+    "nombre": "Cloruro de potasio — precio nominal mensual",
+    "categoria": "Fertilizantes",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "potassium chloride"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Potassium chloride"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Potassium chloride",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_aluminum",
+    "nombre": "Aluminio — precio nominal mensual",
+    "categoria": "Metales industriales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "aluminum"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Aluminum"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Aluminum",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_iron_ore_cfr_spot",
+    "nombre": "Mineral de hierro — precio nominal mensual",
+    "categoria": "Metales industriales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "iron ore, cfr spot"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Iron ore, cfr spot"
+    },
+    "unidad": "US$ ($/dmtu)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Iron ore, cfr spot",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_copper",
+    "nombre": "Cobre — precio nominal mensual",
+    "categoria": "Metales industriales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "copper"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Copper"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Copper",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_lead",
+    "nombre": "Plomo — precio nominal mensual",
+    "categoria": "Metales industriales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "lead"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Lead"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Lead",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_tin",
+    "nombre": "Estaño — precio nominal mensual",
+    "categoria": "Metales industriales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "tin"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Tin"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Tin",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_nickel",
+    "nombre": "Níquel — precio nominal mensual",
+    "categoria": "Metales industriales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "nickel"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Nickel"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Nickel",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_zinc",
+    "nombre": "Zinc — precio nominal mensual",
+    "categoria": "Metales industriales",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "zinc"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Zinc"
+    },
+    "unidad": "US$ ($/mt)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Zinc",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_gold",
+    "nombre": "Oro — precio nominal mensual",
+    "categoria": "Metales preciosos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "gold"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Gold"
+    },
+    "unidad": "US$ ($/troy oz)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Gold",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_platinum",
+    "nombre": "Platino — precio nominal mensual",
+    "categoria": "Metales preciosos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "platinum"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Platinum"
+    },
+    "unidad": "US$ ($/troy oz)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Platinum",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "bm_silver",
+    "nombre": "Plata — precio nominal mensual",
+    "categoria": "Metales preciosos",
+    "etiquetas": [
+      "commodity",
+      "banco mundial",
+      "pink sheet",
+      "silver"
+    ],
+    "adaptador": "bancomundial",
+    "args": {
+      "columna": "Silver"
+    },
+    "unidad": "US$ ($/troy oz)",
+    "frecuencia": "Mensual",
+    "fuente_original": "World Bank Commodity Price Data (The Pink Sheet)",
+    "fuente_corto": "Banco Mundial · Pink Sheet · Silver",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Precios nominales en US$; la unidad es la de la hoja original."
+  },
+  {
+    "id": "fred_wtisplc",
+    "nombre": "Petróleo WTI spot — mensual",
+    "categoria": "Energía",
+    "etiquetas": [
+      "fred",
+      "wtisplc"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "WTISPLC"
+    },
+    "unidad": "US$ por barril",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · WTISPLC",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/WTISPLC (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_dcoilwtico",
+    "nombre": "Petróleo WTI spot — diario",
+    "categoria": "Energía",
+    "etiquetas": [
+      "fred",
+      "dcoilwtico"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "DCOILWTICO"
+    },
+    "unidad": "US$ por barril",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · DCOILWTICO",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/DCOILWTICO (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_dcoilbrenteu",
+    "nombre": "Petróleo Brent spot — diario",
+    "categoria": "Energía",
+    "etiquetas": [
+      "fred",
+      "dcoilbrenteu"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "DCOILBRENTEU"
+    },
+    "unidad": "US$ por barril",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · DCOILBRENTEU",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/DCOILBRENTEU (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_gasregw",
+    "nombre": "Gasolina regular EE. UU. — semanal",
+    "categoria": "Energía",
+    "etiquetas": [
+      "fred",
+      "gasregw"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "GASREGW"
+    },
+    "unidad": "US$ por galón",
+    "frecuencia": "Semanal",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · GASREGW",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/GASREGW (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_ppiaco",
+    "nombre": "Índice de precios al productor: todas las materias primas",
+    "categoria": "Precios",
+    "etiquetas": [
+      "fred",
+      "ppiaco"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "PPIACO"
+    },
+    "unidad": "Índice 1982=100",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · PPIACO",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/PPIACO (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_cpiaucns",
+    "nombre": "IPC EE. UU. (sin ajuste estacional)",
+    "categoria": "Precios",
+    "etiquetas": [
+      "fred",
+      "cpiaucns"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "CPIAUCNS"
+    },
+    "unidad": "Índice 1982-84=100",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · CPIAUCNS",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/CPIAUCNS (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_cpiaucsl",
+    "nombre": "IPC EE. UU. (ajustado)",
+    "categoria": "Precios",
+    "etiquetas": [
+      "fred",
+      "cpiaucsl"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "CPIAUCSL"
+    },
+    "unidad": "Índice 1982-84=100",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · CPIAUCSL",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/CPIAUCSL (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_m2sl",
+    "nombre": "Oferta monetaria M2 EE. UU.",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "fred",
+      "m2sl"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "M2SL"
+    },
+    "unidad": "Miles de millones de US$",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · M2SL",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/M2SL (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_m1sl",
+    "nombre": "Oferta monetaria M1 EE. UU.",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "fred",
+      "m1sl"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "M1SL"
+    },
+    "unidad": "Miles de millones de US$",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · M1SL",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/M1SL (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_bogmbase",
+    "nombre": "Base monetaria EE. UU.",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "fred",
+      "bogmbase"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "BOGMBASE"
+    },
+    "unidad": "Millones de US$",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · BOGMBASE",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/BOGMBASE (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_fedfunds",
+    "nombre": "Tasa de los fondos federales (mensual)",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "fred",
+      "fedfunds"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "FEDFUNDS"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · FEDFUNDS",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/FEDFUNDS (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_dff",
+    "nombre": "Tasa de los fondos federales (diaria)",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "fred",
+      "dff"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "DFF"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · DFF",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/DFF (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_gs10",
+    "nombre": "Bono del Tesoro 10 años (mensual)",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "fred",
+      "gs10"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "GS10"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · GS10",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/GS10 (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_dgs10",
+    "nombre": "Bono del Tesoro 10 años (diario)",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "fred",
+      "dgs10"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "DGS10"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · DGS10",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/DGS10 (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_dgs2",
+    "nombre": "Bono del Tesoro 2 años (diario)",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "fred",
+      "dgs2"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "DGS2"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · DGS2",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/DGS2 (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_dgs30",
+    "nombre": "Bono del Tesoro 30 años (diario)",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "fred",
+      "dgs30"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "DGS30"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · DGS30",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/DGS30 (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_t10y2y",
+    "nombre": "Diferencial 10 años − 2 años del Tesoro",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "fred",
+      "t10y2y"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "T10Y2Y"
+    },
+    "unidad": "Puntos porcentuales",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · T10Y2Y",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/T10Y2Y (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_aaa",
+    "nombre": "Rendimiento de bonos corporativos AAA (Moody's)",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "fred",
+      "aaa"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "AAA"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · AAA",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/AAA (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_baa",
+    "nombre": "Rendimiento de bonos corporativos BAA (Moody's)",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "fred",
+      "baa"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "BAA"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · BAA",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/BAA (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_mortgage30us",
+    "nombre": "Hipoteca fija a 30 años EE. UU.",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "fred",
+      "mortgage30us"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "MORTGAGE30US"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Semanal",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · MORTGAGE30US",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/MORTGAGE30US (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_unrate",
+    "nombre": "Tasa de desempleo EE. UU.",
+    "categoria": "Empleo",
+    "etiquetas": [
+      "fred",
+      "unrate"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "UNRATE"
+    },
+    "unidad": "%",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · UNRATE",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/UNRATE (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_payems",
+    "nombre": "Empleo no agrícola EE. UU.",
+    "categoria": "Empleo",
+    "etiquetas": [
+      "fred",
+      "payems"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "PAYEMS"
+    },
+    "unidad": "Miles de personas",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · PAYEMS",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/PAYEMS (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_gdp",
+    "nombre": "PIB nominal EE. UU. (trimestral)",
+    "categoria": "Crecimiento",
+    "etiquetas": [
+      "fred",
+      "gdp"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "GDP"
+    },
+    "unidad": "Miles de millones de US$",
+    "frecuencia": "Trimestral",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · GDP",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/GDP (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_gdpa",
+    "nombre": "PIB nominal EE. UU. (anual)",
+    "categoria": "Crecimiento",
+    "etiquetas": [
+      "fred",
+      "gdpa"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "GDPA"
+    },
+    "unidad": "Miles de millones de US$",
+    "frecuencia": "Anual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · GDPA",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/GDPA (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_gfdebtn",
+    "nombre": "Deuda pública federal bruta",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "fred",
+      "gfdebtn"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "GFDEBTN"
+    },
+    "unidad": "Millones de US$",
+    "frecuencia": "Trimestral",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · GFDEBTN",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/GFDEBTN (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_gfdegdq188s",
+    "nombre": "Deuda pública federal / PIB",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "fred",
+      "gfdegdq188s"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "GFDEGDQ188S"
+    },
+    "unidad": "% del PIB",
+    "frecuencia": "Trimestral",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · GFDEGDQ188S",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/GFDEGDQ188S (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_houst",
+    "nombre": "Inicios de vivienda EE. UU.",
+    "categoria": "Vivienda",
+    "etiquetas": [
+      "fred",
+      "houst"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "HOUST"
+    },
+    "unidad": "Miles de unidades",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · HOUST",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/HOUST (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_csushpinsa",
+    "nombre": "Índice Case-Shiller de precios de vivienda",
+    "categoria": "Vivienda",
+    "etiquetas": [
+      "fred",
+      "csushpinsa"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "CSUSHPINSA"
+    },
+    "unidad": "Índice ene-2000=100",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · CSUSHPINSA",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/CSUSHPINSA (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_dexuseu",
+    "nombre": "Tipo de cambio US$ por euro",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "fred",
+      "dexuseu"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "DEXUSEU"
+    },
+    "unidad": "US$ por EUR",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · DEXUSEU",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/DEXUSEU (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_dexjpus",
+    "nombre": "Tipo de cambio yen por US$",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "fred",
+      "dexjpus"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "DEXJPUS"
+    },
+    "unidad": "JPY por US$",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · DEXJPUS",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/DEXJPUS (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_dexusuk",
+    "nombre": "Tipo de cambio US$ por libra",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "fred",
+      "dexusuk"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "DEXUSUK"
+    },
+    "unidad": "US$ por GBP",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · DEXUSUK",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/DEXUSUK (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_dexchus",
+    "nombre": "Tipo de cambio yuan por US$",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "fred",
+      "dexchus"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "DEXCHUS"
+    },
+    "unidad": "CNY por US$",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · DEXCHUS",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/DEXCHUS (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_dexmxus",
+    "nombre": "Tipo de cambio peso mexicano por US$",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "fred",
+      "dexmxus"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "DEXMXUS"
+    },
+    "unidad": "MXN por US$",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · DEXMXUS",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/DEXMXUS (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_vixcls",
+    "nombre": "Índice de volatilidad VIX",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "fred",
+      "vixcls"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "VIXCLS"
+    },
+    "unidad": "Índice",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · VIXCLS",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/VIXCLS (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_nasdaqcom",
+    "nombre": "Nasdaq Composite",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "fred",
+      "nasdaqcom"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "NASDAQCOM"
+    },
+    "unidad": "Índice",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · NASDAQCOM",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/NASDAQCOM (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_usrec",
+    "nombre": "Recesiones de EE. UU. (NBER)",
+    "categoria": "Ciclo",
+    "etiquetas": [
+      "fred",
+      "usrec"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "USREC"
+    },
+    "unidad": "1 = recesión",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · USREC",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/USREC (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_indpro",
+    "nombre": "Producción industrial EE. UU.",
+    "categoria": "Crecimiento",
+    "etiquetas": [
+      "fred",
+      "indpro"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "INDPRO"
+    },
+    "unidad": "Índice 2017=100",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · INDPRO",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/INDPRO (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_umcsent",
+    "nombre": "Confianza del consumidor (U. de Michigan)",
+    "categoria": "Sentimiento",
+    "etiquetas": [
+      "fred",
+      "umcsent"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "UMCSENT"
+    },
+    "unidad": "Índice",
+    "frecuencia": "Mensual",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · UMCSENT",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/UMCSENT (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_rrpontsyd",
+    "nombre": "Repos inversos overnight de la Fed",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "fred",
+      "rrpontsyd"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "RRPONTSYD"
+    },
+    "unidad": "Miles de millones de US$",
+    "frecuencia": "Diaria",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · RRPONTSYD",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/RRPONTSYD (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "fred_wtregen",
+    "nombre": "Cuenta general del Tesoro en la Fed",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "fred",
+      "wtregen"
+    ],
+    "adaptador": "fred",
+    "args": {
+      "id": "WTREGEN"
+    },
+    "unidad": "Millones de US$",
+    "frecuencia": "Semanal",
+    "fuente_original": "FRED (Federal Reserve Bank of St. Louis)",
+    "fuente_corto": "FRED · WTREGEN",
+    "licencia": "Ver términos de la serie en FRED",
+    "nota": "Página de la serie: https://fred.stlouisfed.org/series/WTREGEN (unidades y fuente original oficial allí). La unidad indicada aquí es de catálogo: confírmala en esa página antes de rotular."
+  },
+  {
+    "id": "yf_gspc",
+    "nombre": "S&P 500 — cierre diario",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "yahoo",
+      "^gspc"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "^GSPC"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ^GSPC",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_dji",
+    "nombre": "Dow Jones Industrial — cierre diario",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "yahoo",
+      "^dji"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "^DJI"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ^DJI",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_ixic",
+    "nombre": "Nasdaq Composite — cierre diario",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "yahoo",
+      "^ixic"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "^IXIC"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ^IXIC",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_rut",
+    "nombre": "Russell 2000 — cierre diario",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "yahoo",
+      "^rut"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "^RUT"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ^RUT",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_ftse",
+    "nombre": "FTSE 100 — cierre diario",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "yahoo",
+      "^ftse"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "^FTSE"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ^FTSE",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_gdaxi",
+    "nombre": "DAX — cierre diario",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "yahoo",
+      "^gdaxi"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "^GDAXI"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ^GDAXI",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_fchi",
+    "nombre": "CAC 40 — cierre diario",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "yahoo",
+      "^fchi"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "^FCHI"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ^FCHI",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_n225",
+    "nombre": "Nikkei 225 — cierre diario",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "yahoo",
+      "^n225"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "^N225"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ^N225",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_hsi",
+    "nombre": "Hang Seng — cierre diario",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "yahoo",
+      "^hsi"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "^HSI"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ^HSI",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_bvsp",
+    "nombre": "Bovespa — cierre diario",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "yahoo",
+      "^bvsp"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "^BVSP"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ^BVSP",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_mxx",
+    "nombre": "IPC México — cierre diario",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "yahoo",
+      "^mxx"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "^MXX"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ^MXX",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_000001_ss",
+    "nombre": "Shanghai Composite — cierre diario",
+    "categoria": "Mercados",
+    "etiquetas": [
+      "yahoo",
+      "000001.ss"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "000001.SS"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · 000001.SS",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_tnx",
+    "nombre": "Rendimiento bono 10 años (Yahoo) — cierre diario",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "yahoo",
+      "^tnx"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "^TNX"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ^TNX",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_dx_y_nyb",
+    "nombre": "Índice dólar (DXY) — cierre diario",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "yahoo",
+      "dx-y.nyb"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "DX-Y.NYB"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · DX-Y.NYB",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_eurusd_x",
+    "nombre": "EUR/USD — cierre diario",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "yahoo",
+      "eurusd=x"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "EURUSD=X"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · EURUSD=X",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_jpy_x",
+    "nombre": "USD/JPY — cierre diario",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "yahoo",
+      "jpy=x"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "JPY=X"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · JPY=X",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_gc_f",
+    "nombre": "Oro — futuro continuo COMEX — cierre diario",
+    "categoria": "Metales preciosos",
+    "etiquetas": [
+      "yahoo",
+      "gc=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "GC=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · GC=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_si_f",
+    "nombre": "Plata — futuro continuo COMEX — cierre diario",
+    "categoria": "Metales preciosos",
+    "etiquetas": [
+      "yahoo",
+      "si=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "SI=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · SI=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_hg_f",
+    "nombre": "Cobre — futuro continuo COMEX — cierre diario",
+    "categoria": "Metales industriales",
+    "etiquetas": [
+      "yahoo",
+      "hg=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "HG=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · HG=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_pl_f",
+    "nombre": "Platino — futuro continuo NYMEX — cierre diario",
+    "categoria": "Metales preciosos",
+    "etiquetas": [
+      "yahoo",
+      "pl=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "PL=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · PL=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_pa_f",
+    "nombre": "Paladio — futuro continuo NYMEX — cierre diario",
+    "categoria": "Metales preciosos",
+    "etiquetas": [
+      "yahoo",
+      "pa=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "PA=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · PA=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_cl_f",
+    "nombre": "Petróleo WTI — futuro continuo NYMEX — cierre diario",
+    "categoria": "Energía",
+    "etiquetas": [
+      "yahoo",
+      "cl=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "CL=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · CL=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_bz_f",
+    "nombre": "Petróleo Brent — futuro continuo — cierre diario",
+    "categoria": "Energía",
+    "etiquetas": [
+      "yahoo",
+      "bz=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "BZ=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · BZ=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_ng_f",
+    "nombre": "Gas natural — futuro continuo NYMEX — cierre diario",
+    "categoria": "Energía",
+    "etiquetas": [
+      "yahoo",
+      "ng=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "NG=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · NG=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_zw_f",
+    "nombre": "Trigo — futuro continuo CBOT — cierre diario",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "yahoo",
+      "zw=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "ZW=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ZW=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_zc_f",
+    "nombre": "Maíz — futuro continuo CBOT — cierre diario",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "yahoo",
+      "zc=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "ZC=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ZC=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_zs_f",
+    "nombre": "Soya — futuro continuo CBOT — cierre diario",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "yahoo",
+      "zs=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "ZS=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ZS=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_kc_f",
+    "nombre": "Café — futuro continuo ICE — cierre diario",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "yahoo",
+      "kc=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "KC=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · KC=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_cc_f",
+    "nombre": "Cacao — futuro continuo ICE — cierre diario",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "yahoo",
+      "cc=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "CC=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · CC=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_sb_f",
+    "nombre": "Azúcar — futuro continuo ICE — cierre diario",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "yahoo",
+      "sb=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "SB=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · SB=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_ct_f",
+    "nombre": "Algodón — futuro continuo ICE — cierre diario",
+    "categoria": "Agrícolas y alimentos",
+    "etiquetas": [
+      "yahoo",
+      "ct=f"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "CT=F"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · CT=F",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": "Futuro continuo: empalme de contratos sin ajustar por rolleo."
+  },
+  {
+    "id": "yf_btc_usd",
+    "nombre": "Bitcoin (Yahoo) — cierre diario",
+    "categoria": "Cripto",
+    "etiquetas": [
+      "yahoo",
+      "btc-usd"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "BTC-USD"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · BTC-USD",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "yf_eth_usd",
+    "nombre": "Ether (Yahoo) — cierre diario",
+    "categoria": "Cripto",
+    "etiquetas": [
+      "yahoo",
+      "eth-usd"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "ETH-USD"
+    },
+    "unidad": "Precio / nivel de cierre (moneda y unidad del instrumento)",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · ETH-USD",
+    "licencia": "Uso personal/investigación; no redistribuir",
+    "nota": null
+  },
+  {
+    "id": "cm_btc_precio",
+    "nombre": "Bitcoin — precio de referencia diario (desde el primer precio)",
+    "categoria": "Cripto",
+    "etiquetas": [
+      "bitcoin",
+      "btc",
+      "cripto"
+    ],
+    "adaptador": "coinmetrics",
+    "args": {
+      "activo": "btc",
+      "metrica": "PriceUSD",
+      "inicio": "2009-01-01"
+    },
+    "unidad": "US$",
+    "frecuencia": "Diaria",
+    "fuente_original": "Coin Metrics Community Network Data",
+    "fuente_corto": "Coin Metrics · BTC PriceUSD",
+    "licencia": "CC BY-NC 4.0 (datos comunitarios de Coin Metrics)"
+  },
+  {
+    "id": "cm_eth_precio",
+    "nombre": "Ether — precio de referencia diario (desde el primer precio)",
+    "categoria": "Cripto",
+    "etiquetas": [
+      "ethereum",
+      "eth",
+      "cripto"
+    ],
+    "adaptador": "coinmetrics",
+    "args": {
+      "activo": "eth",
+      "metrica": "PriceUSD",
+      "inicio": "2015-01-01"
+    },
+    "unidad": "US$",
+    "frecuencia": "Diaria",
+    "fuente_original": "Coin Metrics Community Network Data",
+    "fuente_corto": "Coin Metrics · ETH PriceUSD",
+    "licencia": "CC BY-NC 4.0 (datos comunitarios de Coin Metrics)"
+  },
+  {
+    "id": "sh_p",
+    "nombre": "S&P Composite — precio nominal (desde 1871)",
+    "categoria": "Mercados (historia larga)",
+    "etiquetas": [
+      "shiller",
+      "sp500",
+      "historia larga"
+    ],
+    "adaptador": "shiller",
+    "args": {
+      "columna": "P"
+    },
+    "unidad": "Índice",
+    "frecuencia": "Mensual",
+    "fuente_original": "Robert J. Shiller, Yale — Online Data (Irrational Exuberance)",
+    "fuente_corto": "Shiller (Yale) · P",
+    "licencia": "Datos públicos del autor; citar a Shiller",
+    "nota": "Valores mensuales; precios = promedio del mes."
+  },
+  {
+    "id": "sh_d",
+    "nombre": "S&P Composite — dividendos nominales (desde 1871)",
+    "categoria": "Mercados (historia larga)",
+    "etiquetas": [
+      "shiller",
+      "sp500",
+      "historia larga"
+    ],
+    "adaptador": "shiller",
+    "args": {
+      "columna": "D"
+    },
+    "unidad": "Puntos de índice",
+    "frecuencia": "Mensual",
+    "fuente_original": "Robert J. Shiller, Yale — Online Data (Irrational Exuberance)",
+    "fuente_corto": "Shiller (Yale) · D",
+    "licencia": "Datos públicos del autor; citar a Shiller",
+    "nota": "Valores mensuales; precios = promedio del mes."
+  },
+  {
+    "id": "sh_e",
+    "nombre": "S&P Composite — beneficios nominales (desde 1871)",
+    "categoria": "Mercados (historia larga)",
+    "etiquetas": [
+      "shiller",
+      "sp500",
+      "historia larga"
+    ],
+    "adaptador": "shiller",
+    "args": {
+      "columna": "E"
+    },
+    "unidad": "Puntos de índice",
+    "frecuencia": "Mensual",
+    "fuente_original": "Robert J. Shiller, Yale — Online Data (Irrational Exuberance)",
+    "fuente_corto": "Shiller (Yale) · E",
+    "licencia": "Datos públicos del autor; citar a Shiller",
+    "nota": "Valores mensuales; precios = promedio del mes."
+  },
+  {
+    "id": "sh_cpi",
+    "nombre": "IPC EE. UU. (empalme Shiller) (desde 1871)",
+    "categoria": "Mercados (historia larga)",
+    "etiquetas": [
+      "shiller",
+      "sp500",
+      "historia larga"
+    ],
+    "adaptador": "shiller",
+    "args": {
+      "columna": "CPI"
+    },
+    "unidad": "Índice",
+    "frecuencia": "Mensual",
+    "fuente_original": "Robert J. Shiller, Yale — Online Data (Irrational Exuberance)",
+    "fuente_corto": "Shiller (Yale) · CPI",
+    "licencia": "Datos públicos del autor; citar a Shiller",
+    "nota": "Valores mensuales; precios = promedio del mes."
+  },
+  {
+    "id": "sh_gs10",
+    "nombre": "Rendimiento bono 10 años EE. UU. (empalme Shiller) (desde 1871)",
+    "categoria": "Mercados (historia larga)",
+    "etiquetas": [
+      "shiller",
+      "sp500",
+      "historia larga"
+    ],
+    "adaptador": "shiller",
+    "args": {
+      "columna": "GS10"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Mensual",
+    "fuente_original": "Robert J. Shiller, Yale — Online Data (Irrational Exuberance)",
+    "fuente_corto": "Shiller (Yale) · GS10",
+    "licencia": "Datos públicos del autor; citar a Shiller",
+    "nota": "Valores mensuales; precios = promedio del mes."
+  },
+  {
+    "id": "sh_real_price",
+    "nombre": "S&P Composite — precio real (desde 1871)",
+    "categoria": "Mercados (historia larga)",
+    "etiquetas": [
+      "shiller",
+      "sp500",
+      "historia larga"
+    ],
+    "adaptador": "shiller",
+    "args": {
+      "columna": "Real Price"
+    },
+    "unidad": "Índice (US$ constantes)",
+    "frecuencia": "Mensual",
+    "fuente_original": "Robert J. Shiller, Yale — Online Data (Irrational Exuberance)",
+    "fuente_corto": "Shiller (Yale) · Real Price",
+    "licencia": "Datos públicos del autor; citar a Shiller",
+    "nota": "Valores mensuales; precios = promedio del mes."
+  },
+  {
+    "id": "ow_population",
+    "nombre": "Población mundial (desde el 10.000 a. C.)",
+    "categoria": "Población",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "population"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "population",
+      "entidad": "World"
+    },
+    "unidad": "Personas",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · population",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "ow_gdp_per_capita_maddison_project_database_gdp_per_capita",
+    "nombre": "PIB per cápita mundial (Maddison Project)",
+    "categoria": "Crecimiento",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "gdp-per-capita-maddison-project-database"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "gdp-per-capita-maddison-project-database",
+      "entidad": "World",
+      "columna": "gdp_per_capita"
+    },
+    "unidad": "US$ internacionales 2011",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · gdp-per-capita-maddison-project-database",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "ow_life_expectancy",
+    "nombre": "Esperanza de vida mundial",
+    "categoria": "Población",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "life-expectancy"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "life-expectancy",
+      "entidad": "World"
+    },
+    "unidad": "Años",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · life-expectancy",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "ow_annual_co2_emissions_per_country",
+    "nombre": "Emisiones anuales de CO₂ mundiales",
+    "categoria": "Clima y energía",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "annual-co2-emissions-per-country"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "annual-co2-emissions-per-country",
+      "entidad": "World"
+    },
+    "unidad": "Toneladas",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · annual-co2-emissions-per-country",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "ow_coal_production_by_country",
+    "nombre": "Producción mundial de carbón",
+    "categoria": "Energía",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "coal-production-by-country"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "coal-production-by-country",
+      "entidad": "World"
+    },
+    "unidad": "TWh",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · coal-production-by-country",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "ow_oil_production_by_country",
+    "nombre": "Producción mundial de petróleo",
+    "categoria": "Energía",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "oil-production-by-country"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "oil-production-by-country",
+      "entidad": "World"
+    },
+    "unidad": "TWh",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · oil-production-by-country",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "ow_primary_energy_cons",
+    "nombre": "Consumo mundial de energía primaria",
+    "categoria": "Energía",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "primary-energy-cons"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "primary-energy-cons",
+      "entidad": "World"
+    },
+    "unidad": "TWh",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · primary-energy-cons",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "ow_global_energy_substitution_coal_twh",
+    "nombre": "Consumo mundial de carbón (sustitución energética)",
+    "categoria": "Energía",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "global-energy-substitution"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "global-energy-substitution",
+      "entidad": "World",
+      "columna": "coal_twh"
+    },
+    "unidad": "TWh",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · global-energy-substitution",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "ow_global_energy_substitution_oil_twh",
+    "nombre": "Consumo mundial de petróleo (sustitución energética)",
+    "categoria": "Energía",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "global-energy-substitution"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "global-energy-substitution",
+      "entidad": "World",
+      "columna": "oil_twh"
+    },
+    "unidad": "TWh",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · global-energy-substitution",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "ow_global_energy_substitution_gas_twh",
+    "nombre": "Consumo mundial de gas (sustitución energética)",
+    "categoria": "Energía",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "global-energy-substitution"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "global-energy-substitution",
+      "entidad": "World",
+      "columna": "gas_twh"
+    },
+    "unidad": "TWh",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · global-energy-substitution",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "ow_global_energy_substitution_hydro_twh",
+    "nombre": "Consumo mundial de hidroeléctrica",
+    "categoria": "Energía",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "global-energy-substitution"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "global-energy-substitution",
+      "entidad": "World",
+      "columna": "hydro_twh"
+    },
+    "unidad": "TWh",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · global-energy-substitution",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "ow_global_energy_substitution_nuclear_twh",
+    "nombre": "Consumo mundial de nuclear",
+    "categoria": "Energía",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "global-energy-substitution"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "global-energy-substitution",
+      "entidad": "World",
+      "columna": "nuclear_twh"
+    },
+    "unidad": "TWh",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · global-energy-substitution",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "ow_temperature_anomaly_northern_hemisphere",
+    "nombre": "Anomalía de temperatura, hemisferio norte",
+    "categoria": "Clima y energía",
+    "etiquetas": [
+      "our world in data",
+      "historia larga",
+      "temperature-anomaly"
+    ],
+    "adaptador": "owid",
+    "args": {
+      "slug": "temperature-anomaly",
+      "entidad": "Northern Hemisphere"
+    },
+    "unidad": "°C (ver página de la serie para la base)",
+    "frecuencia": "Anual",
+    "fuente_original": "Our World in Data (fuentes primarias en la página del gráfico)",
+    "fuente_corto": "Our World in Data · temperature-anomaly",
+    "licencia": "CC BY 4.0 (OWID); revisar licencia de la fuente primaria"
+  },
+  {
+    "id": "nbp_pln_usd",
+    "nombre": "Zloty por dólar estadounidense — tipo de cambio medio oficial NBP",
+    "categoria": "Polonia",
+    "etiquetas": [
+      "polonia",
+      "nbp",
+      "zloty",
+      "pln",
+      "usd"
+    ],
+    "adaptador": "nbp",
+    "args": {
+      "tipo": "kurs",
+      "tabla": "a",
+      "codigo": "usd"
+    },
+    "unidad": "PLN por 1 USD",
+    "frecuencia": "Diaria (días hábiles)",
+    "fuente_original": "Narodowy Bank Polski — Tabla A de tipos de cambio medios",
+    "fuente_corto": "NBP · tabla A · USD/PLN",
+    "licencia": "Datos públicos del NBP",
+    "nota": "La API oficial entrega desde 2002-01-02; el archivo anterior (1984-2001) no está en la API."
+  },
+  {
+    "id": "nbp_pln_eur",
+    "nombre": "Zloty por euro — tipo de cambio medio oficial NBP",
+    "categoria": "Polonia",
+    "etiquetas": [
+      "polonia",
+      "nbp",
+      "zloty",
+      "pln",
+      "eur"
+    ],
+    "adaptador": "nbp",
+    "args": {
+      "tipo": "kurs",
+      "tabla": "a",
+      "codigo": "eur"
+    },
+    "unidad": "PLN por 1 EUR",
+    "frecuencia": "Diaria (días hábiles)",
+    "fuente_original": "Narodowy Bank Polski — Tabla A de tipos de cambio medios",
+    "fuente_corto": "NBP · tabla A · EUR/PLN",
+    "licencia": "Datos públicos del NBP",
+    "nota": "La API oficial entrega desde 2002-01-02; el archivo anterior (1984-2001) no está en la API."
+  },
+  {
+    "id": "nbp_pln_chf",
+    "nombre": "Zloty por franco suizo — tipo de cambio medio oficial NBP",
+    "categoria": "Polonia",
+    "etiquetas": [
+      "polonia",
+      "nbp",
+      "zloty",
+      "pln",
+      "chf"
+    ],
+    "adaptador": "nbp",
+    "args": {
+      "tipo": "kurs",
+      "tabla": "a",
+      "codigo": "chf"
+    },
+    "unidad": "PLN por 1 CHF",
+    "frecuencia": "Diaria (días hábiles)",
+    "fuente_original": "Narodowy Bank Polski — Tabla A de tipos de cambio medios",
+    "fuente_corto": "NBP · tabla A · CHF/PLN",
+    "licencia": "Datos públicos del NBP",
+    "nota": "La API oficial entrega desde 2002-01-02; el archivo anterior (1984-2001) no está en la API."
+  },
+  {
+    "id": "nbp_pln_gbp",
+    "nombre": "Zloty por libra esterlina — tipo de cambio medio oficial NBP",
+    "categoria": "Polonia",
+    "etiquetas": [
+      "polonia",
+      "nbp",
+      "zloty",
+      "pln",
+      "gbp"
+    ],
+    "adaptador": "nbp",
+    "args": {
+      "tipo": "kurs",
+      "tabla": "a",
+      "codigo": "gbp"
+    },
+    "unidad": "PLN por 1 GBP",
+    "frecuencia": "Diaria (días hábiles)",
+    "fuente_original": "Narodowy Bank Polski — Tabla A de tipos de cambio medios",
+    "fuente_corto": "NBP · tabla A · GBP/PLN",
+    "licencia": "Datos públicos del NBP",
+    "nota": "La API oficial entrega desde 2002-01-02; el archivo anterior (1984-2001) no está en la API."
+  },
+  {
+    "id": "nbp_oro_pln_gramo",
+    "nombre": "Precio del oro (1 g, ley 1000) — NBP",
+    "categoria": "Polonia",
+    "etiquetas": [
+      "polonia",
+      "nbp",
+      "oro",
+      "pln"
+    ],
+    "adaptador": "nbp",
+    "args": {
+      "tipo": "zloto"
+    },
+    "unidad": "PLN por gramo",
+    "frecuencia": "Diaria (días hábiles)",
+    "fuente_original": "Narodowy Bank Polski — Precio del oro",
+    "fuente_corto": "NBP · precio del oro (PLN/g)",
+    "licencia": "Datos públicos del NBP"
+  },
+  {
+    "id": "gus_ipc_anual",
+    "nombre": "Polonia — Índice de precios al consumidor (inflación), total, anual",
+    "categoria": "Polonia",
+    "etiquetas": [
+      "polonia",
+      "gus",
+      "inflacion",
+      "ipc"
+    ],
+    "adaptador": "gus",
+    "args": {
+      "variable": 217230
+    },
+    "frecuencia": "Anual",
+    "fuente_original": "GUS — Bank Danych Lokalnych (variable 217230)",
+    "fuente_corto": "GUS · BDL · IPC anual",
+    "licencia": "Datos públicos del GUS",
+    "nota": "Tema oficial BDL P2955 (inflación, COICOP 1999). BDL no declara la base del índice en sus metadatos; confírmala en la ficha antes de rotularla."
+  },
+  {
+    "id": "yf_pkn_wa",
+    "nombre": "PKN Orlen (Varsovia) — cierre diario",
+    "categoria": "Polonia",
+    "etiquetas": [
+      "polonia",
+      "gpw",
+      "orlen",
+      "yahoo"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "PKN.WA"
+    },
+    "unidad": "PLN por acción",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · PKN.WA",
+    "licencia": "Uso personal/investigación; no redistribuir"
+  },
+  {
+    "id": "yf_pln_x",
+    "nombre": "USD/PLN (Yahoo) — cierre diario",
+    "categoria": "Polonia",
+    "etiquetas": [
+      "polonia",
+      "zloty",
+      "yahoo"
+    ],
+    "adaptador": "yahoo",
+    "args": {
+      "simbolo": "PLN=X"
+    },
+    "unidad": "PLN por US$",
+    "frecuencia": "Diaria",
+    "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
+    "fuente_corto": "Yahoo Finance · PLN=X",
+    "licencia": "Uso personal/investigación; no redistribuir"
+  }
+]
