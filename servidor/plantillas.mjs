@@ -24,9 +24,13 @@ export const PLANTILLAS = [
   {id: 'panel', nombre: 'Comparar varias a la vez', descripcion: 'De 2 a 4 gráficas en pantalla, cada una con su cifra al lado y un año común arriba.', necesita: {min: 2, max: 4}, ayuda: 'Elige de 2 a 4 datos.'},
   {id: 'carrera', nombre: 'Ranking en carrera', descripcion: 'Barras que compiten y se reordenan con el tiempo: quién va primero en cada año.', necesita: {min: 3, max: 10}, ayuda: 'Elige de 3 a 10 datos del mismo tipo.'},
   {id: 'correlacion', nombre: '¿Se mueven juntas?', descripcion: 'Un mapa de colores que muestra qué series suben y bajan a la vez, y cuáles al revés.', necesita: {min: 3, max: 8}, ayuda: 'Elige de 3 a 8 datos.'},
+  {id: 'pendiente', nombre: '¿Quién subió y quién bajó?', descripcion: 'Una línea por cada dato entre dos momentos (el primero y el último): se ve de un vistazo quién ganó, quién perdió y cuánto, con el cambio calculado.', necesita: {min: 2, max: 8}, ayuda: 'Elige de 2 a 8 datos.'},
+  {id: 'bump', nombre: '¿Quién superó a quién?', descripcion: 'La posición (1.º, 2.º, 3.º…) de cada dato en varios momentos, unidas por curvas: los cruces son los adelantamientos.', necesita: {min: 3, max: 8}, ayuda: 'Elige de 3 a 8 datos del mismo tipo.'},
   // — tablas (no son series de tiempo): se alimentan de un archivo con una tabla de flujos o de categorías —
   {id: 'resultados', datos: 'flujos', nombre: '¿De dónde viene y adónde va?', descripcion: 'Un diagrama de flujo (Sankey): de dónde entra el dinero, en qué se reparte y qué queda. Los porcentajes se calculan solos.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de flujos (origen, destino, valor).'},
   {id: 'composicion', datos: 'categorias', nombre: 'Qué parte pesa cuánto', descripcion: 'Un anillo que se llena parte por parte, con su valor y su porcentaje al lado.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor).'},
+  {id: 'treemap', datos: 'categorias', nombre: 'Mapa de áreas', descripcion: 'Rectángulos cuya área es proporcional al valor: ideal con muchas partes (más de 6). Lo que no cabe rotulado se lista con su cifra.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor).'},
+  {id: 'waffle', datos: 'categorias', nombre: '100 cuadros', descripcion: 'Cien cuadros, cada uno vale 1 %: la forma más fácil de entender «de cada 100, cuántos son…». Suma exacta a 100.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor).'},
   {id: 'puente', datos: 'categorias', nombre: 'Qué sumó y qué restó', descripcion: 'Una cascada: parte de un total, muestra cada suma y cada resta y llega al resultado. Los subtotales se comprueban.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor, y «total» en los subtotales).'},
 ];
 /** Qué clase de dato usa cada plantilla: 'serie' (tiempo), 'flujos' o 'categorias'. */
@@ -172,6 +176,22 @@ function puente({titulo, camara}) {
   const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(5, Math.min(9, P.dibujo + 1)), dur = +(1 + dib + 3).toFixed(1);
   return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'cascada', id: 'g1', datos: 'd', t: [0.9, 0.9 + dib]}], notas: ['Los subtotales marcados como «total» se comprueban contra la suma de lo anterior.']};
 }
+function pendiente({titulo, camara, foco}) {
+  const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(4, Math.min(7, P.dibujo)), dur = +(1 + dib + 3).toFixed(1);
+  return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'pendiente', id: 'g1', datos: 'd', ...(foco != null ? {foco} : {}), t: [0.9, 0.9 + dib]}], notas: ['Se comparan solo el primer y el último momento de la tabla; el cambio (%) es último ÷ primero − 1. Las series sin dato en alguno de los dos momentos no se dibujan.']};
+}
+function bump({titulo, camara, foco}) {
+  const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(5, Math.min(9, P.dibujo + 1)), dur = +(1 + dib + 3).toFixed(1);
+  return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'bump', id: 'g1', datos: 'd', ...(foco != null ? {foco} : {}), t: [0.9, 0.9 + dib]}], notas: ['La posición en cada momento sale de ordenar las series por su crecimiento acumulado desde el primer momento (valor ÷ valor inicial), para que series de unidades distintas sean comparables. Se muestran hasta 8 momentos repartidos de forma uniforme; solo entran las series con dato en todos ellos.']};
+}
+function treemap({titulo, camara}) {
+  const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(4, Math.min(7, P.dibujo)), dur = +(1 + dib + 3).toFixed(1);
+  return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'treemap', id: 'g1', datos: 'd', t: [0.9, 0.9 + dib]}], notas: ['El área de cada rectángulo es proporcional a su valor; el porcentaje es su valor entre la suma de todas las partes.']};
+}
+function waffle({titulo, camara}) {
+  const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(4, Math.min(7, P.dibujo)), dur = +(1 + dib + 3).toFixed(1);
+  return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'waffle', id: 'g1', datos: 'd', t: [0.9, 0.9 + dib]}], notas: ['Cada cuadro vale 1 %. Los 100 cuadros se reparten por «mayor resto» para que sumen exactamente 100; el porcentaje de la leyenda es el exacto, sin redondear a cuadros.']};
+}
 function correlacion({titulo}) {
   return {duracion: 8, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, 7.9]}, {tipo: 'calor', datos: 'd', sobre: 'variaciones', t: [0.8, 3.6]}], notas: ['La correlación se mide sobre las variaciones entre periodos (no sobre los niveles), que es la forma correcta cuando las series tienen tendencia.']};
 }
@@ -187,7 +207,7 @@ export function generar(entrada) {
   const clase = def.datos ?? 'serie', esTabla = series.some((s) => s.tabla);
   if (clase === 'serie' && esTabla) throw new Error(`«${def.nombre}» se usa con series de tiempo, y elegiste una tabla de ${series.find((s) => s.tabla).tabla}. Elige otro estilo en el paso 2.`);
   if (clase !== 'serie' && !series.every((s) => s.tabla === clase)) throw new Error(`«${def.nombre}» necesita ${clase === 'flujos' ? 'una tabla de flujos (columnas origen, destino y valor)' : 'una tabla de categorías (columnas concepto y valor)'}. ${def.ayuda}`);
-  const {datos, nombres, notas: n0} = armarDatos(series, {comun: plantilla === 'comparar' || plantilla === 'correlacion'});
+  const {datos, nombres, notas: n0} = armarDatos(series, {comun: ['comparar', 'correlacion', 'pendiente', 'bump'].includes(plantilla)});
   if (datos.d.tipo === 'categorias') datos.d.uso = plantilla === 'puente' ? 'cascada' : 'donut';
   if (plantilla === 'comparar') { datos.d.base100 = true; const f0 = Math.min(Math.max(0, entrada.foco ?? 0), datos.d.columnas.length - 1), otros = ['teal', 'purpura', 'piedra']; let k = 0; datos.d.columnas.forEach((c, i) => { c.color = i === f0 ? 'oro' : otros[k++ % 3]; }); }
   const base = compilar({version: 1, datos, capas: []});
@@ -208,6 +228,10 @@ export function generar(entrada) {
   else if (plantilla === 'resultados') g = resultados({titulo, camara});
   else if (plantilla === 'composicion') g = composicion({titulo, camara});
   else if (plantilla === 'puente') g = puente({titulo, camara});
+  else if (plantilla === 'treemap') g = treemap({titulo, camara});
+  else if (plantilla === 'waffle') g = waffle({titulo, camara});
+  else if (plantilla === 'pendiente') g = pendiente({titulo, camara, foco: entrada.foco});
+  else if (plantilla === 'bump') g = bump({titulo, camara, foco: entrada.foco});
   else g = correlacion({titulo});
   // el período («Q3 FY2026») sale de la fecha de cierre del reporte oficial, no se teclea: se declara verificado
   if (series[0]?.trimestre && g.capas[0]?.tipo === 'titulo' && /\d/.test(g.capas[0].texto)) g.capas[0].verificada = {fuente: `Período del reporte ${series[0].trimestre.etiqueta} (SEC EDGAR, fecha de cierre ${series[0].trimestre.fin})`, url: series[0].fuente?.url};

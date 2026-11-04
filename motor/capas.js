@@ -11,7 +11,7 @@ const SANS = '"Geist", system-ui, sans-serif';
 const MONO = '"Geist Mono", ui-monospace, monospace';
 const fnt = (peso, px, mono = false) => `${peso} ${Math.round(px)}px ${mono ? MONO : SANS}`;
 
-export const Z = {imagen: 5, zona: 8, sankey: 10, donut: 10, cascada: 10, linea: 10, barras: 10, carrera: 10, dispersion: 10, calor: 10, llamada: 20, contador: 25, titulo: 30, cortina: 40, sello: 50};
+export const Z = {imagen: 5, zona: 8, sankey: 10, donut: 10, cascada: 10, pendiente: 10, bump: 10, treemap: 10, waffle: 10, linea: 10, barras: 10, carrera: 10, dispersion: 10, calor: 10, llamada: 20, contador: 25, titulo: 30, cortina: 40, sello: 50};
 
 function caja(env, capa, def) {
   const c = capa.caja ?? def;
@@ -903,4 +903,188 @@ function cascada(env, capa) {
   ctx.restore();
 }
 
-export const DIBUJO = {linea, barras, carrera, dispersion, calor, zona, llamada, contador, titulo, cortina, imagen, sello, sankey, donut, cascada};
+// ── MODELOS NUEVOS (2026-11-04): pendiente, bump, treemap, waffle ────────────────────────────────────────────────
+// Misma regla que el resto: cada número que se ve sale de una fila de los datos o es una cuenta exacta sobre ellas.
+const paletaCat = () => [colorTipo('ingreso'), COLOR.teal, COLOR.purpura, COLOR.verde, COLOR.rojo, PALETA.piedra, COLOR.amarillo, COLOR.rosa];
+const etiquetaX = (tab, i, modo = 'anio') => (tab.tipoX === 'fecha' ? fmtFecha(tab.x[i], modo) : String(tab.x[i]));
+/** Separa verticalmente etiquetas que se pisarían: nadie queda a menos de `gap` del anterior ni fuera de [lo, hi]. */
+function separar(ys, gap, lo, hi) {
+  const o = ys.map((y, i) => ({y, i})).sort((a, b) => a.y - b.y);
+  let cur = lo; o.forEach((e) => { e.y = Math.max(e.y, cur); cur = e.y + gap; });
+  let lim = hi; for (let i = o.length - 1; i >= 0; i--) { o[i].y = Math.min(o[i].y, lim); lim = o[i].y - gap; }
+  const out = new Array(ys.length); o.forEach((e) => { out[e.i] = e.y; }); return out;
+}
+
+/** Pendiente (slope chart): dos momentos, una línea por serie. Responde «¿quién subió y quién bajó entre A y B?». */
+function pendiente(env, capa) {
+  const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W, k = vert ? 0.82 : 1;
+  const B = caja(env, capa, vert ? [0.05, 0.27, 0.9, 0.6] : [0.05, 0.25, 0.9, 0.62]);
+  const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
+  const n = tab.x.length, i0 = capa.de ?? 0, i1 = capa.a ?? n - 1;
+  const L = (capa._pl ??= (() => {
+    const idxs = (capa.series ?? tab.series.map((_, i) => i)).filter((si) => tab.series[si].y[i0] != null && tab.series[si].y[i1] != null);
+    const vs = idxs.flatMap((si) => [tab.series[si].y[i0], tab.series[si].y[i1]]), lo = Math.min(...vs), hi = Math.max(...vs), top = B.y + 70 * u, bajo = B.y + B.h - 24 * u;
+    const logE = lo > 0 && hi / lo > 8 && capa.escala !== 'lineal', f = logE ? Math.log10 : (v) => v;   // magnitudes muy distintas: escala logarítmica (se avisa en pantalla)
+    const py = (v) => bajo - ((f(v) - f(lo)) / ((f(hi) - f(lo)) || 1)) * (bajo - top), gap = 56 * u * k;
+    const yl = separar(idxs.map((si) => py(tab.series[si].y[i0])), gap, top - 10 * u, bajo + 10 * u), yr = separar(idxs.map((si) => py(tab.series[si].y[i1])), gap, top - 10 * u, bajo + 10 * u);
+    return {idxs, py, yl, yr, logE, omitidas: (capa.series ?? tab.series.map((_, i) => i)).length - idxs.length};
+  })());
+  const xl = B.x + B.w * 0.36, xr = B.x + B.w * 0.64, p = prog(t, t0, t1, ease.io2), fT = fnt(700, 26 * u * k, true);
+  ctx.save(); ctx.globalAlpha *= ap;
+  [[xl, i0], [xr, i1]].forEach(([x, i]) => { rotulo(ctx, etiquetaX(tab, i), x, B.y + 26 * u, fnt(800, 30 * u * k, true), PALETA.piedraClara, 'center', u); reg(env, 'etiqueta', [x - 70 * u, B.y - 2 * u, x + 70 * u, B.y + 34 * u], `${capa.id ?? 'pendiente'}:x${i}`); });
+  if (L.logE) { rotulo(ctx, 'ESCALA LOGARÍTMICA · LA DISTANCIA ES PROPORCIONAL AL CAMBIO PORCENTUAL', B.x, B.y + B.h + 44 * u, fnt(600, 16 * u, true), PALETA.piedraOscura, 'left', u); reg(env, 'etiqueta', [B.x, B.y + B.h + 24 * u, B.x + 760 * u * k, B.y + B.h + 50 * u], `${capa.id ?? 'pendiente'}:escala`); }
+  L.idxs.forEach((si, j) => {
+    const s = tab.series[si], v0 = s.y[i0], v1 = s.y[i1], color = capa.foco != null ? (si === capa.foco ? colorDe(s.color, si) : rgba(colorDe(s.color, si), 0.45)) : colorDe(s.color, si);
+    const ya = L.py(v0), yb = L.py(v1), pr = clamp(p * 1.25 - j * 0.04), yEnd = lerp(ya, yb, pr), xEnd = lerp(xl, xr, pr);
+    ctx.strokeStyle = color; ctx.lineWidth = (capa.foco === si ? 8 : 5.5) * u; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(xl, ya); ctx.lineTo(xEnd, yEnd); ctx.stroke();
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(xl, ya, 9 * u, 0, 7); ctx.fill(); if (pr >= 1) { ctx.beginPath(); ctx.arc(xr, yb, 9 * u, 0, 7); ctx.fill(); }
+    const la = clamp(p * 4 - 0.2);
+    ctx.save(); ctx.globalAlpha *= la;
+    ctx.font = fT; const nom = cortar(ctx, s.nombre, B.w * 0.3), lw = Math.max(ctx.measureText(nom).width, ctx.measureText(fmtNum(v0, s.fmt)).width);
+    rotulo(ctx, nom, xl - 22 * u, L.yl[j] - 2 * u, fT, PALETA.blanco, 'right', u);
+    rotulo(ctx, fmtNum(v0, s.fmt), xl - 22 * u, L.yl[j] + 24 * u * k, fnt(500, 21 * u * k, true), PALETA.piedraClara, 'right', u);
+    reg(env, 'etiqueta', [xl - 22 * u - lw, L.yl[j] - 26 * u * k, xl - 22 * u, L.yl[j] + 30 * u * k], `${capa.id ?? 'pendiente'}:l:${si}`);
+    ctx.restore();
+    const ra = clamp((pr - 0.85) / 0.15); if (ra <= 0) return;
+    ctx.save(); ctx.globalAlpha *= ra;
+    const delta = v0 > 0 ? (v1 / v0 - 1) * 100 : null, dTxt = delta == null ? null : `${delta >= 0 ? '+' : '−'}${Math.abs(delta).toFixed(Math.abs(delta) < 10 ? 1 : 0).replace('.', ',')} %`;
+    const vTxt = fmtNum(v1, s.fmt); ctx.font = fnt(800, 26 * u * k, true); const rw = Math.max(ctx.measureText(vTxt).width, dTxt ? ctx.measureText(dTxt).width : 0);
+    rotulo(ctx, vTxt, xr + 22 * u, L.yr[j] - 2 * u, fnt(800, 26 * u * k, true), PALETA.blanco, 'left', u);
+    if (dTxt) rotulo(ctx, dTxt, xr + 22 * u, L.yr[j] + 24 * u * k, fnt(700, 21 * u * k, true), delta >= 0 ? COLOR.verde : COLOR.rojo, 'left', u);
+    reg(env, 'etiqueta', [xr + 22 * u, L.yr[j] - 26 * u * k, xr + 22 * u + rw, L.yr[j] + 30 * u * k], `${capa.id ?? 'pendiente'}:r:${si}`);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+/** Bump chart: la posición (1.º, 2.º…) de cada serie en varios momentos. Responde «¿quién superó a quién y cuándo?». */
+function bump(env, capa) {
+  const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W, k = vert ? 0.8 : 1;
+  const B = caja(env, capa, vert ? [0.04, 0.27, 0.92, 0.6] : [0.04, 0.25, 0.92, 0.62]);
+  const [t0, t1] = capa.t ?? [0.5, 6], ap = aparece(env, capa, t0); if (ap <= 0) return;
+  const L = (capa._bm ??= (() => {
+    const n = tab.x.length, m = Math.min(capa.puntos ?? 8, n), pts = Array.from({length: m}, (_, q) => Math.round((q * (n - 1)) / Math.max(1, m - 1)));
+    const idxs = (capa.series ?? tab.series.map((_, i) => i)).filter((si) => pts.every((i) => tab.series[si].y[i] != null) && (capa.orden === 'valor' || tab.series[si].y[pts[0]] > 0));
+    const rank = idxs.map(() => []);
+    const indice = capa.orden !== 'valor';   // por defecto se ordena por crecimiento acumulado desde el primer momento (comparable aunque las unidades difieran)
+    pts.forEach((i) => { const o = idxs.map((si, j) => ({j, v: indice ? tab.series[si].y[i] / tab.series[si].y[pts[0]] : tab.series[si].y[i]})).sort((a, b) => b.v - a.v || a.j - b.j); o.forEach((e, r) => { rank[e.j].push(r); }); });
+    return {pts, idxs, rank};
+  })());
+  const S = L.idxs.length; if (S < 2) return;
+  ctx.font = fnt(700, 25 * u * k); const nombres = L.idxs.map((si) => tab.series[si].nombre);
+  const LW = Math.min(B.w * 0.34, Math.max(...nombres.map((nm) => ctx.measureText(cortar(ctx, nm, B.w * 0.34)).width)) + 28 * u), x0 = B.x + LW, x1 = B.x + B.w - LW, paso = (x1 - x0) / (L.pts.length - 1);
+  const top = B.y + 56 * u, fila = Math.min(86 * u * k, (B.h - 70 * u) / S), cyR = (r) => top + r * fila + fila / 2, cx = (q) => x0 + q * paso;
+  const rx = lerp(x0 - 20 * u, x1 + 20 * u, prog(t, t0, t1, ease.io2));
+  ctx.save(); ctx.globalAlpha *= ap;
+  L.pts.forEach((i, q) => { rotulo(ctx, etiquetaX(tab, i), cx(q), B.y + 24 * u, fnt(700, 21 * u * k, true), PALETA.piedraOscura, 'center', u); });
+  reg(env, 'etiqueta', [x0 - 40 * u, B.y - 2 * u, x1 + 40 * u, B.y + 34 * u], `${capa.id ?? 'bump'}:periodos`);
+  if (capa.orden !== 'valor') { const nota = `1.º = MAYOR CRECIMIENTO ACUMULADO DESDE ${etiquetaX(tab, L.pts[0]).toUpperCase()}`; rotulo(ctx, nota, B.x, B.y + B.h - 4 * u, fnt(600, 16 * u, true), PALETA.piedraOscura, 'left', u); ctx.font = fnt(600, 16 * u, true); reg(env, 'etiqueta', [B.x, B.y + B.h - 24 * u, B.x + ctx.measureText(nota).width, B.y + B.h + 2 * u], `${capa.id ?? 'bump'}:orden`); }
+  L.idxs.forEach((si, j) => {
+    const s = tab.series[si], color = colorDe(s.color, si), mudo = capa.foco != null && si !== capa.foco, a = mudo ? 0.35 : 1;
+    ctx.save(); ctx.beginPath(); ctx.rect(B.x - 4, B.y - 20 * u, rx - B.x + 4, B.h + 40 * u); ctx.clip(); ctx.globalAlpha *= a;
+    ctx.strokeStyle = color; ctx.lineWidth = (capa.foco === si ? 11 : 8) * u; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx(0), cyR(L.rank[j][0]));
+    for (let q = 1; q < L.pts.length; q++) { const m = (cx(q - 1) + cx(q)) / 2; ctx.bezierCurveTo(m, cyR(L.rank[j][q - 1]), m, cyR(L.rank[j][q]), cx(q), cyR(L.rank[j][q])); }
+    ctx.stroke();
+    L.pts.forEach((_, q) => { const px = cx(q), py = cyR(L.rank[j][q]); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(px, py, 17 * u * k, 0, 7); ctx.fill(); texto(ctx, String(L.rank[j][q] + 1), px, py + 7 * u * k, fnt(800, 20 * u * k, true), PALETA.fondo, 'center'); });
+    ctx.restore();
+    ctx.save(); ctx.globalAlpha *= a * clamp((rx - x0 + 40 * u) / (60 * u));
+    ctx.font = fnt(700, 25 * u * k); const nm = cortar(ctx, s.nombre, LW - 28 * u);
+    rotulo(ctx, nm, B.x + LW - 30 * u, cyR(L.rank[j][0]) + 8 * u, fnt(700, 25 * u * k), PALETA.blanco, 'right', u);
+    reg(env, 'etiqueta', [B.x + LW - 30 * u - ctx.measureText(nm).width, cyR(L.rank[j][0]) - 18 * u, B.x + LW - 30 * u, cyR(L.rank[j][0]) + 14 * u], `${capa.id ?? 'bump'}:i:${si}`);
+    ctx.restore();
+    ctx.save(); ctx.globalAlpha *= a * clamp((rx - x1) / (50 * u));
+    rotulo(ctx, nm, x1 + 30 * u, cyR(L.rank[j][L.pts.length - 1]) + 8 * u, fnt(700, 25 * u * k), PALETA.blanco, 'left', u);
+    reg(env, 'etiqueta', [x1 + 30 * u, cyR(L.rank[j][L.pts.length - 1]) - 18 * u, x1 + 30 * u + ctx.measureText(nm).width, cyR(L.rank[j][L.pts.length - 1]) + 14 * u], `${capa.id ?? 'bump'}:f:${si}`);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+/** Treemap (rectángulos "squarified"): el ÁREA de cada parte es proporcional a su valor. Lo que no cabe rotulado se lista abajo con su cifra. */
+function treemap(env, capa) {
+  const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
+  const B = caja(env, capa, vert ? [0.05, 0.26, 0.9, 0.6] : [0.05, 0.24, 0.9, 0.62]);
+  const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
+  const L = (capa._tm ??= (() => {
+    const items = [...tab.items].filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor), total = items.reduce((a, x) => a + x.valor, 0), pie = 70 * u, R = {x: B.x, y: B.y, w: B.w, h: B.h - pie};
+    const esc = (R.w * R.h) / total, nodos = items.map((it) => ({it, a: it.valor * esc, rect: null}));
+    const peor = (fila, lado) => { const s = fila.reduce((a, n) => a + n.a, 0), mx = Math.max(...fila.map((n) => n.a)), mn = Math.min(...fila.map((n) => n.a)); return Math.max((lado * lado * mx) / (s * s), (s * s) / (lado * lado * mn)); };
+    let r = {...R}, fila = [], i = 0;
+    const colocar = () => {
+      const s = fila.reduce((a, n) => a + n.a, 0), horiz = r.w >= r.h, lado = horiz ? r.h : r.w, grosor = s / lado; let off = 0;
+      fila.forEach((n) => { const l = n.a / grosor; n.rect = horiz ? [r.x, r.y + off, grosor, l] : [r.x + off, r.y, l, grosor]; off += l; });
+      if (horiz) r = {x: r.x + grosor, y: r.y, w: r.w - grosor, h: r.h}; else r = {x: r.x, y: r.y + grosor, w: r.w, h: r.h - grosor};
+      fila = [];
+    };
+    while (i < nodos.length) { const lado = Math.min(r.w, r.h), cand = [...fila, nodos[i]]; if (!fila.length || peor(cand, lado) <= peor(fila, lado)) { fila = cand; i++; } else colocar(); }
+    if (fila.length) colocar();
+    return {nodos, total, pie};
+  })());
+  const n = L.nodos.length, p = prog(t, t0, t1, ease.io2) * n, pal = paletaCat(), G = 4 * u, sinRotulo = [];
+  ctx.save(); ctx.globalAlpha *= ap;
+  L.nodos.forEach((nd, i) => {
+    const a = ease.out3(clamp(p - i)); if (a <= 0) return;
+    const [rx, ry, rw, rh] = nd.rect, col = pal[i % pal.length], x = rx + G / 2, y = ry + G / 2, w = rw - G, h = rh - G, cxm = x + w / 2, cym = y + h / 2;
+    ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = rgba(col, 0.88);
+    const sw = w * (0.6 + 0.4 * a), sh = h * (0.6 + 0.4 * a); ctx.fillRect(cxm - sw / 2, cym - sh / 2, sw, sh); ctx.restore();
+    const la = clamp((a - 0.6) / 0.4); if (la <= 0) return;
+    const pct = (nd.it.valor / L.total) * 100, ft = Math.min(30 * u, Math.max(15 * u, Math.min(w / 9, h / 3.2)));
+    ctx.font = fnt(800, ft); const nom = cortar(ctx, nd.it.nombre, w - 16 * u);
+    if (w < 76 * u || h < 44 * u) { sinRotulo.push(nd); return; }
+    ctx.save(); ctx.globalAlpha *= la;
+    texto(ctx, nom, x + 10 * u, y + ft + 6 * u, fnt(800, ft), PALETA.fondo, 'left');
+    let alto = ft + 12 * u;
+    if (h > ft * 2.7) { texto(ctx, fmtNum(nd.it.valor, tab.fmt), x + 10 * u, y + ft * 2 + 8 * u, fnt(600, ft * 0.8, true), PALETA.fondo, 'left'); alto = ft * 2 + 14 * u; }
+    if (h > ft * 3.8) { texto(ctx, pctTxt(pct), x + 10 * u, y + ft * 3 + 10 * u, fnt(800, ft * 0.9, true), PALETA.fondo, 'left'); alto = ft * 3 + 16 * u; }
+    ctx.restore();
+    ctx.font = fnt(800, ft); reg(env, 'etiqueta', [x + 8 * u, y + 4 * u, x + 12 * u + Math.min(w - 8 * u, ctx.measureText(nom).width), y + alto], `${capa.id ?? 'treemap'}:${nd.it.nombre}`);
+  });
+  if (sinRotulo.length && p >= n - 0.2) {
+    const piezas = ['Sin rótulo por tamaño:', ...sinRotulo.map((nd) => `${nd.it.nombre} ${pctTxt((nd.it.valor / L.total) * 100)}`)], f = fnt(500, 18 * u, true); ctx.font = f;
+    const lineas = ['']; piezas.forEach((pz) => { const l = lineas[lineas.length - 1], cand = l ? `${l} · ${pz}` : pz; if (ctx.measureText(cand).width <= B.w || !l) lineas[lineas.length - 1] = cand; else lineas.push(pz); });   // salto de línea, nunca «…»: no se pierde ninguna cifra
+    const y0 = B.y + B.h - 6 * u - (lineas.length - 1) * 24 * u;
+    lineas.forEach((l, q) => { rotulo(ctx, l, B.x, y0 + q * 24 * u, f, PALETA.piedraClara, 'left', u); reg(env, 'etiqueta', [B.x, y0 + q * 24 * u - 20 * u, B.x + Math.min(B.w, ctx.measureText(l).width), y0 + q * 24 * u + 6 * u], `${capa.id ?? 'treemap'}:pequenos${q}`); });
+  }
+  ctx.restore();
+}
+
+/** Waffle: 100 cuadros, cada uno vale 1 %. Se reparten por «mayor resto», así suman exactamente 100 y se declara. */
+function waffle(env, capa) {
+  const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
+  const B = caja(env, capa, vert ? [0.06, 0.26, 0.88, 0.64] : [0.05, 0.24, 0.9, 0.64]);
+  const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
+  const L = (capa._wf ??= (() => {
+    const items = [...tab.items].filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor), total = items.reduce((a, x) => a + x.valor, 0);
+    const base = items.map((it) => { const exacto = (it.valor / total) * 100; return {it, exacto, n: Math.floor(exacto), resto: exacto - Math.floor(exacto)}; });
+    let faltan = 100 - base.reduce((a, b) => a + b.n, 0); [...base].sort((a, b) => b.resto - a.resto).forEach((b) => { if (faltan > 0) { b.n++; faltan--; } });
+    const celdas = []; base.forEach((b, i) => { for (let q = 0; q < b.n; q++) celdas.push(i); });
+    return {base, celdas, total};
+  })());
+  const lado = vert ? Math.min(B.w * 0.8, B.h * 0.46) : Math.min(B.h * 0.9, B.w * 0.4), cel = lado / 10, gx = vert ? B.x + (B.w - lado) / 2 : B.x + 30 * u, gy = vert ? B.y + 10 * u : B.y + (B.h - lado) / 2, pal = paletaCat();
+  const p = prog(t, t0, t1, ease.io2) * 100;
+  ctx.save(); ctx.globalAlpha *= ap;
+  L.celdas.forEach((it, c) => {
+    const a = ease.out3(clamp(p - c)); const fila = 9 - Math.floor(c / 10), col = c % 10, x = gx + col * cel, y = gy + fila * cel, s = (cel - 5 * u) * (0.3 + 0.7 * a);
+    ctx.globalAlpha = ap * a; ctx.fillStyle = pal[it % pal.length]; ctx.fillRect(x + (cel - s) / 2, y + (cel - s) / 2, s, s);
+  });
+  ctx.globalAlpha = ap;
+  rotulo(ctx, 'CADA CUADRO = 1 % DEL TOTAL', gx, gy + lado + 30 * u, fnt(600, 18 * u, true), PALETA.piedraOscura, 'left', u);
+  reg(env, 'etiqueta', [gx, gy + lado + 8 * u, gx + 380 * u, gy + lado + 38 * u], `${capa.id ?? 'waffle'}:nota`);
+  const lx = vert ? B.x + 10 * u : gx + lado + 70 * u, ly0 = vert ? gy + lado + 56 * u : B.y, area = vert ? B.y + B.h - ly0 : B.h, lw = vert ? B.w - 20 * u : B.x + B.w - lx;
+  const rh = Math.min(vert ? 62 * u : 74 * u, area / L.base.length), kk = clamp(rh / (74 * u), 0.6, 1), y0 = ly0 + (area - rh * L.base.length) / 2;
+  let acum = 0;
+  L.base.forEach((b, i) => {
+    const la = clamp((p - acum + 4) / 4); acum += b.n; if (la <= 0) return;
+    const y = y0 + i * rh, col = pal[i % pal.length];
+    ctx.save(); ctx.globalAlpha = ap * la; ctx.fillStyle = col; ctx.fillRect(lx + 3 * u, y + rh / 2 - 9 * u * kk, 18 * u * kk, 18 * u * kk);
+    ctx.font = fnt(700, 26 * u * kk); const nom = cortar(ctx, b.it.nombre, lw - 190 * u);
+    rotulo(ctx, nom, lx + 36 * u, y + rh / 2 - 2 * u, fnt(700, 26 * u * kk), PALETA.blanco, 'left', u);
+    rotulo(ctx, fmtNum(b.it.valor, tab.fmt), lx + 36 * u, y + rh / 2 + 24 * u * kk, fnt(500, 20 * u * kk, true), PALETA.piedraClara, 'left', u);
+    rotulo(ctx, pctTxt(b.exacto), lx + lw, y + rh / 2 + 10 * u * kk, fnt(800, 38 * u * kk, true), col, 'right', u);
+    reg(env, 'etiqueta', [lx, y + 2 * u, lx + lw, y + rh - 2 * u], `${capa.id ?? 'waffle'}:${b.it.nombre}`);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+export const DIBUJO = {linea, barras, carrera, dispersion, calor, zona, llamada, contador, titulo, cortina, imagen, sello, sankey, donut, cascada, pendiente, bump, treemap, waffle};

@@ -47,3 +47,9 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente.
 - **Quién:** (a) el actualizador 24/7 (`servidor/vivo.mjs`) construye la bolsa entre la 1:00 y las 6:00 sin intervención; (b) una sesión programada de Claude (`rtl-trabajo-de-noche`, 1:07 a. m.) recorre esta lista en orden.
 - **Reglas de la sesión de noche:** leer `CLAUDE.md` y esta lista; trabajar de la tarea ⬜ más alta hacia abajo; no tocar `datos/` a mano; correr las pruebas antes de cada commit; nunca borrar trabajo; si algo exige una decisión de David, dejarlo escrito en el diario y seguir con lo siguiente; al terminar, actualizar esta lista (✅/⬜) y escribir el diario con: qué se hizo, rutas, qué debe revisar David, qué quedó fuera.
 - **Límite honesto:** corre solo con el PC encendido y la app de Claude abierta.
+
+## Hecho el 2026-11-04 (investigación + modelos nuevos)
+- ✅ Investigación web: `docs/INVESTIGACION_VISUALIZACION.md` (reglas de elección de gráfica, 20 modelos, fuentes de datos abiertas, reglas reel).
+- ✅ Modelos nuevos: pendiente (slope), bump, treemap, waffle. Escala log declarada en pantalla; waffle suma 100 por mayor resto; treemap lista lo pequeño sin cortar cifras.
+- ✅ `servidor/visualizador.mjs` + herramienta MCP `proponer_visualizaciones`: elige gráficas por la forma del dato, construye hasta 4 opciones distintas y descarta las que no pasan exactitud/textos.
+- ⬜ Siguientes (ver §«Qué implementar primero» de la investigación): dumbbell/lollipop, fan chart, validador de zona segura 9:16, capa de fuente/fecha en pantalla, conectores FRED/World Bank/IMF/Eurostat sin llave, botón «Sorpréndeme» en la interfaz.

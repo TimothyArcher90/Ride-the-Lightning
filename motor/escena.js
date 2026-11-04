@@ -3,7 +3,7 @@ import {DIBUJO, Z} from './capas.js';
 import {PALETA, TEMA, rgba, clamp, aplicarTema} from './nucleo.js';
 
 const ANOTACION = new Set(['llamada', 'contador', 'titulo', 'cortina', 'sello']);
-const GRAFICA = new Set(['linea', 'barras', 'carrera', 'dispersion', 'calor', 'sankey', 'donut', 'cascada', 'zona', 'imagen']);
+const GRAFICA = new Set(['linea', 'barras', 'carrera', 'dispersion', 'calor', 'sankey', 'donut', 'cascada', 'pendiente', 'bump', 'treemap', 'waffle', 'zona', 'imagen']);
 
 export class Escena {
   scratch(W, H) {
