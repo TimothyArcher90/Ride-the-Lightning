@@ -2,6 +2,7 @@
 import {DIBUJO, Z} from './capas.js';
 import {PALETA, TEMA, rgba, clamp, aplicarTema} from './nucleo.js';
 import {fijarFormato} from './diseno.js';
+import {fijarIdioma} from './idioma.js';
 import {TIPOS_EXTRA} from './capas_extra.js';
 
 const ANOTACION = new Set(['llamada', 'contador', 'titulo', 'cortina', 'sello']);
@@ -18,6 +19,7 @@ export class Escena {
     this.spec = spec;
     this.imgs = imgs;
     aplicarTema(spec.tema);
+    fijarIdioma(spec.idioma);
     this.capas = spec.capas
       .map((c, i) => ({...c, _i: i}))
       .sort((a, b) => (a.z ?? Z[a.tipo] ?? 10) - (b.z ?? Z[b.tipo] ?? 10) || a._i - b._i);

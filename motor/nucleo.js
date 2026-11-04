@@ -1,7 +1,8 @@
 // Núcleo compartido (navegador y Node): easing, escalas, formato numérico/fecha y paleta de marca.
 // Sin DOM. Todo es función pura del tiempo: el mismo t da siempre el mismo fotograma.
 
-import d3ticks from './vendor/d3-array/ticks.js';   // ISC, d3-array 3.2.4 (ver docs/THIRD_PARTY_NOTICES.md)
+import d3ticks from './vendor/d3-array/ticks.js';
+import {idioma, MESES_CORTO, MESES_LARGO as ML, LOCALE_NUM, SUFIJO_PCT, ANTES_CRISTO, FECHA_DIA} from './idioma.js';   // ISC, d3-array 3.2.4 (ver docs/THIRD_PARTY_NOTICES.md)
 
 export const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 export const lerp = (a, b, t) => a + (b - a) * t;
@@ -66,8 +67,9 @@ export const rgba = (hex, a) => { const [r, g, b] = h2r(hex); return `rgba(${r},
 // ── Formato (es-CO: coma decimal, punto de miles) ─────────────────────────────────────────────────
 const nf = new Map();
 const formatoNum = (dec) => {
-  if (!nf.has(dec)) nf.set(dec, new Intl.NumberFormat('es-CO', {minimumFractionDigits: dec, maximumFractionDigits: dec}));
-  return nf.get(dec);
+  const k = `${idioma()}:${dec}`;
+  if (!nf.has(k)) nf.set(k, new Intl.NumberFormat(LOCALE_NUM[idioma()], {minimumFractionDigits: dec, maximumFractionDigits: dec}));
+  return nf.get(k);
 };
 /** fmt = {prefijo, sufijo, decimales}. El valor ya viene dividido por su `divisor`. */
 export function fmtNum(v, fmt = {}) {
@@ -81,19 +83,19 @@ export function fmtSigno(v, fmt = {}) {
   const s = v > 0 ? '+' : v < 0 ? '−' : '';
   return s + fmtNum(Math.abs(v), fmt);
 }
-export const fmtPct = (p, dec = 1) => `${p > 0 ? '+' : p < 0 ? '−' : ''}${formatoNum(dec).format(Math.abs(p))} %`;
+export const fmtPct = (p, dec = 1) => `${p > 0 ? '+' : p < 0 ? '−' : ''}${formatoNum(dec).format(Math.abs(p))}${SUFIJO_PCT[idioma()]}`;
 
 /** ms UTC de una fecha; válido para años < 100 y negativos (Date.UTC los mapea mal). */
 export function utc(y, m = 1, d = 1) { const t = new Date(0); t.setUTCFullYear(y, m - 1, d); t.setUTCHours(0, 0, 0, 0); return t.getTime(); }
 
-const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-export const MESES_LARGO = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const MESES = new Proxy([], {get: (_, i) => MESES_CORTO[idioma()][i]});   // lee el idioma vigente en cada uso
+export const MESES_LARGO = new Proxy([], {get: (_, i) => (i === 'length' ? 12 : ML[idioma()][i])});
 /** ms (UTC) -> texto. modo: 'dia' (12 mar 2020) | 'mes' (mar 2020) | 'anio' (2020). */
 export function fmtFecha(ms, modo = 'dia') {
   const d = new Date(ms);
   const y = d.getUTCFullYear(), m = MESES[d.getUTCMonth()], dd = d.getUTCDate();
-  const ya = y <= 0 ? `${1 - y} a. C.` : `${y}`;
-  return modo === 'anio' ? ya : modo === 'mes' ? `${m} ${ya}` : `${dd} ${m} ${ya}`;
+  const ya = y <= 0 ? `${1 - y}${ANTES_CRISTO[idioma()]}` : `${y}`;
+  return modo === 'anio' ? ya : modo === 'mes' ? `${m} ${ya}` : FECHA_DIA[idioma()](dd, m, ya);
 }
 
 // ── Escalas y ticks ─────────────────────────────────────────────────────────────────────────────────
