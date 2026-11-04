@@ -25,11 +25,13 @@ export const PLANTILLAS = [
   {id: 'carrera', nombre: 'Ranking en carrera', descripcion: 'Barras que compiten y se reordenan con el tiempo: quién va primero en cada año.', necesita: {min: 3, max: 10}, ayuda: 'Elige de 3 a 10 datos del mismo tipo.'},
   {id: 'correlacion', nombre: '¿Se mueven juntas?', descripcion: 'Un mapa de colores que muestra qué series suben y bajan a la vez, y cuáles al revés.', necesita: {min: 3, max: 8}, ayuda: 'Elige de 3 a 8 datos.'},
   {id: 'pendiente', nombre: '¿Quién subió y quién bajó?', descripcion: 'Una línea por cada dato entre dos momentos (el primero y el último): se ve de un vistazo quién ganó, quién perdió y cuánto, con el cambio calculado.', necesita: {min: 2, max: 8}, ayuda: 'Elige de 2 a 8 datos.'},
+  {id: 'divergente', nombre: '¿Cuánto ganó o perdió cada una?', descripcion: 'El cambio en % de cada dato entre el primer y el último momento, en una sola escala: ganadores a la derecha, perdedores a la izquierda. Sirve aunque los datos tengan unidades distintas.', necesita: {min: 2, max: 8}, ayuda: 'Elige de 2 a 8 datos.'},
   {id: 'bump', nombre: '¿Quién superó a quién?', descripcion: 'La posición (1.º, 2.º, 3.º…) de cada dato en varios momentos, unidas por curvas: los cruces son los adelantamientos.', necesita: {min: 3, max: 8}, ayuda: 'Elige de 3 a 8 datos del mismo tipo.'},
   // — tablas (no son series de tiempo): se alimentan de un archivo con una tabla de flujos o de categorías —
   {id: 'resultados', datos: 'flujos', nombre: '¿De dónde viene y adónde va?', descripcion: 'Un diagrama de flujo (Sankey): de dónde entra el dinero, en qué se reparte y qué queda. Los porcentajes se calculan solos.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de flujos (origen, destino, valor).'},
   {id: 'composicion', datos: 'categorias', nombre: 'Qué parte pesa cuánto', descripcion: 'Un anillo que se llena parte por parte, con su valor y su porcentaje al lado.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor).'},
   {id: 'treemap', datos: 'categorias', nombre: 'Mapa de áreas', descripcion: 'Rectángulos cuya área es proporcional al valor: ideal con muchas partes (más de 6). Lo que no cabe rotulado se lista con su cifra.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor).'},
+  {id: 'lollipop', datos: 'categorias', nombre: 'Ranking de partes', descripcion: 'Un palo con círculo por cada parte, ordenadas de mayor a menor, con su valor y porcentaje. Letra grande: pensada para el celular.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor).'},
   {id: 'waffle', datos: 'categorias', nombre: '100 cuadros', descripcion: 'Cien cuadros, cada uno vale 1 %: la forma más fácil de entender «de cada 100, cuántos son…». Suma exacta a 100.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor).'},
   {id: 'puente', datos: 'categorias', nombre: 'Qué sumó y qué restó', descripcion: 'Una cascada: parte de un total, muestra cada suma y cada resta y llega al resultado. Los subtotales se comprueban.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor, y «total» en los subtotales).'},
 ];
@@ -145,7 +147,7 @@ function comparar({titulo, camara, foco, n}) {
     notas: ['Las series se muestran como índice base 100 en la primera fecha en la que todas tienen dato, para que series de unidades distintas se puedan comparar. Cada cifra conserva su valor original en el informe.']};
 }
 function layoutPanel(n, vertical) {
-  if (vertical) { const top = 0.2, alto = 0.68, h = alto / n - 0.11; return Array.from({length: n}, (_, k) => ({caja: [0.17, +(top + k * (alto / n) + 0.055).toFixed(3), 0.75, +h.toFixed(3)], pos: [0.12, +(top + k * (alto / n)).toFixed(3)]})); }
+  if (vertical) { const top = 0.2, alto = 0.68, h = alto / n - 0.11; return Array.from({length: n}, (_, k) => ({caja: [0.15, +(top + k * (alto / n) + 0.055).toFixed(3), 0.55, +h.toFixed(3)], pos: [0.12, +(top + k * (alto / n)).toFixed(3)]})); }
   if (n === 2) return [0.075, 0.54].map((x) => ({caja: [x, 0.36, 0.385, 0.4], pos: [x, 0.30]}));
   if (n === 3) return [0.065, 0.375, 0.685].map((x) => ({caja: [x, 0.36, 0.26, 0.4], pos: [x, 0.30]}));
   const xs = [0.075, 0.575], ys = [[0.27, 0.24], [0.66, 0.23]];
@@ -184,6 +186,14 @@ function bump({titulo, camara, foco}) {
   const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(5, Math.min(9, P.dibujo + 1)), dur = +(1 + dib + 3).toFixed(1);
   return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'bump', id: 'g1', datos: 'd', ...(foco != null ? {foco} : {}), t: [0.9, 0.9 + dib]}], notas: ['La posición en cada momento sale de ordenar las series por su crecimiento acumulado desde el primer momento (valor ÷ valor inicial), para que series de unidades distintas sean comparables. Se muestran hasta 8 momentos repartidos de forma uniforme; solo entran las series con dato en todos ellos.']};
 }
+function divergente({titulo, camara}) {
+  const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(4, Math.min(7, P.dibujo)), dur = +(1 + dib + 3).toFixed(1);
+  return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'divergente', id: 'g1', datos: 'd', t: [0.9, 0.9 + dib]}], notas: ['El cambio (%) es último ÷ primero − 1 de cada serie, todas en la misma escala. Bajo cada barra se muestran los dos valores originales.']};
+}
+function lollipop({titulo, camara}) {
+  const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(4, Math.min(7, P.dibujo)), dur = +(1 + dib + 3).toFixed(1);
+  return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'lollipop', id: 'g1', datos: 'd', t: [0.9, 0.9 + dib]}], notas: ['Los palos parten de cero y su largo es proporcional al valor; el porcentaje es el valor entre la suma de todas las partes.']};
+}
 function treemap({titulo, camara}) {
   const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(4, Math.min(7, P.dibujo)), dur = +(1 + dib + 3).toFixed(1);
   return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'treemap', id: 'g1', datos: 'd', t: [0.9, 0.9 + dib]}], notas: ['El área de cada rectángulo es proporcional a su valor; el porcentaje es su valor entre la suma de todas las partes.']};
@@ -207,7 +217,7 @@ export function generar(entrada) {
   const clase = def.datos ?? 'serie', esTabla = series.some((s) => s.tabla);
   if (clase === 'serie' && esTabla) throw new Error(`«${def.nombre}» se usa con series de tiempo, y elegiste una tabla de ${series.find((s) => s.tabla).tabla}. Elige otro estilo en el paso 2.`);
   if (clase !== 'serie' && !series.every((s) => s.tabla === clase)) throw new Error(`«${def.nombre}» necesita ${clase === 'flujos' ? 'una tabla de flujos (columnas origen, destino y valor)' : 'una tabla de categorías (columnas concepto y valor)'}. ${def.ayuda}`);
-  const {datos, nombres, notas: n0} = armarDatos(series, {comun: ['comparar', 'correlacion', 'pendiente', 'bump'].includes(plantilla)});
+  const {datos, nombres, notas: n0} = armarDatos(series, {comun: ['comparar', 'correlacion', 'pendiente', 'bump', 'divergente'].includes(plantilla)});
   if (datos.d.tipo === 'categorias') datos.d.uso = plantilla === 'puente' ? 'cascada' : 'donut';
   if (plantilla === 'comparar') { datos.d.base100 = true; const f0 = Math.min(Math.max(0, entrada.foco ?? 0), datos.d.columnas.length - 1), otros = ['teal', 'purpura', 'piedra']; let k = 0; datos.d.columnas.forEach((c, i) => { c.color = i === f0 ? 'oro' : otros[k++ % 3]; }); }
   const base = compilar({version: 1, datos, capas: []});
@@ -230,6 +240,8 @@ export function generar(entrada) {
   else if (plantilla === 'puente') g = puente({titulo, camara});
   else if (plantilla === 'treemap') g = treemap({titulo, camara});
   else if (plantilla === 'waffle') g = waffle({titulo, camara});
+  else if (plantilla === 'lollipop') g = lollipop({titulo, camara});
+  else if (plantilla === 'divergente') g = divergente({titulo, camara});
   else if (plantilla === 'pendiente') g = pendiente({titulo, camara, foco: entrada.foco});
   else if (plantilla === 'bump') g = bump({titulo, camara, foco: entrada.foco});
   else g = correlacion({titulo});

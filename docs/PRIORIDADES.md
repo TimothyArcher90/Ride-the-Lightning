@@ -53,3 +53,13 @@ Estado: ✅ hecho · 🔄 en curso · ⬜ pendiente.
 - ✅ Modelos nuevos: pendiente (slope), bump, treemap, waffle. Escala log declarada en pantalla; waffle suma 100 por mayor resto; treemap lista lo pequeño sin cortar cifras.
 - ✅ `servidor/visualizador.mjs` + herramienta MCP `proponer_visualizaciones`: elige gráficas por la forma del dato, construye hasta 4 opciones distintas y descarta las que no pasan exactitud/textos.
 - ⬜ Siguientes (ver §«Qué implementar primero» de la investigación): dumbbell/lollipop, fan chart, validador de zona segura 9:16, capa de fuente/fecha en pantalla, conectores FRED/World Bank/IMF/Eurostat sin llave, botón «Sorpréndeme» en la interfaz.
+
+## Hecho el 2026-11-04 (segunda tanda)
+- ✅ Modelos nuevos: lollipop (categorías) y divergente (cambio % en escala común). Total de modelos: 16.
+- ✅ Zona segura TikTok/Reels: `auditarColisiones` devuelve `zonaSegura` (aviso aparte); en vertical todos los modelos ya salen con 0 avisos (cajas al 66-72 % del ancho; cascada vertical = filas horizontales).
+- ✅ Interfaz: iconos de los modelos nuevos y etiqueta «★ Recomendada: …» (endpoint `/api/recomendar`) en el paso 2.
+- ✅ Conectores sin llave (agente): Banco Mundial, FMI, Eurostat, Tesoro de EE. UU., TRM Colombia; 13 series nuevas (172 → 185). `node scripts/prueba-conectores.mjs`.
+- ✅ `docs/INVESTIGACION_ANIMACION.md`: 15 técnicas con parámetros, 22 pruebas amateur/pro, guiones de 30/45/60 s.
+- ⬜ **Tipografía en vertical**: la letra de los modelos viejos (19–26 px a 1080 de ancho) es pequeña para celular; la investigación sugiere ≥48 px en rótulos [hipótesis de un blog]. Hay que subirla modelo por modelo y re-auditar (el auditor mide cajas registradas: si se sube la fuente hay que subir también la caja).
+- ⬜ Pruebas automáticas del checklist amateur/pro (§2 de la investigación de animación): easing lineal, texto <3 s, >1 protagonista, contraste.
+- ⬜ Sankey vertical queda apretado (nodos intermedios con rótulos pequeños).

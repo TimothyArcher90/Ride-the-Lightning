@@ -140,6 +140,94 @@ export const ADAPTADORES = {
     const nombre = [meta.n1, meta.n2, meta.n3].filter(Boolean).join(' · ');
     return {columnas: ['fecha', `GUS_${variable}`], filas, url: `https://bdl.stat.gov.pl/bdl/dane/podgrup/temat`, urlDatos: `${base}/data/by-variable/${variable}?unit-level=0`, unidad: meta.measureUnitName && meta.measureUnitName !== '-' ? meta.measureUnitName : 'Sin unidad en los metadatos de BDL (índice)', notaFuente: `BDL · tema ${meta.subjectId} «${tema}» · variable ${variable}: ${nombre}`};
   },
+  /** Banco Mundial · indicadores de desarrollo (WDI, API v2 sin clave): un indicador de un país o agregado (WLD, USA, COL…). Anual. Los años sin dato (null) se omiten; no se rellenan. */
+  async worldbank({indicador, pais}) {
+    const base = 'https://api.worldbank.org/v2', urlDatos = `${base}/country/${pais}/indicator/${indicador}?format=json&per_page=20000`;
+    const j = JSON.parse(await pedir(urlDatos));
+    if (!Array.isArray(j) || !Array.isArray(j[1])) throw new Error(`Banco Mundial no devolvió datos para ${indicador}/${pais}: ${JSON.stringify(j?.[0]?.message ?? j).slice(0, 220)}`);
+    if (j[0].pages > 1) throw new Error(`Banco Mundial: ${indicador}/${pais} llegó paginado (${j[0].pages} páginas); el adaptador no lo soporta.`);
+    const filas = j[1].filter((r) => r.value != null && r.date.length === 4).map((r) => [`${r.date}-01-01`, r.value]).sort((a, b) => a[0].localeCompare(b[0]));
+    if (!filas.length) throw new Error(`Banco Mundial: ${indicador}/${pais} no tiene ningún valor (solo nulos).`);
+    const ind = JSON.parse(await pedir(`${base}/indicator/${indicador}?format=json`))[1]?.[0] ?? {};
+    const nombrePais = j[1][0].country.value;
+    return {columnas: ['fecha', `${indicador}_${pais}`], filas, url: `https://data.worldbank.org/indicator/${indicador}?locations=${j[1][0].country.id}`, urlDatos, unidad: ind.unit || undefined,
+      notaFuente: `${ind.name ?? indicador} · ${nombrePais} (${pais}) · ${ind.source?.value ?? 'World Bank'} · actualización de la API: ${j[0].lastupdated} · años sin dato omitidos: ${j[1].length - filas.length}`};
+  },
+  /** FMI · DataMapper (WEO), API sin clave. La API ignora el filtro de país y devuelve todos: se elige aquí. Por defecto se EXCLUYEN los años posteriores al año en curso menos uno (proyecciones del WEO); proyecciones:true los incluye. */
+  async imf({indicador, pais, proyecciones = false}) {
+    const base = 'https://www.imf.org/external/datamapper/api/v1', urlDatos = `${base}/${indicador}/${pais}`;
+    const j = JSON.parse(await pedir(urlDatos));
+    const serie = j.values?.[indicador]?.[pais];
+    if (!serie || !Object.keys(serie).length) throw new Error(`FMI DataMapper no tiene ${indicador} para ${pais}.`);
+    const tope = new Date().getUTCFullYear() - 1;
+    const todos = Object.entries(serie).filter(([a, v]) => typeof v === 'number' && a.length === 4).sort((a, b) => a[0].localeCompare(b[0]));
+    const filas = todos.filter(([a]) => proyecciones || +a <= tope).map(([a, v]) => [`${a}-01-01`, v]);
+    if (!filas.length) throw new Error(`FMI DataMapper: ${indicador}/${pais} no tiene datos hasta ${tope}.`);
+    const meta = JSON.parse(await pedir(`${base}/indicators`)).indicators?.[indicador] ?? {};
+    const etiquetaPais = JSON.parse(await pedir(`${base}/countries`)).countries?.[pais]?.label ?? pais;
+    return {columnas: ['fecha', `${indicador}_${pais}`], filas, url: `https://www.imf.org/external/datamapper/${indicador}@WEO/${pais}`, urlDatos, unidad: meta.unit,
+      notaFuente: `${meta.label ?? indicador} · ${etiquetaPais} (${pais}) · ${meta.source ?? 'IMF'} · última modificación ${meta['last-modified'] ?? 'desconocida'} · ${proyecciones ? 'INCLUYE años de proyección del WEO: rotularlos como estimación' : `solo hasta ${tope}; se excluyen ${todos.length - filas.length} años de proyección`}. Los últimos años hasta ${tope} pueden seguir siendo estimaciones del FMI.`};
+  },
+  /** Eurostat (JSON-stat 2.0, sin clave). Todas las dimensiones salvo el tiempo deben quedar fijadas por filtros. Soporta periodos mensuales (AAAA-MM), trimestrales (AAAA-Qn) y anuales (AAAA); los vacíos se omiten. */
+  async eurostat({dataset, filtros = {}}) {
+    const q = new URLSearchParams({format: 'JSON', lang: 'EN', ...filtros});
+    const urlDatos = `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/${dataset}?${q}`;
+    const j = JSON.parse(await pedir(urlDatos));
+    if (j.error) throw new Error(`Eurostat rechazó ${dataset}: ${JSON.stringify(j.error).slice(0, 220)}`);
+    if (!j.id || !j.dimension?.time) throw new Error(`Eurostat: respuesta inesperada para ${dataset}.`);
+    const iT = j.id.indexOf('time'), libres = j.id.filter((d, i) => i !== iT && j.size[i] !== 1);
+    if (libres.length) throw new Error(`Eurostat ${dataset}: faltan filtros para ${libres.join(', ')} (más de un valor posible).`);
+    const aFecha = (t) => {
+      let m;
+      if ((m = t.match(/^(\d{4})-(\d{2})$/))) return `${m[1]}-${m[2]}-01`;
+      if ((m = t.match(/^(\d{4})-Q([1-4])$/))) return `${m[1]}-${String((+m[2] - 1) * 3 + 1).padStart(2, '0')}-01`;
+      if ((m = t.match(/^(\d{4})$/))) return `${m[1]}-01-01`;
+      throw new Error(`Eurostat ${dataset}: periodo no soportado "${t}".`);
+    };
+    const filas = [], flags = new Set();
+    for (const [t, pos] of Object.entries(j.dimension.time.category.index).sort((a, b) => a[1] - b[1])) {
+      const v = j.value?.[pos];
+      if (v == null) continue;
+      filas.push([aFecha(t), v]);
+      if (j.status?.[pos]) flags.add(`${j.status[pos]}`);
+    }
+    if (!filas.length) throw new Error(`Eurostat ${dataset} con ${JSON.stringify(filtros)} no devolvió ningún valor.`);
+    const fijas = j.id.filter((d, i) => i !== iT).map((d) => `${j.dimension[d].label}: ${Object.values(j.dimension[d].category.label ?? {})[0] ?? Object.keys(j.dimension[d].category.index)[0]}`).join(' · ');
+    return {columnas: ['fecha', `${dataset}_${filtros.geo ?? 'serie'}`], filas, url: `https://ec.europa.eu/eurostat/databrowser/view/${dataset}/default/table?lang=en`, urlDatos,
+      notaFuente: `${j.label} (${dataset}) · ${fijas} · actualizado por Eurostat: ${j.updated} · periodos sin dato omitidos: ${Object.keys(j.dimension.time.category.index).length - filas.length}${flags.size ? ` · marcas de estado en la fuente: ${[...flags].join(',')} (p = provisional, e = estimado)` : ''}`};
+  },
+  /** Tesoro de EE. UU. · FiscalData, deuda al centavo (debt_to_penny), API sin clave. Diaria desde 1993-04-01. campo: tot_pub_debt_out_amt (deuda total), debt_held_public_amt o intragov_hold_amt (estos dos vienen vacíos en los primeros años: se omiten). */
+  async tesoro({campo = 'tot_pub_debt_out_amt'}) {
+    const base = 'https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny', filas = [];
+    let etiqueta = campo;
+    for (let p = 1; p <= 50; p++) {
+      const j = JSON.parse(await pedir(`${base}?format=json&sort=record_date&fields=record_date,${campo}&page%5Bsize%5D=10000&page%5Bnumber%5D=${p}`));
+      if (!Array.isArray(j.data)) throw new Error(`FiscalData no devolvió datos: ${JSON.stringify(j).slice(0, 220)}`);
+      etiqueta = j.meta?.labels?.[campo] ?? etiqueta;
+      for (const d of j.data) if (d[campo] != null && d[campo] !== 'null' && Number.isFinite(Number(d[campo]))) filas.push([d.record_date, d[campo]]);
+      if (j.data.length < 10000) break;
+    }
+    if (!filas.length) throw new Error(`FiscalData: el campo ${campo} no trae valores.`);
+    return {columnas: ['fecha', campo], filas, url: 'https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/', urlDatos: `${base}?fields=record_date,${campo}&sort=record_date`, unidad: 'US$',
+      notaFuente: `Debt to the Penny · ${etiqueta} · dato diario en dólares corrientes, tal como lo publica el Tesoro (cadena exacta, sin redondear)`};
+  },
+  /** TRM de Colombia (certificada por la Superfinanciera) en datos.gov.co (Socrata, sin clave). La fecha es el INICIO de vigencia: un mismo valor rige hasta vigenciahasta (fines de semana y festivos); no se rellenan días. */
+  async trm() {
+    const base = 'https://www.datos.gov.co/resource/32sa-8pi3.json', filas = [];
+    for (let o = 0; o < 400000; o += 50000) {
+      const q = new URLSearchParams({$select: 'valor,unidad,vigenciadesde', $order: 'vigenciadesde ASC', $limit: '50000', $offset: String(o)});
+      const j = JSON.parse(await pedir(`${base}?${q}`));
+      if (!Array.isArray(j)) throw new Error(`datos.gov.co no devolvió una lista: ${JSON.stringify(j).slice(0, 220)}`);
+      for (const d of j) {
+        if (d.unidad !== 'COP') throw new Error(`TRM: unidad inesperada "${d.unidad}" en ${d.vigenciadesde}`);
+        if (d.valor != null && Number.isFinite(Number(d.valor))) filas.push([d.vigenciadesde.slice(0, 10), d.valor]);
+      }
+      if (j.length < 50000) break;
+    }
+    if (!filas.length) throw new Error('TRM: datos.gov.co no devolvió filas.');
+    return {columnas: ['fecha', 'TRM_COP_por_USD'], filas, url: 'https://www.datos.gov.co/d/32sa-8pi3', urlDatos: base, unidad: 'COP por 1 US$',
+      notaFuente: 'Tasa Representativa del Mercado (Superintendencia Financiera de Colombia). Fecha = inicio de vigencia; cada valor rige hasta su vigenciahasta.'};
+  },
   /** CSV/XLSX público en una URL fija (Shiller, Banco Mundial, BoE…): se descarga tal cual y se lee con la ingesta común. */
   async archivo({url, extension = 'csv', hoja, filaEncabezado, colX, colY}) {
     const buf = await pedir(url, {texto: false});

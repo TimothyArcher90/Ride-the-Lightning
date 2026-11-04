@@ -15,6 +15,7 @@ import {detectarTabla} from './tablas.mjs';
 import {empresas as empresasCat, buscarEmpresas, asegurarEmpresa, esDestacada, leerIndice, itemTrimestre, seriesDeEmpresa, construidas as construidasLista} from './trimestres.mjs';
 import {leerUniverso} from './universo.mjs';
 import {chat, pararChat, reiniciarChat} from './chat.mjs';
+import {recomendar} from './visualizador.mjs';
 
 // Tablas de ejemplo (se copian a entradas/ para usarlas con un clic). Las cifras son de demostración y así se rotulan.
 const EJEMPLOS = {
@@ -127,6 +128,7 @@ async function api(req, res) {
       }
       case '/api/plantillas': return json(res, {plantillas: PLANTILLAS, camaras: Object.entries(CAMARAS).map(([id, c]) => ({id, ...c}))});
       case '/api/analizar': { const {series} = JSON.parse((await cuerpo(req)).toString('utf8')); await asegurar(series); return json(res, analizar(series)); }
+      case '/api/recomendar': { const ent = JSON.parse((await cuerpo(req)).toString('utf8')); await asegurar(ent.series); return json(res, {recomendadas: recomendar(ent)}); }
       case '/api/generar': { const ent = JSON.parse((await cuerpo(req)).toString('utf8')); await asegurar(ent.series); const r = generar(ent); return json(res, {...r, spec: r.spec}); }
       case '/api/abrir': {
         const {ruta} = JSON.parse((await cuerpo(req)).toString('utf8')), abs = path.resolve(ruta);

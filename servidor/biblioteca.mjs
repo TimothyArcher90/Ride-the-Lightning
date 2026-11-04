@@ -14,11 +14,14 @@ export async function listarPinkSheet() {
   return out;
 }
 
-const NOMBRES = {fred: 'FRED (Federal Reserve Bank of St. Louis)', yahoo: 'Yahoo Finance (API de gráficos, no oficial)', coinmetrics: 'Coin Metrics Community Network Data', owid: 'Our World in Data'};
+const NOMBRES = {fred: 'FRED (Federal Reserve Bank of St. Louis)', yahoo: 'Yahoo Finance (API de gráficos, no oficial)', coinmetrics: 'Coin Metrics Community Network Data', owid: 'Our World in Data',
+  worldbank: 'Banco Mundial — World Development Indicators (API v2)', imf: 'FMI — World Economic Outlook, DataMapper', eurostat: 'Eurostat (Comisión Europea)', tesoro: 'U.S. Department of the Treasury — FiscalData, Debt to the Penny', trm: 'Superintendencia Financiera de Colombia — TRM, vía datos.gov.co'};
+// Licencia por defecto de los adaptadores abiertos cuando la llamada ad hoc no trae una (la procedencia nunca queda sin licencia).
+const LICENCIAS = {worldbank: 'CC BY 4.0 (Banco Mundial)', imf: 'Términos de uso del FMI (imf.org/en/About/copyright-and-terms): citar al FMI; confirmar reutilización comercial', eurostat: 'CC BY 4.0 (política de reutilización de Eurostat)', tesoro: 'Dominio público (obra del gobierno de EE. UU.; FiscalData)', trm: 'CC BY-SA 4.0 (datos.gov.co); atribución: Superintendencia Financiera de Colombia'};
 
 /** Descarga ad hoc (fuera del catálogo): cualquier ticker de Yahoo, serie FRED, etc. Mismas garantías de procedencia. */
 export async function descargarAdHoc({id, nombre, adaptador, args, categoria = 'Ad hoc', unidad, frecuencia, licencia}) {
-  return descargar({id, nombre, categoria, adaptador, args, unidad, frecuencia, fuente_original: NOMBRES[adaptador] ?? adaptador, licencia});
+  return descargar({id, nombre, categoria, adaptador, args, unidad, frecuencia, fuente_original: NOMBRES[adaptador] ?? adaptador, licencia: licencia ?? LICENCIAS[adaptador]});
 }
 
 // ── Combinar series de la biblioteca en una tabla ancha (unión por fecha EXACTA; no remuestrea ni interpola) ──

@@ -24,6 +24,7 @@ console.log('\n1) Series: pendiente y bump (biblioteca)');
 const ids = ['bm_gold', 'bm_copper', 'bm_crude_oil_wti', 'bm_wheat_us_hrw', 'fred_dgs10'].filter(hay);
 if (ids.length >= 3) for (const formato of ['horizontal', 'vertical']) {
   await pieza(`pendiente · ${formato}`, {plantilla: 'pendiente', series: bib(...ids.slice(0, 4)), formato});
+  await pieza(`divergente · ${formato}`, {plantilla: 'divergente', series: bib(...ids.slice(0, 5)), formato});
   await pieza(`bump · ${formato}`, {plantilla: 'bump', series: bib(...ids.slice(0, 5)), formato});
 } else console.log('  (faltan series descargadas: se omite)');
 
@@ -37,7 +38,7 @@ for (const tk of ['AMZN', 'AAPL', 'MSFT']) {
   const csv = 'concepto,valor\n' + [...partes.map((f) => [f[0], Math.abs(+f[1])]), [utilidad[0], +utilidad[1]]].filter((f) => f[1] > 0).map((f) => `${f[0]},${f[1]}`).join('\n');
   fs.mkdirSync(path.join(RAIZ, '.tmp'), {recursive: true}); const ruta = `.tmp/viz-${tk}.csv`; fs.writeFileSync(path.join(RAIZ, ruta), csv);
   const item = {...it, ruta, tabla: 'categorias', uso: 'donut'};
-  for (const formato of ['horizontal', 'vertical']) for (const plantilla of ['treemap', 'waffle']) await pieza(`${tk} ${plantilla} · ${formato}`, {plantilla, series: [item], formato});
+  for (const formato of ['horizontal', 'vertical']) for (const plantilla of ['treemap', 'waffle', 'lollipop']) await pieza(`${tk} ${plantilla} · ${formato}`, {plantilla, series: [item], formato});
 }
 
 console.log('\n3) Waffle suma exactamente 100 y el visualizador entrega opciones distintas');

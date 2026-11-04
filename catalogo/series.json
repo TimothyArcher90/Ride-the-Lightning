@@ -3459,5 +3459,307 @@
     "fuente_original": "Yahoo Finance (API de gráficos, no oficial)",
     "fuente_corto": "Yahoo Finance · PLN=X",
     "licencia": "Uso personal/investigación; no redistribuir"
+  },
+  {
+    "id": "wb_ny_gdp_mktp_cd_wld",
+    "nombre": "PIB mundial (US$ corrientes)",
+    "categoria": "Crecimiento",
+    "etiquetas": [
+      "banco mundial",
+      "wdi",
+      "ny.gdp.mktp.cd",
+      "wld"
+    ],
+    "adaptador": "worldbank",
+    "args": {
+      "indicador": "NY.GDP.MKTP.CD",
+      "pais": "WLD"
+    },
+    "unidad": "US$ corrientes",
+    "frecuencia": "Anual",
+    "fuente_original": "Banco Mundial — World Development Indicators (API v2)",
+    "fuente_corto": "Banco Mundial · WDI · NY.GDP.MKTP.CD · WLD",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Años sin dato omitidos, nunca interpolados. Fuente primaria de cada serie en la página del indicador."
+  },
+  {
+    "id": "wb_ny_gdp_mktp_cd_usa",
+    "nombre": "PIB de EE. UU. (US$ corrientes)",
+    "categoria": "Crecimiento",
+    "etiquetas": [
+      "banco mundial",
+      "wdi",
+      "ny.gdp.mktp.cd",
+      "usa"
+    ],
+    "adaptador": "worldbank",
+    "args": {
+      "indicador": "NY.GDP.MKTP.CD",
+      "pais": "USA"
+    },
+    "unidad": "US$ corrientes",
+    "frecuencia": "Anual",
+    "fuente_original": "Banco Mundial — World Development Indicators (API v2)",
+    "fuente_corto": "Banco Mundial · WDI · NY.GDP.MKTP.CD · USA",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Años sin dato omitidos, nunca interpolados. Fuente primaria de cada serie en la página del indicador."
+  },
+  {
+    "id": "wb_ny_gdp_mktp_cd_col",
+    "nombre": "PIB de Colombia (US$ corrientes)",
+    "categoria": "Crecimiento",
+    "etiquetas": [
+      "banco mundial",
+      "wdi",
+      "ny.gdp.mktp.cd",
+      "col"
+    ],
+    "adaptador": "worldbank",
+    "args": {
+      "indicador": "NY.GDP.MKTP.CD",
+      "pais": "COL"
+    },
+    "unidad": "US$ corrientes",
+    "frecuencia": "Anual",
+    "fuente_original": "Banco Mundial — World Development Indicators (API v2)",
+    "fuente_corto": "Banco Mundial · WDI · NY.GDP.MKTP.CD · COL",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Años sin dato omitidos, nunca interpolados. Fuente primaria de cada serie en la página del indicador."
+  },
+  {
+    "id": "wb_fp_cpi_totl_zg_col",
+    "nombre": "Inflación de Colombia (IPC, variación anual)",
+    "categoria": "Precios",
+    "etiquetas": [
+      "banco mundial",
+      "wdi",
+      "fp.cpi.totl.zg",
+      "col"
+    ],
+    "adaptador": "worldbank",
+    "args": {
+      "indicador": "FP.CPI.TOTL.ZG",
+      "pais": "COL"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Anual",
+    "fuente_original": "Banco Mundial — World Development Indicators (API v2)",
+    "fuente_corto": "Banco Mundial · WDI · FP.CPI.TOTL.ZG · COL",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Años sin dato omitidos, nunca interpolados. Fuente primaria de cada serie en la página del indicador."
+  },
+  {
+    "id": "wb_fp_cpi_totl_zg_wld",
+    "nombre": "Inflación mundial (IPC, variación anual)",
+    "categoria": "Precios",
+    "etiquetas": [
+      "banco mundial",
+      "wdi",
+      "fp.cpi.totl.zg",
+      "wld"
+    ],
+    "adaptador": "worldbank",
+    "args": {
+      "indicador": "FP.CPI.TOTL.ZG",
+      "pais": "WLD"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Anual",
+    "fuente_original": "Banco Mundial — World Development Indicators (API v2)",
+    "fuente_corto": "Banco Mundial · WDI · FP.CPI.TOTL.ZG · WLD",
+    "licencia": "CC BY 4.0 (Banco Mundial)",
+    "nota": "Años sin dato omitidos, nunca interpolados. Fuente primaria de cada serie en la página del indicador."
+  },
+  {
+    "id": "imf_ngdp_rpch_usa",
+    "nombre": "Crecimiento real del PIB de EE. UU. (FMI)",
+    "categoria": "Crecimiento",
+    "etiquetas": [
+      "fmi",
+      "imf",
+      "weo",
+      "ngdp_rpch",
+      "usa"
+    ],
+    "adaptador": "imf",
+    "args": {
+      "indicador": "NGDP_RPCH",
+      "pais": "USA"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Anual",
+    "fuente_original": "FMI — World Economic Outlook, DataMapper",
+    "fuente_corto": "FMI · WEO · NGDP_RPCH · USA",
+    "licencia": "Términos de uso del FMI: citar al FMI; confirmar reutilización comercial",
+    "nota": "Se excluyen las proyecciones del WEO (años posteriores al año en curso menos uno); los últimos años incluidos pueden ser estimaciones del FMI."
+  },
+  {
+    "id": "imf_ngdp_rpch_chn",
+    "nombre": "Crecimiento real del PIB de China (FMI)",
+    "categoria": "Crecimiento",
+    "etiquetas": [
+      "fmi",
+      "imf",
+      "weo",
+      "ngdp_rpch",
+      "chn"
+    ],
+    "adaptador": "imf",
+    "args": {
+      "indicador": "NGDP_RPCH",
+      "pais": "CHN"
+    },
+    "unidad": "% anual",
+    "frecuencia": "Anual",
+    "fuente_original": "FMI — World Economic Outlook, DataMapper",
+    "fuente_corto": "FMI · WEO · NGDP_RPCH · CHN",
+    "licencia": "Términos de uso del FMI: citar al FMI; confirmar reutilización comercial",
+    "nota": "Se excluyen las proyecciones del WEO (años posteriores al año en curso menos uno); los últimos años incluidos pueden ser estimaciones del FMI."
+  },
+  {
+    "id": "imf_ggxwdg_ngdp_jpn",
+    "nombre": "Deuda pública bruta de Japón / PIB (FMI)",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "fmi",
+      "imf",
+      "weo",
+      "ggxwdg_ngdp",
+      "jpn"
+    ],
+    "adaptador": "imf",
+    "args": {
+      "indicador": "GGXWDG_NGDP",
+      "pais": "JPN"
+    },
+    "unidad": "% del PIB",
+    "frecuencia": "Anual",
+    "fuente_original": "FMI — World Economic Outlook, DataMapper",
+    "fuente_corto": "FMI · WEO · GGXWDG_NGDP · JPN",
+    "licencia": "Términos de uso del FMI: citar al FMI; confirmar reutilización comercial",
+    "nota": "Se excluyen las proyecciones del WEO (años posteriores al año en curso menos uno); los últimos años incluidos pueden ser estimaciones del FMI."
+  },
+  {
+    "id": "eu_hicp_ea",
+    "nombre": "Inflación armonizada (IPCA) de zona euro — variación anual",
+    "categoria": "Precios",
+    "etiquetas": [
+      "eurostat",
+      "hicp",
+      "ipca",
+      "inflacion",
+      "ea"
+    ],
+    "adaptador": "eurostat",
+    "args": {
+      "dataset": "prc_hicp_manr",
+      "filtros": {
+        "geo": "EA",
+        "coicop": "CP00",
+        "unit": "RCH_A"
+      }
+    },
+    "unidad": "% anual",
+    "frecuencia": "Mensual",
+    "fuente_original": "Eurostat — HICP, tasa de variación anual (prc_hicp_manr)",
+    "fuente_corto": "Eurostat · prc_hicp_manr · EA",
+    "licencia": "CC BY 4.0 (política de reutilización de Eurostat)",
+    "nota": "Índice general (CP00). Los valores recientes pueden ser provisionales; la composición de la zona euro cambia con el tiempo (ver nota de la fuente)."
+  },
+  {
+    "id": "eu_hicp_es",
+    "nombre": "Inflación armonizada (IPCA) de España — variación anual",
+    "categoria": "Precios",
+    "etiquetas": [
+      "eurostat",
+      "hicp",
+      "ipca",
+      "inflacion",
+      "es"
+    ],
+    "adaptador": "eurostat",
+    "args": {
+      "dataset": "prc_hicp_manr",
+      "filtros": {
+        "geo": "ES",
+        "coicop": "CP00",
+        "unit": "RCH_A"
+      }
+    },
+    "unidad": "% anual",
+    "frecuencia": "Mensual",
+    "fuente_original": "Eurostat — HICP, tasa de variación anual (prc_hicp_manr)",
+    "fuente_corto": "Eurostat · prc_hicp_manr · ES",
+    "licencia": "CC BY 4.0 (política de reutilización de Eurostat)",
+    "nota": "Índice general (CP00). Los valores recientes pueden ser provisionales; la composición de la zona euro cambia con el tiempo (ver nota de la fuente)."
+  },
+  {
+    "id": "eu_hicp_de",
+    "nombre": "Inflación armonizada (IPCA) de Alemania — variación anual",
+    "categoria": "Precios",
+    "etiquetas": [
+      "eurostat",
+      "hicp",
+      "ipca",
+      "inflacion",
+      "de"
+    ],
+    "adaptador": "eurostat",
+    "args": {
+      "dataset": "prc_hicp_manr",
+      "filtros": {
+        "geo": "DE",
+        "coicop": "CP00",
+        "unit": "RCH_A"
+      }
+    },
+    "unidad": "% anual",
+    "frecuencia": "Mensual",
+    "fuente_original": "Eurostat — HICP, tasa de variación anual (prc_hicp_manr)",
+    "fuente_corto": "Eurostat · prc_hicp_manr · DE",
+    "licencia": "CC BY 4.0 (política de reutilización de Eurostat)",
+    "nota": "Índice general (CP00). Los valores recientes pueden ser provisionales; la composición de la zona euro cambia con el tiempo (ver nota de la fuente)."
+  },
+  {
+    "id": "ust_deuda_total",
+    "nombre": "Deuda pública total de EE. UU. (al centavo)",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "tesoro",
+      "treasury",
+      "deuda",
+      "fiscaldata",
+      "ee. uu."
+    ],
+    "adaptador": "tesoro",
+    "args": {
+      "campo": "tot_pub_debt_out_amt"
+    },
+    "unidad": "US$ corrientes",
+    "frecuencia": "Diaria (días hábiles)",
+    "fuente_original": "U.S. Department of the Treasury — FiscalData, Debt to the Penny",
+    "fuente_corto": "Tesoro de EE. UU. · Debt to the Penny",
+    "licencia": "Dominio público (obra del gobierno de EE. UU.; FiscalData)",
+    "nota": "Desde 1993-04-01. Deuda total pendiente = en manos del público + intragubernamental."
+  },
+  {
+    "id": "co_trm",
+    "nombre": "Colombia — dólar (TRM, pesos por US$)",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "colombia",
+      "trm",
+      "dolar",
+      "cop",
+      "superfinanciera"
+    ],
+    "adaptador": "trm",
+    "args": {},
+    "unidad": "COP por 1 US$",
+    "frecuencia": "Diaria (vigencia; incluye fines de semana como rango)",
+    "fuente_original": "Superintendencia Financiera de Colombia — TRM, vía datos.gov.co",
+    "fuente_corto": "Superfinanciera · TRM · datos.gov.co",
+    "licencia": "CC BY-SA 4.0 (datos.gov.co); atribución: Superintendencia Financiera de Colombia",
+    "nota": "Fecha = inicio de vigencia; cada valor rige hasta su vigenciahasta. Desde 1991-12-02."
   }
 ]

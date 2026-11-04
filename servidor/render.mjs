@@ -75,7 +75,15 @@ export async function auditarColisiones(spec, {paso = 0.2} = {}) {
       }
     }
     const problemas = [...ev.values()].map((e) => ({tipo: e.tipo, a: `${e.a.tipo}${e.a.id ? ' (' + e.a.id + ')' : ''}`, b: e.b ? `${e.b.tipo}${e.b.id ? ' (' + e.b.id + ')' : ''}` : null, desde: e.ts[0], hasta: e.ts[e.ts.length - 1]}));
-    return {ok: problemas.length === 0, problemas, instantes: ts.length};
+    // Zona segura de TikTok/Reels (regla 5 de Electric Eye): en vertical, nada de texto en la columna de botones (x ≥ 72 % del ancho desde y ≥ 43,75 % del alto).
+    // Va aparte de `problemas`: es un aviso de diseño, no un choque de textos.
+    const zona = new Map();
+    if (H > W) for (const {t, registro} of cuadros) for (const A of registro) {
+      if (A.tipo === 'sello' || A.tipo === 'fuente') continue;
+      if (A.caja[2] > 0.722 * W + 2 && A.caja[3] > 0.4375 * H && A.caja[0] < W) { const k = `${A.tipo}:${A.id ?? ''}`; (zona.get(k) ?? zona.set(k, {a: A.id ? `${A.tipo} (${A.id})` : A.tipo, ts: []}).get(k)).ts.push(t); }
+    }
+    const zonaSegura = [...zona.values()].map((e) => ({a: e.a, desde: e.ts[0], hasta: e.ts[e.ts.length - 1]}));
+    return {ok: problemas.length === 0, problemas, zonaSegura, instantes: ts.length};
   } finally { await nav.close(); await srv.cerrar(); }
 }
 

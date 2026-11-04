@@ -33,8 +33,8 @@ server.tool('descargar_serie', 'Descarga la historia COMPLETA (desde el primer d
   return texto({archivo: path.relative(RAIZ, m.archivo), filas: m.filas, inicio: m.inicio, fin: m.fin, columnas: fs.readFileSync(m.archivo, 'utf8').split('\n')[0], fuente: m.fuente});
 });
 
-server.tool('descargar_serie_adhoc', 'Descarga una serie fuera del catálogo: adaptador fred {id}, yahoo {simbolo}, coinmetrics {activo, metrica, inicio}, owid {slug, entidad, columna}. Historia completa.',
-  {id: z.string(), nombre: z.string(), adaptador: z.enum(['fred', 'yahoo', 'coinmetrics', 'owid']), args: z.record(z.any()), unidad: z.string().optional(), frecuencia: z.string().optional()},
+server.tool('descargar_serie_adhoc', 'Descarga una serie fuera del catálogo: adaptador fred {id}, yahoo {simbolo}, coinmetrics {activo, metrica, inicio}, owid {slug, entidad, columna}, worldbank {indicador, pais}, imf {indicador, pais, proyecciones}, eurostat {dataset, filtros}, tesoro {campo}, trm {}. Historia completa.',
+  {id: z.string(), nombre: z.string(), adaptador: z.enum(['fred', 'yahoo', 'coinmetrics', 'owid', 'worldbank', 'imf', 'eurostat', 'tesoro', 'trm']), args: z.record(z.any()), unidad: z.string().optional(), frecuencia: z.string().optional()},
   async (a) => { const m = await descargarAdHoc(a); return texto({archivo: path.relative(RAIZ, m.archivo), filas: m.filas, inicio: m.inicio, fin: m.fin, fuente: m.fuente}); });
 
 server.tool('combinar_series', 'Une series ya descargadas en una tabla ancha por fecha EXACTA (sin remuestrear). Se reconstruye sola cuando cambia un componente. Úsala para paneles múltiples y matrices de correlación.',
@@ -54,7 +54,7 @@ server.tool('proponer_visualizaciones', 'EL VISUALIZADOR: dado un dato de la bib
   });
 
 server.tool('generar_pieza', 'Genera la spec COMPLETA de una pieza a partir de una plantilla (cámara, ritmo, tiempos y colores resueltos) y la guarda en specs/<nombre>.json. Luego usa vista_previa y exportar_video con esa ruta.',
-  {nombre: z.string(), plantilla: z.enum(['historia', 'comparar', 'panel', 'carrera', 'correlacion', 'pendiente', 'bump']), series: z.array(z.string()), momentos: z.array(z.object({tipo: z.enum(['primero', 'subida', 'caida', 'max', 'min', 'ultimo']), etiqueta: z.string().max(30).optional()})).optional(),
+  {nombre: z.string(), plantilla: z.enum(['historia', 'comparar', 'panel', 'carrera', 'correlacion', 'pendiente', 'bump', 'divergente']), series: z.array(z.string()), momentos: z.array(z.object({tipo: z.enum(['primero', 'subida', 'caida', 'max', 'min', 'ultimo']), etiqueta: z.string().max(30).optional()})).optional(),
     camara: z.enum(['cinematico', 'documental', 'dinamico', 'seguir', 'estatico']).default('documental'), formato: z.enum(['horizontal', 'vertical']).default('horizontal'), titulo: z.string().optional(), foco: z.number().optional(), estiloMomento: z.enum(['tarjeta', 'barra', 'pildora', 'circulo']).default('tarjeta'), tema: z.enum(['oscuro', 'harris', 'carbon']).default('oscuro'), vivo: z.boolean().default(false)},
   async (a) => {
     const cat = leerCatalogo(); for (const id of a.series) { const e = cat.find((x) => x.id === id); if (e && !fs.existsSync(path.join(RAIZ, 'datos', 'biblioteca', id + '.csv'))) await descargar(e); }

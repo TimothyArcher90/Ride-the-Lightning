@@ -111,6 +111,24 @@ E.push({id: 'yf_pkn_wa', nombre: 'PKN Orlen (Varsovia) — cierre diario', categ
 E.push({id: 'yf_pln_x', nombre: 'USD/PLN (Yahoo) — cierre diario', categoria: 'Polonia', etiquetas: ['polonia', 'zloty', 'yahoo'], adaptador: 'yahoo', args: {simbolo: 'PLN=X'}, unidad: 'PLN por US$', frecuencia: 'Diaria',
   fuente_original: 'Yahoo Finance (API de gráficos, no oficial)', fuente_corto: 'Yahoo Finance · PLN=X', licencia: 'Uso personal/investigación; no redistribuir'});
 
+// ── Fuentes abiertas sin llave: Banco Mundial (WDI), FMI (WEO), Eurostat, Tesoro de EE. UU., TRM de Colombia ────────
+const WB = [['NY.GDP.MKTP.CD', 'WLD', 'PIB mundial (US$ corrientes)', 'Crecimiento', 'US$ corrientes'], ['NY.GDP.MKTP.CD', 'USA', 'PIB de EE. UU. (US$ corrientes)', 'Crecimiento', 'US$ corrientes'],
+  ['NY.GDP.MKTP.CD', 'COL', 'PIB de Colombia (US$ corrientes)', 'Crecimiento', 'US$ corrientes'], ['FP.CPI.TOTL.ZG', 'COL', 'Inflación de Colombia (IPC, variación anual)', 'Precios', '% anual'],
+  ['FP.CPI.TOTL.ZG', 'WLD', 'Inflación mundial (IPC, variación anual)', 'Precios', '% anual']];
+for (const [ind, pais, nombre, cat, unidad] of WB) E.push({id: `wb_${slug(ind)}_${pais.toLowerCase()}`, nombre, categoria: cat, etiquetas: ['banco mundial', 'wdi', ind.toLowerCase(), pais.toLowerCase()], adaptador: 'worldbank', args: {indicador: ind, pais}, unidad, frecuencia: 'Anual',
+  fuente_original: 'Banco Mundial — World Development Indicators (API v2)', fuente_corto: `Banco Mundial · WDI · ${ind} · ${pais}`, licencia: 'CC BY 4.0 (Banco Mundial)', nota: 'Años sin dato omitidos, nunca interpolados. Fuente primaria de cada serie en la página del indicador.'});
+const IMF = [['NGDP_RPCH', 'USA', 'Crecimiento real del PIB de EE. UU. (FMI)', 'Crecimiento', '% anual'], ['NGDP_RPCH', 'CHN', 'Crecimiento real del PIB de China (FMI)', 'Crecimiento', '% anual'],
+  ['GGXWDG_NGDP', 'JPN', 'Deuda pública bruta de Japón / PIB (FMI)', 'Deuda', '% del PIB']];
+for (const [ind, pais, nombre, cat, unidad] of IMF) E.push({id: `imf_${slug(ind)}_${pais.toLowerCase()}`, nombre, categoria: cat, etiquetas: ['fmi', 'imf', 'weo', ind.toLowerCase(), pais.toLowerCase()], adaptador: 'imf', args: {indicador: ind, pais}, unidad, frecuencia: 'Anual',
+  fuente_original: 'FMI — World Economic Outlook, DataMapper', fuente_corto: `FMI · WEO · ${ind} · ${pais}`, licencia: 'Términos de uso del FMI: citar al FMI; confirmar reutilización comercial', nota: 'Se excluyen las proyecciones del WEO (años posteriores al año en curso menos uno); los últimos años incluidos pueden ser estimaciones del FMI.'});
+for (const [geo, n] of [['EA', 'zona euro'], ['ES', 'España'], ['DE', 'Alemania']]) E.push({id: `eu_hicp_${geo.toLowerCase()}`, nombre: `Inflación armonizada (IPCA) de ${n} — variación anual`, categoria: 'Precios', etiquetas: ['eurostat', 'hicp', 'ipca', 'inflacion', geo.toLowerCase()],
+  adaptador: 'eurostat', args: {dataset: 'prc_hicp_manr', filtros: {geo, coicop: 'CP00', unit: 'RCH_A'}}, unidad: '% anual', frecuencia: 'Mensual', fuente_original: 'Eurostat — HICP, tasa de variación anual (prc_hicp_manr)', fuente_corto: `Eurostat · prc_hicp_manr · ${geo}`,
+  licencia: 'CC BY 4.0 (política de reutilización de Eurostat)', nota: 'Índice general (CP00). Los valores recientes pueden ser provisionales; la composición de la zona euro cambia con el tiempo (ver nota de la fuente).'});
+E.push({id: 'ust_deuda_total', nombre: 'Deuda pública total de EE. UU. (al centavo)', categoria: 'Deuda', etiquetas: ['tesoro', 'treasury', 'deuda', 'fiscaldata', 'ee. uu.'], adaptador: 'tesoro', args: {campo: 'tot_pub_debt_out_amt'}, unidad: 'US$ corrientes', frecuencia: 'Diaria (días hábiles)',
+  fuente_original: 'U.S. Department of the Treasury — FiscalData, Debt to the Penny', fuente_corto: 'Tesoro de EE. UU. · Debt to the Penny', licencia: 'Dominio público (obra del gobierno de EE. UU.; FiscalData)', nota: 'Desde 1993-04-01. Deuda total pendiente = en manos del público + intragubernamental.'});
+E.push({id: 'co_trm', nombre: 'Colombia — dólar (TRM, pesos por US$)', categoria: 'Divisas', etiquetas: ['colombia', 'trm', 'dolar', 'cop', 'superfinanciera'], adaptador: 'trm', args: {}, unidad: 'COP por 1 US$', frecuencia: 'Diaria (vigencia; incluye fines de semana como rango)',
+  fuente_original: 'Superintendencia Financiera de Colombia — TRM, vía datos.gov.co', fuente_corto: 'Superfinanciera · TRM · datos.gov.co', licencia: 'CC BY-SA 4.0 (datos.gov.co); atribución: Superintendencia Financiera de Colombia', nota: 'Fecha = inicio de vigencia; cada valor rige hasta su vigenciahasta. Desde 1991-12-02.'});
+
 const fed = JSON.parse(fs.readFileSync(rutaCatalogo, 'utf8')).find((e) => e.id === 'fed_balance');
 if (fed) E.unshift(fed);
 const vistos = new Set(), out = E.filter((e) => !vistos.has(e.id) && vistos.add(e.id));

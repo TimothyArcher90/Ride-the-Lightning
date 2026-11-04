@@ -14,7 +14,7 @@ import {fmtNum, fmtSigno, fmtPct, fmtFecha, colorDe, utc, TEMAS_DISPONIBLES} fro
 import {cargarFlujos, cargarCategorias} from './tablas.mjs';
 
 export const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const TIPOS_GRAFICA = ['linea', 'barras', 'carrera', 'dispersion', 'calor', 'sankey', 'donut', 'cascada', 'pendiente', 'bump', 'treemap', 'waffle'];
+const TIPOS_GRAFICA = ['linea', 'barras', 'carrera', 'dispersion', 'calor', 'sankey', 'donut', 'cascada', 'pendiente', 'bump', 'treemap', 'waffle', 'lollipop', 'divergente'];
 const TIPOS = [...TIPOS_GRAFICA, 'zona', 'llamada', 'contador', 'titulo', 'cortina', 'imagen', 'sello'];
 const MAX_PX = {horizontal: [1920, 1080], vertical: [1080, 1920]};
 
@@ -255,10 +255,10 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
       if (!tab) { E(`${donde}: "datos":"${capa.datos}" no existe o no compiló.`); return; }
       const esTabla = tab.tipoX === 'flujos' || tab.tipoX === 'categorias';
       if (capa.tipo === 'sankey' && tab.tipoX !== 'flujos') { E(`${donde}: el Sankey necesita datos de tipo "flujos" (origen, destino, valor).`); return; }
-      if (['donut', 'cascada', 'treemap', 'waffle'].includes(capa.tipo) && tab.tipoX !== 'categorias') { E(`${donde}: ${capa.tipo} necesita datos de tipo "categorias" (concepto, valor).`); return; }
-      if (esTabla && !['sankey', 'donut', 'cascada', 'treemap', 'waffle'].includes(capa.tipo)) { E(`${donde}: estos datos son una tabla de ${tab.tipoX}, no una serie de tiempo: úsalos con sankey, donut, cascada, treemap o waffle.`); return; }
-      if (['pendiente', 'bump'].includes(capa.tipo) && (tab.series.length < 2 || tab.x.length < 2)) { E(`${donde}: ${capa.tipo} necesita al menos 2 series y 2 momentos.`); return; }
-      if (capa.tipo === 'pendiente') {
+      if (['donut', 'cascada', 'treemap', 'waffle', 'lollipop'].includes(capa.tipo) && tab.tipoX !== 'categorias') { E(`${donde}: ${capa.tipo} necesita datos de tipo "categorias" (concepto, valor).`); return; }
+      if (esTabla && !['sankey', 'donut', 'cascada', 'treemap', 'waffle', 'lollipop'].includes(capa.tipo)) { E(`${donde}: estos datos son una tabla de ${tab.tipoX}, no una serie de tiempo: úsalos con sankey, donut, cascada, treemap o waffle.`); return; }
+      if (['pendiente', 'bump', 'divergente'].includes(capa.tipo) && (tab.series.length < 2 || tab.x.length < 2)) { E(`${donde}: ${capa.tipo} necesita al menos 2 series y 2 momentos.`); return; }
+      if (capa.tipo === 'pendiente' || capa.tipo === 'divergente') {
         const n = tab.x.length, de = capa.de ?? 0, a = capa.a ?? n - 1;
         if (!Number.isInteger(de) || !Number.isInteger(a) || de < 0 || a >= n || de >= a) { E(`${donde}: "de" y "a" deben ser posiciones enteras de la tabla con de < a (hay ${n} filas).`); return; }
       }
