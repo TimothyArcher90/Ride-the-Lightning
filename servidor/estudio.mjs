@@ -128,6 +128,9 @@ async function api(req, res) {
         const cats = [...cat.reduce((m, e) => m.set(e.categoria, (m.get(e.categoria) ?? 0) + 1), new Map())].map(([nombre, n]) => ({nombre, n})).sort((a, b) => b.n - a.n);
         return json(res, {series: lista, categorias: cats, total: cat.length, coinciden: todos.length, desde});
       }
+      case '/api/paises': { const m = await import('./paises.mjs'); return json(res, {paises: m.listarPaises()}); }
+      case '/api/indicadores-pais': { const m = await import('./paises.mjs'); return json(res, {indicadores: m.indicadoresPais()}); }
+      case '/api/ficha-pais': { const m = await import('./paises.mjs'); return json(res, await m.fichaPais(String(q.get('iso') ?? '').toUpperCase())); }
       case '/api/plantillas': return json(res, {plantillas: PLANTILLAS, camaras: Object.entries(CAMARAS).map(([id, c]) => ({id, ...c}))});
       case '/api/analizar': { const {series} = JSON.parse((await cuerpo(req)).toString('utf8')); await asegurar(series); return json(res, analizar(series)); }
       case '/api/recomendar': { const ent = JSON.parse((await cuerpo(req)).toString('utf8')); await asegurar(ent.series); return json(res, {recomendadas: recomendar(ent)}); }

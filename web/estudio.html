@@ -148,12 +148,29 @@
   .carta .sub, .carta .meta { font-size:15px; } .carta .recom { color:var(--oro); font-weight:600; }
   #chatBtn { font-size:16px; }
   .carta .tit { padding-right:34px; }
+  .carta .recom { font-weight:500 !important; font-size:14px; }
+  .vista { padding-bottom:80px; }
   .seg { flex-wrap:wrap; } .seg button { font-size:15px; min-height:46px; }
   .resumen4 { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:var(--s2); margin:var(--s3) 0; }
   .resumen4 div { background:var(--tarjeta); border:1px solid var(--linea); border-radius:var(--r); padding:10px 14px; } .resumen4 small { display:block; color:var(--suave); font-size:13px; } .resumen4 b { font-size:16px; }
   .entrega { display:grid; gap:var(--s2); margin-top:var(--s3); } .entrega .btn { width:100%; justify-content:flex-start; min-height:64px; flex-wrap:wrap; text-align:left; } .entrega .btn small { flex-basis:100%; font:400 14px Geist; opacity:.85; margin-left:28px; }
   @media (max-width:1100px) { main { grid-template-columns:minmax(0,1fr) !important; } .marco, .marco.vert { max-height:38vh; } .vista { position:static !important; order:1 !important; min-width:0; } body.conVista .vista { order:-1 !important; } .intentos { grid-template-columns:1fr; } }
   #paso, .vista { min-width:0; } html, body { overflow-x:hidden; }
+  .intentos { grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); }
+  .intento .g { font:600 11px "Geist Mono"; letter-spacing:.08em; text-transform:uppercase; color:var(--oro); }
+  .intento { min-height:104px; transition:border-color .15s, background .15s; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:var(--s2); }
+  .kpi { position:relative; text-align:left; background:var(--tarjeta); border:1.5px solid var(--linea); border-radius:var(--r); padding:14px 16px; color:var(--texto); cursor:pointer; font:inherit; display:flex; flex-direction:column; gap:4px; min-height:118px; transition:border-color .15s; }
+  .kpi:hover:not(:disabled) { border-color:var(--linea2); } .kpi[aria-pressed="true"] { border-color:var(--oro); background:#2b2a24; } .kpi:disabled { opacity:.5; cursor:not-allowed; }
+  .kpi .k { color:var(--suave); font-size:14px; padding-right:30px; } .kpi .v { font:700 24px/1.15 Geist; font-variant-numeric:tabular-nums; } .kpi .m { color:var(--suave); font-size:13px; }
+  .kpi .marca { position:absolute; top:12px; right:12px; width:24px; height:24px; border-radius:50%; display:grid; place-items:center; border:1.5px solid var(--linea2); color:transparent; }
+  .kpi[aria-pressed="true"] .marca { background:var(--oro); border-color:var(--oro); color:var(--oro-t); }
+  .galeria { grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); }
+  .carta.tpl { min-height:0; transition:border-color .15s; }
+  .carta.tpl canvas.mini-vivo, .carta.tpl svg.mini { width:100%; aspect-ratio:16/9; height:auto; object-fit:contain; border-radius:6px; background:var(--prof); margin-bottom:6px; }
+  .carta.tpl canvas.mini-vivo.vert { aspect-ratio:9/16; max-height:300px; width:auto; align-self:center; }
+  .carta.tpl.cargando svg.mini { animation:brillo 1.4s linear infinite; background:linear-gradient(100deg,#ffffff00 20%,#ffffff14 50%,#ffffff00 80%) var(--prof); background-size:200% 100%; }
+  .carta.tpl .tit { font-size:18px; }
   @media (max-width:640px) { header { padding:10px var(--s3); } main { padding:var(--s3); } h2 { font-size:24px; } nav.pasos button { padding:8px 12px; font-size:14px; } }
 </style>
 </head>
