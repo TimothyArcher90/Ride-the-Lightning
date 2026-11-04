@@ -43,30 +43,35 @@ const barraNav = (atras, sig, sigTxt, sigOk = true) => `<div class="barra-nav">$
 function enlazarNav(paso) { const a = $('#atras'), s = $('#sig'); if (a) a.onclick = () => ir(paso - 1); if (s) s.onclick = () => ir(paso + 1); }
 
 // ── PASO 1: datos ───────────────────────────────────────────────────────────────────────────────────────────────
-async function cargarBiblioteca() {
-  try { S.bib = await api(`/api/biblioteca?q=${encodeURIComponent(S.q)}&categoria=${encodeURIComponent(S.cat)}`); } catch (e) { S.bib = {series: [], categorias: [], total: 0, error: e.message}; }
+// Sin búsqueda ni categoría se muestran solo los datos que casi todos quieren (no las 185 series juntas).
+const POPULARES = ['yf_btc_usd', 'bm_gold', 'yf_gspc', 'fred_cpiaucsl', 'fred_dgs10', 'bm_crude_oil_wti', 'fred_unrate', 'fred_dexuseu', 'fed_balance', 'fred_gdp', 'bm_copper', 'yf_ixic'];
+async function cargarBiblioteca(mas = false) {
+  const desde = mas ? (S.bib?.series?.length ?? 0) : 0, previas = mas ? S.bib?.series ?? [] : [], busca = S.q.trim() || S.cat;
+  const url = busca ? `/api/biblioteca?q=${encodeURIComponent(S.q)}&categoria=${encodeURIComponent(S.cat)}&desde=${desde}` : `/api/biblioteca?ids=${POPULARES.join(',')}`;
+  try { const j = await api(url); S.bib = {...j, series: previas.concat(j.series), populares: !busca}; } catch (e) { S.bib = {series: [], categorias: [], total: 0, coinciden: 0, error: e.message}; }
   if (S.paso === 0) pintarLista();
 }
-const insigSalud = (s) => (s.estado === 'al_dia' ? `<span class="pill ok">${ic('check')}Al día</span>` : s.estado === 'atrasada' ? `<span class="pill av">${ic('warn')}Atrasada</span>` : `<span class="pill">Se descarga al elegirla</span>`);
-const insigLic = (l) => (l.nivel === 'libre' ? `<span class="pill ok" title="${esc(l.texto)}">${ic('check')}Uso abierto</span>` : `<span class="pill av" title="${esc(l.texto)}">${ic('warn')}Uso restringido</span>`);
+const estadoTxt = (s) => (s.salud.estado === 'al_dia' ? 'Al día' : s.salud.estado === 'atrasada' ? 'Atrasada' : 'Se descarga al elegirla');
 const estaElegida = (id) => S.series.some((s) => s.origen === 'biblioteca' && s.id === id);
+const rango = (s) => (s.inicio ? `${String(s.inicio).slice(0, 4).replace(/^-0*/, '−')} → ${String(s.fin).slice(0, 4)}` : 'historia completa');
 function pintarLista() {
   const cont = $('#lista'); if (!cont) return;
-  if (!S.bib) { cont.innerHTML = '<p class="ayuda">Cargando la biblioteca…</p>'; return; }
-  if (S.bib.error) { cont.innerHTML = `<div class="aviso mal">${ic('warn')}<div>No se pudo cargar la biblioteca: ${esc(S.bib.error)}. Reintenta en unos segundos.</div></div>`; return; }
-  $('#chips').innerHTML = [`<button type="button" class="chip" data-c="" aria-pressed="${S.cat === ''}">Todo (${S.bib.total})</button>`, ...S.bib.categorias.map((c) => `<button type="button" class="chip" data-c="${esc(c.nombre)}" aria-pressed="${S.cat === c.nombre}">${esc(c.nombre)} (${c.n})</button>`)].join('');
+  if (!S.bib) { cont.innerHTML = '<p class="ayuda">Cargando datos…</p>'; return; }
+  if (S.bib.error) { cont.innerHTML = `<div class="aviso mal">${ic('warn')}<div>No se pudo cargar la lista: ${esc(S.bib.error)}. Reintenta en unos segundos.</div></div>`; return; }
+  $('#chips').innerHTML = [`<button type="button" class="chip" data-c="" aria-pressed="${S.cat === ''}">Populares</button>`, ...S.bib.categorias.slice(0, 14).map((c) => `<button type="button" class="chip" data-c="${esc(c.nombre)}" aria-pressed="${S.cat === c.nombre}">${esc(c.nombre)}</button>`)].join('');
   $('#chips').querySelectorAll('button').forEach((b) => (b.onclick = () => { S.cat = b.dataset.c; cargarBiblioteca(); }));
   if (!S.bib.series.length) { cont.innerHTML = '<p class="ayuda">No encontré datos con esa búsqueda. Prueba con una palabra más simple: «oro», «bitcoin», «petróleo», «inflación»…</p>'; return; }
-  cont.innerHTML = `<div class="rejilla" role="group" aria-label="Datos disponibles">${S.bib.series.map((s) => `
-    <button type="button" class="carta" role="checkbox" aria-checked="${estaElegida(s.id)}" data-id="${esc(s.id)}">
+  const titulo = S.bib.populares ? 'Los más usados' : `${S.bib.coinciden} resultado${S.bib.coinciden === 1 ? '' : 's'}`;
+  const hay = S.bib.series.length < (S.bib.coinciden ?? 0);
+  cont.innerHTML = `<p class="tag" style="margin:0 0 8px">${esc(titulo)}</p><ul class="filas" role="group" aria-label="Datos disponibles">${S.bib.series.map((s) => `
+    <li><button type="button" class="dato" role="checkbox" aria-checked="${estaElegida(s.id)}" data-id="${esc(s.id)}">
       <span class="marca">${ic('check')}</span>
-      <span class="tit">${esc(s.nombre)}</span>
-      <span class="sub">${esc(s.categoria)} · ${esc(s.frecuencia)}</span>
-      <span class="meta">${s.inicio ? `${esc(String(s.inicio).slice(0, 4).replace(/^-0*/, '−'))} → ${esc(String(s.fin).slice(0, 4))} · ${s.filas.toLocaleString('es-CO')} datos` : 'Historia completa desde el primer dato'}</span>
-      <span class="sub">Fuente: ${esc(s.fuente)}</span>
-      <span class="insig">${insigSalud(s.salud)}${insigLic(s.licencia)}</span>
-    </button>`).join('')}</div>`;
-  cont.querySelectorAll('.carta').forEach((b) => (b.onclick = () => alternar(S.bib.series.find((x) => x.id === b.dataset.id))));
+      <span class="dato-t"><span class="tit">${esc(s.nombre)}</span><span class="sub">${esc(s.categoria)} · ${esc(s.frecuencia)} · ${esc(rango(s))} · ${esc(s.fuente)}</span></span>
+      ${s.salud.estado === 'atrasada' ? `<span class="pill av" title="${esc(s.salud.texto)}">${ic('warn')}Atrasada</span>` : ''}${s.licencia.nivel !== 'libre' ? `<span class="pill av" title="${esc(s.licencia.texto)}">${ic('warn')}Uso restringido</span>` : ''}
+    </button></li>`).join('')}</ul>
+    ${hay ? `<button type="button" class="btn" id="verMas" style="margin-top:12px">Ver más (${S.bib.coinciden - S.bib.series.length} restantes)</button>` : S.bib.populares ? '<p class="ayuda" style="margin-top:12px">¿No ves el tuyo? Escríbelo arriba o elige una categoría: hay ' + S.bib.total + ' datos reales.</p>' : ''}`;
+  cont.querySelectorAll('.dato').forEach((b) => (b.onclick = () => alternar(S.bib.series.find((x) => x.id === b.dataset.id))));
+  const vm = $('#verMas'); if (vm) vm.onclick = () => cargarBiblioteca(true);
 }
 function alternar(ficha) {
   const i = S.series.findIndex((s) => s.origen === 'biblioteca' && s.id === ficha.id);
@@ -76,7 +81,7 @@ function alternar(ficha) {
 }
 function pintarSeleccion() {
   const c = $('#seleccion'); if (!c) return;
-  c.innerHTML = S.series.length ? `<div class="caja"><strong>Elegidos (${S.series.length}):</strong>${S.series.map((s, k) => `<span class="ficha-sel">${esc(s.nombre)}<button type="button" data-k="${k}" aria-label="Quitar ${esc(s.nombre)}">${ic('x')}</button></span>`).join('')}<span class="esp"></span><button class="btn p" id="sig">Siguiente: cómo lo quieres ver${ic('next')}</button></div>` : '<div class="caja"><span class="ayuda" style="margin:0">Todavía no elegiste ningún dato.</span></div>';
+  c.innerHTML = S.series.length ? `<div class="caja"><strong>Elegidos (${S.series.length}):</strong>${S.series.map((s, k) => `<span class="ficha-sel">${esc(s.nombre)}<button type="button" data-k="${k}" aria-label="Quitar ${esc(s.nombre)}">${ic('x')}</button></span>`).join('')}<span class="esp"></span><button class="btn p" id="sig">Siguiente: elegir cómo se ve${ic('next')}</button></div>` : '<div class="caja"><span class="ayuda" style="margin:0">Elige al menos un dato de la lista para continuar.</span></div>';
   c.querySelectorAll('.ficha-sel button').forEach((b) => (b.onclick = () => { S.series.splice(+b.dataset.k, 1); S.sel = null; S.analisis = null; guardar(); pintarLista(); pintarSeleccion(); pintarPasos(); regenerar(); }));
   const s = $('#sig'); if (s) s.onclick = () => ir(1);
 }
@@ -91,11 +96,12 @@ const claseDe = (intento) => (intento === 'serie' ? 'serie' : intento === 'flujo
 const claseDatos = () => S.series[0]?.tabla ?? (S.series.length ? 'serie' : claseDe(S.intento));
 function paso1() {
   $('#paso').innerHTML = `
-    <h2>¿Qué quieres contar?</h2>
-    <p class="ayuda">Elige una historia. El tipo de gráfico, la cámara y los colores los resolvemos nosotros.</p>
-    <div class="rejilla" id="intentos" style="grid-template-columns:repeat(2,minmax(0,1fr))" role="radiogroup" aria-label="Qué quieres contar">${INTENTOS.map((i) => `<button type="button" class="carta" role="radio" aria-checked="${S.intento === i.id}" data-id="${i.id}">${MINI[i.mini] ?? ''}<span class="marca">${ic('check')}</span><span class="tit">${esc(i.t)}</span><span class="sub">${esc(i.s)}</span></button>`).join('')}</div>
+    <div class="guia"><strong>Para qué sirve:</strong> convierte datos reales (oro, bitcoin, inflación, resultados de empresas…) en una animación lista para tus videos. Sin programar y sin riesgo de cifras mal puestas.
+      <ol><li><b>Elige el dato</b> aquí</li><li><b>Elige cómo se ve</b></li><li><b>Descarga el video</b></li></ol></div>
+    <h2>Paso 1 · ¿Qué quieres contar?</h2>
+    <div class="intentos" id="intentos" role="radiogroup" aria-label="Qué quieres contar">${INTENTOS.map((i) => `<button type="button" class="intento" role="radio" aria-checked="${S.intento === i.id}" data-id="${i.id}"><span class="t">${esc(i.t)}</span><span class="s">${esc(i.s)}</span></button>`).join('')}</div>
     <div id="bloque"></div>`;
-  $('#intentos').querySelectorAll('.carta').forEach((b) => (b.onclick = () => {
+  $('#intentos').querySelectorAll('.intento').forEach((b) => (b.onclick = () => {
     const nuevo = b.dataset.id; if (nuevo === S.intento) return;
     S.intento = nuevo;
     if (S.series.length && claseDatos() !== claseDe(nuevo)) { S.series = []; S.sel = null; S.analisis = null; S.subida = null; S.spec = S.plano = S.informe = null; mostrarVista(); }
@@ -105,21 +111,22 @@ function paso1() {
 }
 function paso1Serie() {
   $('#bloque').innerHTML = `
-    <p class="ayuda">Elige un dato real. Se descarga <strong>completo, desde el primer registro que existe</strong>, y se mantiene al día solo. No tienes que buscar ni pasar archivos.</p>
-    <label class="etq" for="busca">Busca en palabras simples</label>
-    <input id="busca" type="search" placeholder="oro, bitcoin, petróleo, inflación, dólar, población…" value="${esc(S.q)}" autocomplete="off">
+    <p class="ayuda">Busca un dato real o toca uno de la lista. Toca varios para compararlos (máx. 10). Se descargan completos y se mantienen al día solos.</p>
+    <div class="buscador">${ic('search')}<input id="busca" type="search" aria-label="Buscar un dato" placeholder="Busca: oro, bitcoin, petróleo, inflación, dólar…" value="${esc(S.q)}" autocomplete="off"></div>
     <div class="chips" id="chips" role="group" aria-label="Categorías"></div>
     <div id="lista"></div>
     <div class="seleccion" id="seleccion"></div>
-    <h3>Resultados de una empresa en el tiempo</h3>
-    <p class="ayuda">Ingresos, utilidad y margen trimestre a trimestre, con datos oficiales de la SEC. Marca una o varias métricas de la misma empresa (para comparar empresas entre sí, usa «Una empresa, un trimestre» o tu propia tabla).</p>
-    <label class="etq" for="busS">Busca una empresa de la bolsa de EE. UU.</label>
-    <input id="busS" type="search" placeholder="Amazon, Apple, NVIDIA…" autocomplete="off">
-    <div id="empSerie"></div>
-    <h3>¿Tienes tus propios datos?</h3>
-    <p class="ayuda">Suelta un Excel (xlsx, xls, xlsb, ods), un CSV, TSV o JSON. Te preguntamos solo lo necesario.</p>
-    <div id="drop" tabindex="0">${ic('up')} Suelta aquí tu archivo o <label for="arch" style="color:var(--oro);text-decoration:underline;cursor:pointer">elígelo</label><input id="arch" type="file" class="sr"></div>
-    <div id="subida"></div>`;
+    <details class="det otras" ${S.subida || empSeriesSel ? 'open' : ''}><summary>Otras formas de empezar: resultados de una empresa o tu propio archivo</summary>
+      <h3>Resultados de una empresa en el tiempo</h3>
+      <p class="ayuda">Ingresos, utilidad y margen trimestre a trimestre, con datos oficiales de la SEC.</p>
+      <label class="etq" for="busS">Busca una empresa de la bolsa de EE. UU.</label>
+      <input id="busS" type="search" placeholder="Amazon, Apple, NVIDIA…" autocomplete="off">
+      <div id="empSerie"></div>
+      <h3>¿Tienes tus propios datos?</h3>
+      <p class="ayuda">Suelta un Excel, CSV, TSV o JSON. Te preguntamos solo lo necesario.</p>
+      <div id="drop" tabindex="0">${ic('up')} Suelta aquí tu archivo o <label for="arch" style="color:var(--oro);text-decoration:underline;cursor:pointer">elígelo</label><input id="arch" type="file" class="sr"></div>
+      <div id="subida"></div>
+    </details>`;
   let d; $('#busca').oninput = (e) => { S.q = e.target.value; clearTimeout(d); d = setTimeout(cargarBiblioteca, 250); };
   const drop = $('#drop'); drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('sobre'); }; drop.ondragleave = () => drop.classList.remove('sobre');
   drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('sobre'); subir(e.dataTransfer.files[0]); };
@@ -315,8 +322,8 @@ const MINI = {
 async function paso2() {
   const n = S.series.length;
   $('#paso').innerHTML = `
-    <h2>¿Cómo lo quieres ver?</h2>
-    <p class="ayuda">Elige un estilo. Ya viene con el ritmo, los zooms y los colores de marca resueltos; tú decides qué contar.</p>
+    <h2>Paso 2 · ¿Cómo lo quieres ver?</h2>
+    <p class="ayuda">Elige un estilo (la vista previa de la derecha cambia al instante). La marca <strong>★ Recomendada</strong> es la que mejor cuenta tus datos.</p>
     ${(() => {
       // solo se muestran los estilos que sirven para lo que elegiste; el resto queda plegado (sin regañar)
       const clase = claseDatos(), mios = S.plantillas.filter((p) => (p.datos ?? 'serie') === clase), encajan = mios.filter((p) => n >= p.necesita.min && n <= p.necesita.max), otros = mios.filter((p) => !encajan.includes(p));
@@ -354,7 +361,7 @@ async function pintarMomentos() {
     const r = S.analisis.resumen;
     cont.innerHTML = `<h3>Momentos que vale la pena contar</h3>
       <p class="ayuda">Los buscamos nosotros <strong>en los datos</strong>: nada es inventado. Marca los que quieras mostrar y ponles un nombre corto.</p>
-      <div class="aviso">${ic('info')}<div>Tu dato va de <strong>${esc(r.desde)}</strong> a <strong>${esc(r.hasta)}</strong> (${r.filas.toLocaleString('es-CO')} registros).${S.analisis.avisos.length ? '<br>' + S.analisis.avisos.map(esc).join('<br>') : ''}</div></div>
+      <div class="aviso">${ic('info')}<div>Tu dato va de <strong>${esc(r.desde)}</strong> a <strong>${esc(r.hasta)}</strong> (${r.filas.toLocaleString('es-CO')} registros).${S.analisis.avisos.filter((a) => !/^datos\.|ninguna capa/.test(a)).length ? '<br>' + S.analisis.avisos.filter((a) => !/^datos\.|ninguna capa/.test(a)).map(esc).join('<br>') : ''}</div></div>
       ${S.analisis.momentos.map((m) => `<div class="momento"><input type="checkbox" id="m_${m.id}" data-id="${m.id}" ${S.sel[m.id] ? 'checked' : ''}><div><label for="m_${m.id}" class="etq" style="margin:0">${esc(m.anio)} · ${esc(m.valor)}</label><input type="text" maxlength="30" data-et="${m.id}" aria-label="Nombre corto para ${esc(m.etiqueta)}" value="${esc(S.etiquetas[m.id] ?? m.etiqueta)}"></div><div class="expl">${esc(m.explicacion)}</div></div>`).join('')}`;
     cont.querySelectorAll('input[type=checkbox]').forEach((c) => (c.onchange = () => { S.sel[c.dataset.id] = c.checked; guardar(); regenerar(); }));
     cont.querySelectorAll('input[data-et]').forEach((t) => (t.oninput = () => { S.etiquetas[t.dataset.et] = t.value; guardar(); regenerarDebounce(); }));
@@ -366,7 +373,7 @@ const limpio = (s) => { const {ficha, ...r} = s; return r; };
 function paso3() {
   if (S.series[0]?.tabla) {   // flujos, anillos y cascadas se construyen solos: no hay cámara que elegir, solo el aspecto
     $('#paso').innerHTML = `
-      <h2>Aspecto</h2>
+      <h2>Paso 3 · Aspecto</h2>
       <p class="ayuda">Esta animación se construye sola, de izquierda a derecha, sin zooms que elegir. Solo falta escoger cómo se ve.</p>
       <div class="seg" role="group" aria-label="Aspecto de color"><button type="button" data-tema="oscuro" aria-pressed="${S.tema === 'oscuro'}">MacroWise (oscuro cálido)</button><button type="button" data-tema="harris" aria-pressed="${S.tema === 'harris'}">Negro y rosa-rojo</button><button type="button" data-tema="carbon" aria-pressed="${S.tema === 'carbon'}">Gris carbón y teal</button></div>
       ${S.plano ? `<p class="ayuda" style="margin-top:16px">Duración: <strong>${S.plano.duracion.toFixed(1)} segundos</strong>.</p>` : ''}
@@ -375,8 +382,8 @@ function paso3() {
     enlazarNav(2); return;
   }
   $('#paso').innerHTML = `
-    <h2>Cámara y ritmo</h2>
-    <p class="ayuda">Define cómo se mueve la cámara y qué tan rápido se cuenta. Puedes cambiarlo y ver el resultado a la derecha al instante.</p>
+    <h2>Paso 3 · Cámara y ritmo</h2>
+    <p class="ayuda">Cómo se mueve la cámara y qué tan rápido se cuenta. Si dudas, deja la que está marcada: ya funciona bien.</p>
     <div class="rejilla" role="radiogroup" aria-label="Estilos de cámara">${S.camaras.map((c) => `<button type="button" class="carta" role="radio" aria-checked="${S.camara === c.id}" data-id="${c.id}"><span class="marca">${ic('check')}</span><span class="tit">${esc(c.nombre)}</span><span class="sub">${esc(c.descripcion)}</span><span class="meta">Trazo ${c.dibujo} s${c.mov ? ` · zoom ${c.mov} s` : ' · sin zoom'}</span></button>`).join('')}</div>
     ${S.plantilla !== 'historia' ? `<div class="aviso">${ic('info')}<div>Este estilo (${esc((S.plantillas.find((p) => p.id === S.plantilla) ?? {}).nombre ?? '')}) usa su propia cámara fija; el ritmo cambia solo en «La historia de una cifra».</div></div>` : ''}
     ${S.plantilla === 'historia' ? `<h3>Cómo se marcan los momentos</h3><div class="seg" role="group" aria-label="Estilo de los momentos"><button type="button" data-em="tarjeta" aria-pressed="${S.estiloMomento === 'tarjeta'}">Tarjeta: año · qué pasó · dato</button><button type="button" data-em="barra" aria-pressed="${S.estiloMomento === 'barra'}">Solo barra con el año (la voz cuenta el resto)</button><button type="button" data-em="pildora" aria-pressed="${S.estiloMomento === 'pildora'}">Píldora amarilla con la frase</button><button type="button" data-em="circulo" aria-pressed="${S.estiloMomento === 'circulo'}">Círculo sobre el dato</button></div>` : ''}
@@ -396,8 +403,8 @@ function paso3() {
 function paso4() {
   const inf = S.informe, errores = inf?.errores ?? [];
   $('#paso').innerHTML = `
-    <h2>Revisar y exportar</h2>
-    <p class="ayuda">Mira la animación a la derecha. Si te gusta, expórtala. Antes de hacerlo, el sistema comprueba que <strong>ningún texto se pise</strong> y que <strong>cada cifra salga de los datos</strong>.</p>
+    <h2>Paso 4 · Revisar y descargar</h2>
+    <p class="ayuda">Mira la animación a la derecha. Si te gusta, descárgala. El sistema ya comprueba que <strong>ningún texto se pise</strong> y que <strong>cada cifra salga de los datos</strong>.</p>
     ${errores.length ? `<div class="aviso mal">${ic('warn')}<div><strong>Hay algo por corregir:</strong><br>${errores.map(esc).join('<br>')}</div></div>` : ''}
     <h3>Qué vas a recibir</h3>
     <ul style="margin:0;padding-left:20px"><li><strong>Video MP4</strong> para ver y compartir (1920×1080 o 1080×1920).</li><li><strong>Archivo ProRes 4444 con transparencia</strong> para montar en Premiere (solo en la versión final).</li><li><strong>Informe de verificación</strong> con el origen de cada cifra.</li></ul>
@@ -472,9 +479,11 @@ async function cargarImagenes(p) {
 }
 async function mostrarVista() {
   const vacio = $('#vacio'), simple = $('#simple'), marco = $('#marco');
+  document.body.classList.toggle('conVista', !!S.plano && !S.error);
   if (S.error || !S.plano) {
     vacio.hidden = false; escena = null; ctx.clearRect(0, 0, lienzo.width, lienzo.height);
-    vacio.innerHTML = S.error ? `<div><p style="font-size:18px;font-weight:700;margin:0 0 6px;color:var(--rojo)">No se pudo armar la animación</p><p style="margin:0">${esc(S.error)}</p></div>` : '<div><p style="font-size:20px;font-weight:700;margin:0 0 6px">Aquí verás tu animación</p><p style="margin:0">Elige un dato a la izquierda para empezar.</p></div>';
+    vacio.innerHTML = S.error ? `<div><p style="font-size:18px;font-weight:700;margin:0 0 6px;color:var(--rojo)">No se pudo armar la animación</p><p style="margin:0">${esc(S.error)}</p></div>` : '<div><p style="font-size:20px;font-weight:700;margin:0 0 6px">Aquí verás tu animación</p><p style="margin:0 0 14px">Elige un dato a la izquierda y aparece sola.</p><button class="btn p" id="vacioEj" type="button">Ver un ejemplo ya hecho</button></div>';
+    const ve = $('#vacioEj'); if (ve) ve.onclick = () => $('#btnEjemplos').click();
     simple.hidden = !S.informe; if (S.informe) pintarSimple(); return;
   }
   vacio.hidden = true;
@@ -591,6 +600,7 @@ chatIn.oninput = () => { chatIn.style.height = 'auto'; chatIn.style.height = Mat
 
 (async () => {
   const pl = await api('/api/plantillas'); S.plantillas = pl.plantillas; S.camaras = pl.camaras;
-  pintar(); estadoVivo(); setInterval(estadoVivo, 60000);
+  pintar(); pintarBotonPlay(); estadoVivo(); setInterval(estadoVivo, 60000);
+  if (!S.series.length) { const ve = document.createElement('button'); ve.className = 'btn p'; ve.type = 'button'; ve.style.marginTop = '14px'; ve.textContent = 'Ver un ejemplo ya hecho'; ve.onclick = () => $('#btnEjemplos').click(); $('#vacio > div').append(ve); }
   if (S.series.length) { S.series = S.series.map((s) => s); regenerar(); }
 })();

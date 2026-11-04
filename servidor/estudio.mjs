@@ -122,9 +122,11 @@ async function api(req, res) {
       }
       case '/api/biblioteca': {
         const cat = leerCatalogo(), qq = (q.get('q') ?? '').toLowerCase().split(/\s+/).filter(Boolean), c = q.get('categoria');
-        const lista = cat.filter((e) => (!c || e.categoria === c) && qq.every((p) => `${e.id} ${e.nombre} ${e.categoria} ${(e.etiquetas ?? []).join(' ')}`.toLowerCase().includes(p))).slice(0, 60).map(ficha);
+        const ids = (q.get('ids') ?? '').split(',').filter(Boolean), desde = Math.max(0, +(q.get('desde') ?? 0) || 0);
+        const todos = ids.length ? ids.map((i) => cat.find((e) => e.id === i)).filter(Boolean) : cat.filter((e) => (!c || e.categoria === c) && qq.every((p) => `${e.id} ${e.nombre} ${e.categoria} ${(e.etiquetas ?? []).join(' ')}`.toLowerCase().includes(p)));
+        const lista = todos.slice(desde, desde + 24).map(ficha);
         const cats = [...cat.reduce((m, e) => m.set(e.categoria, (m.get(e.categoria) ?? 0) + 1), new Map())].map(([nombre, n]) => ({nombre, n})).sort((a, b) => b.n - a.n);
-        return json(res, {series: lista, categorias: cats, total: cat.length});
+        return json(res, {series: lista, categorias: cats, total: cat.length, coinciden: todos.length, desde});
       }
       case '/api/plantillas': return json(res, {plantillas: PLANTILLAS, camaras: Object.entries(CAMARAS).map(([id, c]) => ({id, ...c}))});
       case '/api/analizar': { const {series} = JSON.parse((await cuerpo(req)).toString('utf8')); await asegurar(series); return json(res, analizar(series)); }

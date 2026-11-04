@@ -120,6 +120,36 @@
   #chatIn { flex:1; resize:none; background:var(--prof); color:var(--texto); border:1px solid var(--linea2); border-radius:10px; padding:10px 12px; font:15px/1.4 Geist,system-ui,sans-serif; min-height:44px; max-height:120px; }
   .pulso { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--oro); animation:pul 1s infinite; }
   @keyframes pul { 0%,100% { opacity:.25 } 50% { opacity:1 } }
+
+  /* ── pulido de usabilidad: qué es, qué hago ahora, menos ruido ── */
+  body { font-size:17px; }
+  .ayuda { font-size:16px; color:#CFCABF; }
+  .guia { background:var(--tarjeta); border:1px solid var(--linea2); border-left:4px solid var(--oro); border-radius:var(--r); padding:var(--s3) var(--s4); margin:0 0 var(--s4); font-size:16px; }
+  .guia ol { display:flex; gap:var(--s3); flex-wrap:wrap; list-style:none; counter-reset:g; margin:var(--s2) 0 0; padding:0; }
+  .guia li { counter-increment:g; display:flex; align-items:center; gap:8px; color:var(--suave); }
+  .guia li::before { content:counter(g); width:26px; height:26px; border-radius:50%; background:var(--oro); color:var(--oro-t); display:grid; place-items:center; font:700 14px "Geist Mono"; }
+  .guia li b { color:var(--texto); }
+  .intentos { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:var(--s2); margin:var(--s2) 0 var(--s4); }
+  .intento { text-align:left; background:var(--tarjeta); border:1.5px solid var(--linea); border-radius:var(--r); padding:12px 14px; color:var(--texto); cursor:pointer; font:inherit; display:flex; flex-direction:column; gap:4px; min-height:84px; }
+  .intento .t { font-weight:700; font-size:16px; line-height:1.3; } .intento .s { color:var(--suave); font-size:14px; line-height:1.35; }
+  .intento:hover { border-color:var(--linea2); } .intento[aria-checked="true"] { border-color:var(--oro); background:#2b2a24; box-shadow:inset 0 0 0 1px var(--oro); }
+  .buscador { position:relative; } .buscador svg { position:absolute; left:14px; top:14px; color:var(--suave); }
+  .buscador input { padding-left:44px; font-size:18px; min-height:52px; border-color:var(--oro); }
+  .chips { margin:var(--s2) 0 var(--s3); }
+  .chip { min-height:38px; font-size:15px; }
+  .filas { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+  .dato { width:100%; display:flex; align-items:center; gap:12px; text-align:left; background:var(--tarjeta); border:1.5px solid var(--linea); border-radius:var(--r); padding:10px 14px; min-height:60px; color:var(--texto); cursor:pointer; font:inherit; }
+  .dato:hover { border-color:var(--linea2); } .dato[aria-checked="true"] { border-color:var(--oro); background:#2b2a24; }
+  .dato .marca { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; border:1.5px solid var(--linea2); color:transparent; flex:none; }
+  .dato[aria-checked="true"] .marca { background:var(--oro); border-color:var(--oro); color:var(--oro-t); }
+  .dato-t { display:flex; flex-direction:column; flex:1; min-width:0; } .dato .tit { font-weight:700; font-size:16px; } .dato .sub { color:var(--suave); font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .otras { margin-top:var(--s5); border-top:1px solid var(--linea); padding-top:var(--s3); } .otras summary { font-size:16px; }
+  .seleccion { bottom:0; } .seleccion .caja { box-shadow:0 -6px 24px #0009; border-color:var(--oro); }
+  .carta .sub, .carta .meta { font-size:15px; } .carta .recom { color:var(--oro); font-weight:600; }
+  #chatBtn { font-size:16px; }
+  @media (max-width:1100px) { main { grid-template-columns:minmax(0,1fr) !important; } .marco, .marco.vert { max-height:38vh; } .vista { position:static !important; order:1 !important; min-width:0; } body.conVista .vista { order:-1 !important; } .intentos { grid-template-columns:1fr; } }
+  #paso, .vista { min-width:0; } html, body { overflow-x:hidden; }
+  @media (max-width:640px) { header { padding:10px var(--s3); } main { padding:var(--s3); } h2 { font-size:24px; } nav.pasos button { padding:8px 12px; font-size:14px; } }
 </style>
 </head>
 <body>
@@ -127,7 +157,7 @@
   <h1><svg class="logo" viewBox="0 0 256 256" aria-hidden="true"><rect width="256" height="256" rx="52" fill="#232320"/><polygon points="146,28 78,138 120,138 100,228 182,106 138,106" fill="#C9A84C" stroke="#FFF3C4" stroke-width="6" stroke-linejoin="round"/></svg>Ride the <b>Lightning</b></h1>
   <span class="pill" id="estadoDatos" role="status" aria-live="polite"></span>
   <span class="esp"></span>
-  <button class="btn" id="btnEjemplos" aria-haspopup="true">Abrir un ejemplo</button>
+  <button class="btn" id="btnEjemplos" aria-haspopup="true">Ver un ejemplo</button>
   <button class="btn" id="btnExperto" aria-pressed="false">Modo experto</button>
 </header>
 
@@ -139,7 +169,7 @@
   <aside class="vista" aria-label="Vista previa">
     <div class="marco" id="marco">
       <canvas id="lienzo" width="960" height="540" role="img" aria-label="Vista previa de la animación"></canvas>
-      <div class="vacio" id="vacio"><div><p style="font-size:20px;font-weight:700;margin:0 0 6px">Aquí verás tu animación</p><p style="margin:0">Elige un dato a la izquierda para empezar.</p></div></div>
+      <div class="vacio" id="vacio"><div><p style="font-size:20px;font-weight:700;margin:0 0 6px">Aquí verás tu animación</p><p style="margin:0">Elige un dato a la izquierda y aparece sola.</p></div></div>
       <div class="carga" id="carga" hidden><span>Preparando tu animación…</span></div>
     </div>
     <div class="control">
@@ -157,7 +187,7 @@
     </div>
   </aside>
 </main>
-<button id="chatBtn" aria-expanded="false" aria-controls="chat"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Chat</button>
+<button id="chatBtn" aria-expanded="false" aria-controls="chat"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Pedir cambios hablando</button>
 <section id="chat" hidden aria-label="Chat para editar la animación">
   <header><strong>Edita hablando</strong><span class="esp" style="flex:1"></span><button class="btn" id="chatNuevo" title="Empezar una conversación nueva" style="padding:6px 10px;font-size:13px">Nuevo</button><button class="btn" id="chatCerrar" aria-label="Cerrar el chat" style="padding:6px 10px">✕</button></header>
   <div id="chatMsgs" role="log" aria-live="polite"></div>
