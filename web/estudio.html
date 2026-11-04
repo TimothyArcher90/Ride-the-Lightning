@@ -147,6 +147,11 @@
   .seleccion { bottom:0; } .seleccion .caja { box-shadow:0 -6px 24px #0009; border-color:var(--oro); }
   .carta .sub, .carta .meta { font-size:15px; } .carta .recom { color:var(--oro); font-weight:600; }
   #chatBtn { font-size:16px; }
+  .carta .tit { padding-right:34px; }
+  .seg { flex-wrap:wrap; } .seg button { font-size:15px; min-height:46px; }
+  .resumen4 { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:var(--s2); margin:var(--s3) 0; }
+  .resumen4 div { background:var(--tarjeta); border:1px solid var(--linea); border-radius:var(--r); padding:10px 14px; } .resumen4 small { display:block; color:var(--suave); font-size:13px; } .resumen4 b { font-size:16px; }
+  .entrega { display:grid; gap:var(--s2); margin-top:var(--s3); } .entrega .btn { width:100%; justify-content:flex-start; min-height:64px; flex-wrap:wrap; text-align:left; } .entrega .btn small { flex-basis:100%; font:400 14px Geist; opacity:.85; margin-left:28px; }
   @media (max-width:1100px) { main { grid-template-columns:minmax(0,1fr) !important; } .marco, .marco.vert { max-height:38vh; } .vista { position:static !important; order:1 !important; min-width:0; } body.conVista .vista { order:-1 !important; } .intentos { grid-template-columns:1fr; } }
   #paso, .vista { min-width:0; } html, body { overflow-x:hidden; }
   @media (max-width:640px) { header { padding:10px var(--s3); } main { padding:var(--s3); } h2 { font-size:24px; } nav.pasos button { padding:8px 12px; font-size:14px; } }

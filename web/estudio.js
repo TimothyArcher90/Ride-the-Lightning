@@ -384,12 +384,12 @@ function paso3() {
   $('#paso').innerHTML = `
     <h2>Paso 3 · Cámara y ritmo</h2>
     <p class="ayuda">Cómo se mueve la cámara y qué tan rápido se cuenta. Si dudas, deja la que está marcada: ya funciona bien.</p>
-    <div class="rejilla" role="radiogroup" aria-label="Estilos de cámara">${S.camaras.map((c) => `<button type="button" class="carta" role="radio" aria-checked="${S.camara === c.id}" data-id="${c.id}"><span class="marca">${ic('check')}</span><span class="tit">${esc(c.nombre)}</span><span class="sub">${esc(c.descripcion)}</span><span class="meta">Trazo ${c.dibujo} s${c.mov ? ` · zoom ${c.mov} s` : ' · sin zoom'}</span></button>`).join('')}</div>
+    <div class="rejilla" role="radiogroup" aria-label="Estilos de cámara">${S.camaras.map((c) => `<button type="button" class="carta" role="radio" aria-checked="${S.camara === c.id}" data-id="${c.id}"><span class="marca">${ic('check')}</span><span class="tit">${esc(c.nombre)}</span><span class="sub">${esc(c.descripcion)}</span><span class="meta">Se dibuja en ${c.dibujo} s${c.mov ? ` · con zoom` : ' · sin zoom'}</span>${c.id === 'documental' ? '<span class="pill ok" style="align-self:flex-start">★ Recomendada</span>' : ''}</button>`).join('')}</div>
     ${S.plantilla !== 'historia' ? `<div class="aviso">${ic('info')}<div>Este estilo (${esc((S.plantillas.find((p) => p.id === S.plantilla) ?? {}).nombre ?? '')}) usa su propia cámara fija; el ritmo cambia solo en «La historia de una cifra».</div></div>` : ''}
     ${S.plantilla === 'historia' ? `<h3>Cómo se marcan los momentos</h3><div class="seg" role="group" aria-label="Estilo de los momentos"><button type="button" data-em="tarjeta" aria-pressed="${S.estiloMomento === 'tarjeta'}">Tarjeta: año · qué pasó · dato</button><button type="button" data-em="barra" aria-pressed="${S.estiloMomento === 'barra'}">Solo barra con el año (la voz cuenta el resto)</button><button type="button" data-em="pildora" aria-pressed="${S.estiloMomento === 'pildora'}">Píldora amarilla con la frase</button><button type="button" data-em="circulo" aria-pressed="${S.estiloMomento === 'circulo'}">Círculo sobre el dato</button></div>` : ''}
     <h3>Aspecto</h3><div class="seg" role="group" aria-label="Aspecto de color"><button type="button" data-tema="oscuro" aria-pressed="${S.tema === 'oscuro'}">MacroWise (oscuro cálido)</button><button type="button" data-tema="harris" aria-pressed="${S.tema === 'harris'}">Negro y rosa-rojo</button><button type="button" data-tema="carbon" aria-pressed="${S.tema === 'carbon'}">Gris carbón y teal</button></div>
-    <h3>¿Mantenerlo siempre al día?</h3>
-    <label class="conmuta"><input type="checkbox" id="vivo" ${S.vivo ? 'checked' : ''}><span><strong>Actualizar el video solo cuando la fuente publique datos nuevos</strong><br><span class="ayuda" style="margin:0">Los datos se actualizan siempre. Con esto, además, se genera una versión nueva del video (v2, v3…) cada vez que haya un dato nuevo, como mucho cada 6 horas. Requiere que el actualizador esté encendido.</span></span></label>
+    <details class="det" ${S.vivo ? 'open' : ''}><summary>Opción avanzada: rehacer el video solo cuando salgan datos nuevos</summary>
+    <label class="conmuta" style="margin-top:8px"><input type="checkbox" id="vivo" ${S.vivo ? 'checked' : ''}><span><strong>Crear una versión nueva (v2, v3…) cuando la fuente publique datos</strong><br><span class="ayuda" style="margin:0">Máximo una cada 6 horas. Requiere el actualizador encendido. Si no sabes qué es, déjalo apagado.</span></span></label></details>
     ${S.plano ? `<p class="ayuda" style="margin-top:16px">Duración de esta versión: <strong>${S.plano.duracion.toFixed(1)} segundos</strong>.</p>` : ''}
     ${barraNav(true, true, 'Siguiente: revisar y exportar')}`;
   $('#paso').querySelectorAll('.carta').forEach((b) => (b.onclick = () => { S.camara = b.dataset.id; guardar(); paso3(); regenerar(); }));
@@ -406,11 +406,11 @@ function paso4() {
     <h2>Paso 4 · Revisar y descargar</h2>
     <p class="ayuda">Mira la animación a la derecha. Si te gusta, descárgala. El sistema ya comprueba que <strong>ningún texto se pise</strong> y que <strong>cada cifra salga de los datos</strong>.</p>
     ${errores.length ? `<div class="aviso mal">${ic('warn')}<div><strong>Hay algo por corregir:</strong><br>${errores.map(esc).join('<br>')}</div></div>` : ''}
-    <h3>Qué vas a recibir</h3>
-    <ul style="margin:0;padding-left:20px"><li><strong>Video MP4</strong> para ver y compartir (1920×1080 o 1080×1920).</li><li><strong>Archivo ProRes 4444 con transparencia</strong> para montar en Premiere (solo en la versión final).</li><li><strong>Informe de verificación</strong> con el origen de cada cifra.</li></ul>
-    <div class="fila" style="margin-top:20px">
-      <button class="btn" id="rBorrador" ${errores.length || !S.spec ? 'disabled' : ''}>${ic('film')}Exportar borrador (rápido, ~30 s)</button>
-      <button class="btn p" id="rFinal" ${errores.length || !S.spec ? 'disabled' : ''}>${ic('film')}Exportar versión final (3–6 min)</button>
+    <div class="resumen4"><div><small>Dato</small><b>${esc(S.series.map((s) => s.nombre).slice(0, 2).join(' + ') || '—')}${S.series.length > 2 ? ' +' + (S.series.length - 2) : ''}</b></div><div><small>Estilo</small><b>${esc(S.plantillas.find((p) => p.id === S.plantilla)?.nombre ?? '—')}</b></div><div><small>Formato</small><b>${S.formato === 'vertical' ? 'Vertical 9:16' : 'Horizontal 16:9'}</b></div><div><small>Duración</small><b>${S.plano ? S.plano.duracion.toFixed(1) + ' s' : '—'}</b></div></div>
+    <h3>Elige qué descargar</h3>
+    <div class="entrega">
+      <button class="btn" id="rBorrador" ${errores.length || !S.spec ? 'disabled' : ''}>${ic('film')}Borrador rápido · ~30 segundos<small>Un MP4 para revisar cómo quedó. Úsalo antes de la versión final.</small></button>
+      <button class="btn p" id="rFinal" ${errores.length || !S.spec ? 'disabled' : ''}>${ic('film')}Versión final · 3 a 6 minutos<small>MP4 para compartir + archivo ProRes con transparencia para Premiere + informe de dónde sale cada cifra.</small></button>
     </div>
     <div id="estadoRender" aria-live="polite" style="margin-top:16px"></div>
     ${barraNav(true, false)}`;
@@ -438,7 +438,7 @@ function pintarRender() {
   else if (r.estado === 'error') c.innerHTML = `<div class="aviso mal">${ic('warn')}<div><strong>No se pudo exportar.</strong><br>${esc(r.error)}<br><span class="ayuda">Si dice que hay textos que se pisan, quita un momento o acorta su nombre en el paso 2.</span></div></div>`;
   else if (r.estado === 'listo') {
     const s = r.resultado.salidas;
-    c.innerHTML = `<div class="aviso ok">${ic('check')}<div><strong>Listo en ${r.resultado.segundos} s.</strong><br>${Object.entries(s).filter(([k]) => k !== 'contacto').map(([k, v]) => `<span class="mono" style="font-size:13px">${esc(k === 'mp4' ? 'Video' : k === 'alfa' ? 'Con transparencia (Premiere)' : 'Informe')}: ${esc(v)}</span>`).join('<br>')}</div></div>
+    c.innerHTML = `<div class="aviso ok">${ic('check')}<div><strong>¡Listo! Tardó ${r.resultado.segundos} s. Pulsa «Abrir la carpeta» para ver tus archivos.</strong><br>${Object.entries(s).filter(([k]) => k !== 'contacto').map(([k, v]) => `<span class="mono" style="font-size:13px">${esc(k === 'mp4' ? 'Video' : k === 'alfa' ? 'Con transparencia (Premiere)' : 'Informe')}: ${esc(v)}</span>`).join('<br>')}</div></div>
       <button class="btn" id="abrirCarpeta">${ic('folder')}Abrir la carpeta</button>`;
     $('#abrirCarpeta').onclick = () => post('/api/abrir', {ruta: s.mp4});
   }
