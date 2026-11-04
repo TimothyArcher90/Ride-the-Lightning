@@ -12,9 +12,10 @@ import {fileURLToPath} from 'node:url';
 import {leerTabla, columnaNumeros, columnaFechas, indiceColumna} from './datos.mjs';
 import {fmtNum, fmtSigno, fmtPct, fmtFecha, colorDe, utc, TEMAS_DISPONIBLES} from '../motor/nucleo.js';
 import {cargarFlujos, cargarCategorias} from './tablas.mjs';
+import {TIPOS_EXTRA, EXTRA_CLASE, validarExtra} from '../motor/capas_extra.js';
 
 export const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const TIPOS_GRAFICA = ['linea', 'barras', 'carrera', 'dispersion', 'calor', 'sankey', 'donut', 'cascada', 'pendiente', 'bump', 'treemap', 'waffle', 'lollipop', 'divergente'];
+const TIPOS_GRAFICA = ['linea', 'barras', 'carrera', 'dispersion', 'calor', 'sankey', 'donut', 'cascada', 'pendiente', 'bump', 'treemap', 'waffle', 'lollipop', 'divergente', ...TIPOS_EXTRA];
 const TIPOS = [...TIPOS_GRAFICA, 'zona', 'llamada', 'contador', 'titulo', 'cortina', 'imagen', 'sello'];
 const MAX_PX = {horizontal: [1920, 1080], vertical: [1080, 1920]};
 
@@ -255,8 +256,13 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
       if (!tab) { E(`${donde}: "datos":"${capa.datos}" no existe o no compiló.`); return; }
       const esTabla = tab.tipoX === 'flujos' || tab.tipoX === 'categorias';
       if (capa.tipo === 'sankey' && tab.tipoX !== 'flujos') { E(`${donde}: el Sankey necesita datos de tipo "flujos" (origen, destino, valor).`); return; }
+      if (EXTRA_CLASE[capa.tipo]) {   // visualizador universal: cada capa extra valida su propia clase de dato y sus reglas (motor/capas_extra.js)
+        const r = validarExtra(capa, tab, donde); r.errores.forEach(E); informe.avisos.push(...r.avisos); informe.metodos.push(...r.metodos); informe.cifras.push(...r.cifras);
+        if (r.errores.length) return;
+      } else {
       if (['donut', 'cascada', 'treemap', 'waffle', 'lollipop'].includes(capa.tipo) && tab.tipoX !== 'categorias') { E(`${donde}: ${capa.tipo} necesita datos de tipo "categorias" (concepto, valor).`); return; }
       if (esTabla && !['sankey', 'donut', 'cascada', 'treemap', 'waffle', 'lollipop'].includes(capa.tipo)) { E(`${donde}: estos datos son una tabla de ${tab.tipoX}, no una serie de tiempo: úsalos con sankey, donut, cascada, treemap o waffle.`); return; }
+      }
       if (['pendiente', 'bump', 'divergente'].includes(capa.tipo) && (tab.series.length < 2 || tab.x.length < 2)) { E(`${donde}: ${capa.tipo} necesita al menos 2 series y 2 momentos.`); return; }
       if (capa.tipo === 'pendiente' || capa.tipo === 'divergente') {
         const n = tab.x.length, de = capa.de ?? 0, a = capa.a ?? n - 1;
@@ -339,7 +345,8 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
       const tab = g ? tablas[g.datos] : Object.values(tablas)[0];
       ['texto', 'sub'].forEach((campo) => {
         if (capa[campo] == null) return;
-        chequearDigitos(capa[campo], capa, `${donde}.${campo}`, informe);
+        // el nombre de una serie puede llevar cifras legítimas («S&P 500», «Tesoro a 10 años»): salen del catálogo, no se teclean
+        chequearDigitos((tab?.series ?? []).reduce((r, s) => (s.nombre ? r.split(s.nombre).join('') : r), String(capa[campo])), capa, `${donde}.${campo}`, informe);
         if (tab && tab.tipoX !== 'flujos' && tab.tipoX !== 'categorias') { const r = expandir(capa[campo], {tab, si: 0, i: tab.x.length - 1}, informe, `${donde}.${campo}`); capa[campo] = r.texto; if (r.usados.length) informe.cifras.push({capa: donde, campo, mostrado: r.texto, marcadores: r.usados}); }
       });
     }

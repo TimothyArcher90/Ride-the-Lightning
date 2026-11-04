@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {rutaCatalogo} from '../servidor/catalogo.mjs';
 import {listarPinkSheet} from '../servidor/biblioteca.mjs';
+import {entradasPaises} from '../servidor/paises.mjs';
 
 const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 const E = [];
@@ -128,6 +129,9 @@ E.push({id: 'ust_deuda_total', nombre: 'Deuda pública total de EE. UU. (al cent
   fuente_original: 'U.S. Department of the Treasury — FiscalData, Debt to the Penny', fuente_corto: 'Tesoro de EE. UU. · Debt to the Penny', licencia: 'Dominio público (obra del gobierno de EE. UU.; FiscalData)', nota: 'Desde 1993-04-01. Deuda total pendiente = en manos del público + intragubernamental.'});
 E.push({id: 'co_trm', nombre: 'Colombia — dólar (TRM, pesos por US$)', categoria: 'Divisas', etiquetas: ['colombia', 'trm', 'dolar', 'cop', 'superfinanciera'], adaptador: 'trm', args: {}, unidad: 'COP por 1 US$', frecuencia: 'Diaria (vigencia; incluye fines de semana como rango)',
   fuente_original: 'Superintendencia Financiera de Colombia — TRM, vía datos.gov.co', fuente_corto: 'Superfinanciera · TRM · datos.gov.co', licencia: 'CC BY-SA 4.0 (datos.gov.co); atribución: Superintendencia Financiera de Colombia', nota: 'Fecha = inicio de vigencia; cada valor rige hasta su vigenciahasta. Desde 1991-12-02.'});
+
+// ── Series por país (Banco Mundial / FMI): se generan en servidor/paises.mjs; scripts/construir-paises.mjs las refresca ──
+E.push(...entradasPaises());
 
 const fed = JSON.parse(fs.readFileSync(rutaCatalogo, 'utf8')).find((e) => e.id === 'fed_balance');
 if (fed) E.unshift(fed);

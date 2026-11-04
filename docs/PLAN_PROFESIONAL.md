@@ -44,8 +44,8 @@ Modelos nuevos en `motor/capas_extra.js`: radar/perfil, área apilada y 100 %, v
 | Fase | Contenido | Estado |
 |---|---|---|
 | A | Interfaz: guía, lista compacta, pasos claros, móvil | Hecho (ab68f11, cc2e9c9) |
-| B | Países: ficha, comparación, verificación de fuentes | En curso |
-| C | Salida profesional: diseño, pie de fuente, checklist | En curso |
-| D | Modelos universales + galería viva | En curso (galería lista; modelos en curso) |
+| B | Países: ficha, comparación, verificación de fuentes | Hecho: 45 países × 14 indicadores (812 series); FMI con licencia a confirmar |
+| C | Salida profesional: diseño, pie de fuente, checklist | Hecho (`motor/diseno.js`, `scripts/prueba-calidad.mjs`); Sankey vertical es lo más débil |
+| D | Modelos universales + galería viva | Hecho: 27 modelos, galería con el dato real |
 | E | Prueba con una persona no técnica, video final de muestra | Pendiente |
 | F | Biblioteca de plantillas guardadas / «Sorpréndeme» multi-opción | Pendiente |

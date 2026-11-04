@@ -8,14 +8,16 @@ import {RAIZ, compilar} from './compilar.mjs';
 import {leerCatalogo} from './catalogo.mjs';
 import {combinar} from './biblioteca.mjs';
 import {momentos, resumenSerie} from './analisis.mjs';
+import {fmtFecha} from '../motor/nucleo.js';
+import {PLANTILLAS_EXTRA, IDS_EXTRA, USO_EXTRA, COMUN_EXTRA, generarExtra} from './plantillas_extra.mjs';   // visualizador universal
 
 /** Presets de cámara y ritmo. Valores en segundos. */
 export const CAMARAS = {
-  cinematico: {nombre: 'Cinemático', descripcion: 'Trazo lento y zooms suaves a cada momento. Para videos largos y documentales.', dibujo: 10, mov: 1.8, mantener: 2.4, zoom: 0.18, respiro: 1.8, inicio: 1.2},
-  documental: {nombre: 'Documental', descripcion: 'Ritmo de editorial: trazo medio, un zoom claro por idea. El punto medio para casi todo.', dibujo: 7, mov: 1.3, mantener: 1.9, zoom: 0.14, respiro: 1.3, inicio: 1.0},
-  dinamico: {nombre: 'Dinámico (Reels y Shorts)', descripcion: 'Rápido y directo: trazo corto, zooms enérgicos. Pensado para vertical.', dibujo: 4.5, mov: 0.9, mantener: 1.4, zoom: 0.12, respiro: 0.9, inicio: 0.6},
-  seguir: {nombre: 'Sigue la línea (estilo Johnny Harris)', descripcion: 'La cámara acompaña la punta de la línea mientras se dibuja, reescala el eje y al final se abre al plano completo. Luego marca los momentos.', dibujo: 8, mov: 0, mantener: 1.9, zoom: 1, respiro: 1.2, inicio: 0.8, seguir: true},
-  estatico: {nombre: 'Sin movimiento de cámara', descripcion: 'La gráfica se dibuja completa y los momentos aparecen sobre ella. Sencillo y sobrio.', dibujo: 6, mov: 0, mantener: 1.9, zoom: 1, respiro: 1.2, inicio: 0.8},
+  cinematico: {nombre: 'Cinemático', descripcion: 'Trazo lento y zooms suaves a cada momento. Para videos largos y documentales.', dibujo: 10, mov: 1.8, mantener: 3, zoom: 0.18, respiro: 1.8, inicio: 1.2},
+  documental: {nombre: 'Documental', descripcion: 'Ritmo de editorial: trazo medio, un zoom claro por idea. El punto medio para casi todo.', dibujo: 7, mov: 1.3, mantener: 3, zoom: 0.14, respiro: 1.3, inicio: 1.0},
+  dinamico: {nombre: 'Dinámico (Reels y Shorts)', descripcion: 'Rápido y directo: trazo corto, zooms enérgicos. Pensado para vertical.', dibujo: 4.5, mov: 0.9, mantener: 3, zoom: 0.12, respiro: 0.9, inicio: 0.6},
+  seguir: {nombre: 'Sigue la línea (estilo Johnny Harris)', descripcion: 'La cámara acompaña la punta de la línea mientras se dibuja, reescala el eje y al final se abre al plano completo. Luego marca los momentos.', dibujo: 8, mov: 0, mantener: 3, zoom: 1, respiro: 1.2, inicio: 0.8, seguir: true},
+  estatico: {nombre: 'Sin movimiento de cámara', descripcion: 'La gráfica se dibuja completa y los momentos aparecen sobre ella. Sencillo y sobrio.', dibujo: 6, mov: 0, mantener: 3, zoom: 1, respiro: 1.2, inicio: 0.8},
 };
 
 export const PLANTILLAS = [
@@ -36,6 +38,7 @@ export const PLANTILLAS = [
   {id: 'puente', datos: 'categorias', nombre: 'Qué sumó y qué restó', descripcion: 'Una cascada: parte de un total, muestra cada suma y cada resta y llega al resultado. Los subtotales se comprueban.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor, y «total» en los subtotales).'},
 ];
 /** Qué clase de dato usa cada plantilla: 'serie' (tiempo), 'flujos' o 'categorias'. */
+PLANTILLAS.push(...PLANTILLAS_EXTRA);
 export const tipoDatosDe = (id) => PLANTILLAS.find((p) => p.id === id)?.datos ?? 'serie';
 
 const COLORES = ['oro', 'teal', 'purpura', 'piedra'];
@@ -56,6 +59,9 @@ const maxAbsDeCsv = (archivo, colIdx) => {
   return m;
 };
 const relativo = (abs) => path.relative(RAIZ, abs).replace(/\\/g, '/');
+
+/** Título por defecto de una pieza con varias series: sus nombres (sin cifras, que el compilador exige verificar). */
+const tituloDeNombres = (nombres) => { const t = nombres.length <= 3 ? nombres.join(', ').replace(/, ([^,]*)$/, ' y $1') : `${nombres.slice(0, 2).join(', ')} y otros`; return /\d/.test(t) || t.length > 60 ? 'Comparación' : t; };
 
 /** Construye el bloque `datos` para la lista de series elegidas. Devuelve {datos:{d}, nombres:[…], notas:[…]}. */
 function armarDatos(items, {comun = false} = {}) {
@@ -141,16 +147,16 @@ function historia({datos, tab, nombre, titulo, momentosElegidos, camara, escala,
   return {duracion, capas, notas: usaLog ? [`Escala logarítmica activada automáticamente: la serie varía más de ${Math.round(res.razonMaxMin)} veces, y en escala normal los primeros años se verían planos.`] : [], ...(vivo ? {vivo} : {})};
 }
 
-function comparar({titulo, camara, foco, n}) {
+function comparar({titulo, camara, foco, n, real = false, unidad = ''}) {
   const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(5, Math.min(10, P.dibujo + 1)), dur = +(P.inicio + dib + 3).toFixed(1), f = Math.min(Math.max(0, foco ?? 0), n - 1);
   return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'linea', id: 'g1', datos: 'd', foco: f, ejeUnidad: true, t: [P.inicio, P.inicio + dib]}, {tipo: 'contador', capa: 'g1', serie: f, t: [0, dur - 0.1]}],
-    notas: ['Las series se muestran como índice base 100 en la primera fecha en la que todas tienen dato, para que series de unidades distintas se puedan comparar. Cada cifra conserva su valor original en el informe.']};
+    notas: real ? [`Todas las series están en la misma unidad (${unidad || 'la misma escala'}), así que se comparan con sus valores reales sobre un solo eje. No se transformó ninguna cifra.`] : ['Las series tienen unidades distintas, así que se muestran como índice: la primera fecha en la que todas tienen dato vale 100 y lo demás se mide contra ese punto. Cada cifra conserva su valor original en el informe.']};
 }
 function layoutPanel(n, vertical) {
-  if (vertical) { const top = 0.2, alto = 0.68, h = alto / n - 0.11; return Array.from({length: n}, (_, k) => ({caja: [0.15, +(top + k * (alto / n) + 0.055).toFixed(3), 0.55, +h.toFixed(3)], pos: [0.12, +(top + k * (alto / n)).toFixed(3)]})); }
+  if (vertical) { const top = 0.2, alto = 0.68, h = alto / n - 0.125; return Array.from({length: n}, (_, k) => ({caja: [0.15, +(top + k * (alto / n) + 0.055).toFixed(3), 0.55, +h.toFixed(3)], pos: [0.12, +(top + k * (alto / n)).toFixed(3)]})); }
   if (n === 2) return [0.075, 0.54].map((x) => ({caja: [x, 0.36, 0.385, 0.4], pos: [x, 0.30]}));
   if (n === 3) return [0.065, 0.375, 0.685].map((x) => ({caja: [x, 0.36, 0.26, 0.4], pos: [x, 0.30]}));
-  const xs = [0.075, 0.575], ys = [[0.27, 0.24], [0.66, 0.23]];
+  const xs = [0.075, 0.575], ys = [[0.30, 0.19], [0.68, 0.18]];
   return [0, 1, 2, 3].map((k) => ({caja: [xs[k % 2], ys[k >> 1][0], 0.4, ys[k >> 1][1]], pos: [xs[k % 2], +(ys[k >> 1][0] - 0.062).toFixed(3)]}));
 }
 function panel({datos, titulo, vertical, camara}) {
@@ -182,9 +188,9 @@ function pendiente({titulo, camara, foco}) {
   const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(4, Math.min(7, P.dibujo)), dur = +(1 + dib + 3).toFixed(1);
   return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'pendiente', id: 'g1', datos: 'd', ...(foco != null ? {foco} : {}), t: [0.9, 0.9 + dib]}], notas: ['Se comparan solo el primer y el último momento de la tabla; el cambio (%) es último ÷ primero − 1. Las series sin dato en alguno de los dos momentos no se dibujan.']};
 }
-function bump({titulo, camara, foco}) {
+function bump({titulo, camara, foco, real = false}) {
   const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(5, Math.min(9, P.dibujo + 1)), dur = +(1 + dib + 3).toFixed(1);
-  return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'bump', id: 'g1', datos: 'd', ...(foco != null ? {foco} : {}), t: [0.9, 0.9 + dib]}], notas: ['La posición en cada momento sale de ordenar las series por su crecimiento acumulado desde el primer momento (valor ÷ valor inicial), para que series de unidades distintas sean comparables. Se muestran hasta 8 momentos repartidos de forma uniforme; solo entran las series con dato en todos ellos.']};
+  return {duracion: dur, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', t: [0.2, dur - 0.1]}, {tipo: 'bump', id: 'g1', datos: 'd', ...(real ? {orden: 'valor'} : {}), ...(foco != null ? {foco} : {}), t: [0.9, 0.9 + dib]}], notas: [real ? 'Todas las series tienen la misma unidad, así que el puesto de cada una sale de su valor real en cada momento (1.º = el valor más alto). Se muestran hasta 8 momentos repartidos de forma uniforme; solo entran las series con dato en todos ellos.' : 'El puesto de cada serie sale de cuánto ha crecido desde el primer momento (valor actual ÷ valor inicial), para poder comparar series con unidades distintas. Se muestran hasta 8 momentos repartidos de forma uniforme; solo entran las series con dato en todos ellos.']};
 }
 function divergente({titulo, camara}) {
   const P = CAMARAS[camara] ?? CAMARAS.documental, dib = Math.max(4, Math.min(7, P.dibujo)), dur = +(1 + dib + 3).toFixed(1);
@@ -217,13 +223,15 @@ export function generar(entrada) {
   const clase = def.datos ?? 'serie', esTabla = series.some((s) => s.tabla);
   if (clase === 'serie' && esTabla) throw new Error(`«${def.nombre}» se usa con series de tiempo, y elegiste una tabla de ${series.find((s) => s.tabla).tabla}. Elige otro estilo en el paso 2.`);
   if (clase !== 'serie' && !series.every((s) => s.tabla === clase)) throw new Error(`«${def.nombre}» necesita ${clase === 'flujos' ? 'una tabla de flujos (columnas origen, destino y valor)' : 'una tabla de categorías (columnas concepto y valor)'}. ${def.ayuda}`);
-  const {datos, nombres, notas: n0} = armarDatos(series, {comun: ['comparar', 'correlacion', 'pendiente', 'bump', 'divergente'].includes(plantilla)});
-  if (datos.d.tipo === 'categorias') datos.d.uso = plantilla === 'puente' ? 'cascada' : 'donut';
-  if (plantilla === 'comparar') { datos.d.base100 = true; const f0 = Math.min(Math.max(0, entrada.foco ?? 0), datos.d.columnas.length - 1), otros = ['teal', 'purpura', 'piedra']; let k = 0; datos.d.columnas.forEach((c, i) => { c.color = i === f0 ? 'oro' : otros[k++ % 3]; }); }
+  const {datos, nombres, notas: n0} = armarDatos(series, {comun: ['comparar', 'correlacion', 'pendiente', 'bump', 'divergente', ...COMUN_EXTRA].includes(plantilla)});
+  if (datos.d.tipo === 'categorias') datos.d.uso = plantilla === 'puente' ? 'cascada' : (USO_EXTRA[plantilla] ?? 'donut');
+  // misma unidad (y misma escala) en todas las series → se comparan en valores reales sobre un eje común; si difieren → índice base 100, declarado en pantalla
+  const cols0 = datos.d.columnas ?? [], mismaUnidad = cols0.length > 1 && cols0.every((c) => c.unidad && c.unidad === cols0[0].unidad && (c.divisor ?? 1) === (cols0[0].divisor ?? 1) && (c.prefijo ?? '') === (cols0[0].prefijo ?? '') && (c.sufijo ?? '') === (cols0[0].sufijo ?? ''));
+  if (plantilla === 'comparar') { if (!mismaUnidad) datos.d.base100 = true; const f0 = Math.min(Math.max(0, entrada.foco ?? 0), datos.d.columnas.length - 1), otros = ['teal', 'purpura', 'piedra']; let k = 0; datos.d.columnas.forEach((c, i) => { c.color = i === f0 ? 'oro' : otros[k++ % 3]; }); }
   const base = compilar({version: 1, datos, capas: []});
   const tab = base.spec.tablas?.d;
   if (!tab) return {spec: {version: 1, datos, capas: []}, informe: base.informe, notas: n0};
-  const titulo = entrada.titulo?.trim() || (nombres.length === 1 ? nombres[0].replace(/\s*\(.*\)\s*$/, '') : plantilla === 'carrera' ? 'Quién va primero' : plantilla === 'correlacion' ? '¿Se mueven juntas?' : 'Comparación');
+  const titulo = entrada.titulo?.trim() || (nombres.length === 1 ? nombres[0].replace(/\s*\(.*\)\s*$/, '') : plantilla === 'carrera' ? 'Quién va primero' : plantilla === 'correlacion' ? '¿Se mueven juntas?' : tituloDeNombres(nombres));
   let g;
   if (plantilla === 'historia') {
     const elegidos = (entrada.momentos ?? []).map((m) => {
@@ -233,7 +241,7 @@ export function generar(entrada) {
     });
     g = historia({datos, tab, nombre: nombres[0], titulo, momentosElegidos: elegidos, camara, escala, vivo, estilo: entrada.estiloMomento});
   } else if (plantilla === 'panel') g = panel({datos, titulo, vertical: formato === 'vertical', camara});
-  else if (plantilla === 'comparar') g = comparar({titulo, camara, foco: entrada.foco, n: nombres.length});
+  else if (plantilla === 'comparar') g = comparar({titulo, camara, foco: entrada.foco, n: nombres.length, real: mismaUnidad, unidad: cols0[0]?.unidad});
   else if (plantilla === 'carrera') g = carrera({datos, titulo, tab});
   else if (plantilla === 'resultados') g = resultados({titulo, camara});
   else if (plantilla === 'composicion') g = composicion({titulo, camara});
@@ -243,11 +251,25 @@ export function generar(entrada) {
   else if (plantilla === 'lollipop') g = lollipop({titulo, camara});
   else if (plantilla === 'divergente') g = divergente({titulo, camara});
   else if (plantilla === 'pendiente') g = pendiente({titulo, camara, foco: entrada.foco});
-  else if (plantilla === 'bump') g = bump({titulo, camara, foco: entrada.foco});
+  else if (plantilla === 'bump') g = bump({titulo, camara, foco: entrada.foco, real: mismaUnidad});
+  else if (IDS_EXTRA.has(plantilla)) g = generarExtra(plantilla, {datos, tab, titulo, camara, formato, entrada, CAMARAS});
   else g = correlacion({titulo});
+  // SUBTÍTULO del bloque de título: la unidad o lo que se está mirando, en palabras simples (sin cifras tecleadas: las fechas son marcadores)
+  const sinDig = (x) => x && !/\d/.test(x), c0 = datos.d.columnas?.[0], un = sinDig(c0?.unidad) ? c0.unidad : null, esSerie = !datos.d.tipo;
+  const SUB = {
+    historia: un ? `${un} · {desde}–{hasta}` : '{desde}–{hasta}',
+    comparar: mismaUnidad ? `Valores reales, ${un ?? 'misma unidad'} (un solo eje)` : 'Índice base cien: todas parten del mismo punto',
+    panel: 'Misma escala de tiempo en todas', carrera: un ? `${un} · quién va primero en cada fecha` : 'Quién va primero en cada fecha',
+    correlacion: 'Cuánto se mueven al mismo tiempo: juntas, sin relación o al revés', pendiente: 'Del primer al último dato disponible', divergente: 'Cambio entre el primer y el último dato',
+    bump: mismaUnidad ? 'Puestos según el valor en cada momento' : 'Puestos según cuánto crecieron', resultados: un ? `Cifras en ${un}` : null, composicion: un ? `Cifras en ${un}` : null,
+    puente: un ? `Cifras en ${un}` : null, treemap: un ? `Cifras en ${un}` : null, waffle: 'De cada cien, cuántos corresponden a cada parte', lollipop: un ? `Cifras en ${un}` : null,
+  };
+  if (g.capas[0]?.tipo === 'titulo' && !g.capas[0].sub && SUB[plantilla] && (esSerie || !/\{/.test(SUB[plantilla]))) g.capas[0].sub = SUB[plantilla];
   // el período («Q3 FY2026») sale de la fecha de cierre del reporte oficial, no se teclea: se declara verificado
   if (series[0]?.trimestre && g.capas[0]?.tipo === 'titulo' && /\d/.test(g.capas[0].texto)) g.capas[0].verificada = {fuente: `Período del reporte ${series[0].trimestre.etiqueta} (SEC EDGAR, fecha de cierre ${series[0].trimestre.fin})`, url: series[0].fuente?.url};
-  const spec = {version: 1, titulo, formato, fps: 30, duracion: g.duracion, datos, capas: g.capas, ...(entrada.tema && entrada.tema !== 'oscuro' ? {tema: entrada.tema} : {}), ...(g.vivo ? {vivo: g.vivo} : {})};
+  // pie de fuente: en los reportes trimestrales la «fecha del último dato» es el cierre del trimestre (sale del reporte oficial)
+  if (series[0]?.trimestre && series[0].fuente?.nombre) g.capas.push({tipo: 'sello', texto: series[0].fuente.nombre, fecha: fmtFecha(Date.parse(series[0].trimestre.fin), 'dia')});
+  const spec = {version: 1, titulo, formato, fps: 30, duracion: g.duracion, datos, capas: g.capas, ...(series[0]?.trimestre && series[0].fuente?.nombre ? {sello: false} : {}), ...(entrada.tema && entrada.tema !== 'oscuro' ? {tema: entrada.tema} : {}), ...(g.vivo ? {vivo: g.vivo} : {})};
   const comp = compilar(spec);
   return {spec, plano: comp.spec, informe: comp.informe, notas: [...n0, ...(g.notas ?? [])]};
 }

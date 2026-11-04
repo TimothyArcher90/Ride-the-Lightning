@@ -1,0 +1,16 @@
+{
+  "generado": "2026-11-04",
+  "paises": 45,
+  "indicadores": 14,
+  "sinDatos": {
+    "SGP": {
+      "gini": "El Banco Mundial no publica ningún valor de «Índice de Gini (desigualdad del ingreso)» para Singapur."
+    },
+    "SAU": {
+      "gini": "El Banco Mundial no publica ningún valor de «Índice de Gini (desigualdad del ingreso)» para Arabia Saudita."
+    },
+    "VEN": {
+      "deuda_pib": "El FMI no publica ningún valor de «Deuda pública bruta» para Venezuela."
+    }
+  }
+}

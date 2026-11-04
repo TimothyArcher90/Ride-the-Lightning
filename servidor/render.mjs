@@ -50,6 +50,11 @@ export async function vistaPrevia(spec, tiempos, {dir, nombre = 'vista', escala 
   } finally { await nav.close(); await srv.cerrar(); }
 }
 
+// Nombres en español claro para quien no es técnico: los mensajes del auditor se dirigen a una persona, no a un programador.
+const HUMANO = {titulo: 'el título', contador: 'el contador del año', tarjeta: 'una tarjeta de anotación', 'eje-x': 'los números del eje horizontal', 'eje-y': 'los números del eje vertical', sello: 'el pie de fuente', etiqueta: 'una etiqueta'};
+const quien = (e) => { const id = e.id ? String(e.id).split(':').slice(-1)[0] : ''; return `${HUMANO[e.tipo] ?? e.tipo}${id && e.tipo !== 'titulo' ? ` («${id}»)` : ''}`; };
+const seg = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
+
 /**
  * Auditoría de textos (el equivalente al "revisar_proyecto" de Electric Eye): recorre la pieza cada 0,2 s y comprueba que
  * ningún texto pise a otro ni se salga del cuadro. Los ejes pueden tocarse entre sí; todo lo demás, no.
@@ -74,15 +79,14 @@ export async function auditarColisiones(spec, {paso = 0.2} = {}) {
         }
       }
     }
-    const problemas = [...ev.values()].map((e) => ({tipo: e.tipo, a: `${e.a.tipo}${e.a.id ? ' (' + e.a.id + ')' : ''}`, b: e.b ? `${e.b.tipo}${e.b.id ? ' (' + e.b.id + ')' : ''}` : null, desde: e.ts[0], hasta: e.ts[e.ts.length - 1]}));
+    const problemas = [...ev.values()].map((e) => { const d = e.ts[0], h = e.ts[e.ts.length - 1], a = quien(e.a), b = e.b ? quien(e.b) : null; return {tipo: e.tipo, a, b, desde: d, hasta: h, mensaje: b ? `${a} y ${b} se tapan entre el segundo ${seg(d)} y el ${seg(h)}. Acorta uno de los textos o haz que aparezcan en momentos distintos.` : `${a} se sale del cuadro entre el segundo ${seg(d)} y el ${seg(h)}. Acorta el texto.`}; });
     // Zona segura de TikTok/Reels (regla 5 de Electric Eye): en vertical, nada de texto en la columna de botones (x ≥ 72 % del ancho desde y ≥ 43,75 % del alto).
     // Va aparte de `problemas`: es un aviso de diseño, no un choque de textos.
     const zona = new Map();
     if (H > W) for (const {t, registro} of cuadros) for (const A of registro) {
-      if (A.tipo === 'sello' || A.tipo === 'fuente') continue;
-      if (A.caja[2] > 0.722 * W + 2 && A.caja[3] > 0.4375 * H && A.caja[0] < W) { const k = `${A.tipo}:${A.id ?? ''}`; (zona.get(k) ?? zona.set(k, {a: A.id ? `${A.tipo} (${A.id})` : A.tipo, ts: []}).get(k)).ts.push(t); }
+            if (A.caja[2] > 0.722 * W + 2 && A.caja[3] > 0.4375 * H && A.caja[0] < W) { const k = `${A.tipo}:${A.id ?? ''}`; (zona.get(k) ?? zona.set(k, {a: quien(A), ts: []}).get(k)).ts.push(t); }
     }
-    const zonaSegura = [...zona.values()].map((e) => ({a: e.a, desde: e.ts[0], hasta: e.ts[e.ts.length - 1]}));
+    const zonaSegura = [...zona.values()].map((e) => ({a: e.a, desde: e.ts[0], hasta: e.ts[e.ts.length - 1], mensaje: `${e.a} invade la zona de la derecha donde TikTok e Instagram ponen sus botones (entre el segundo ${seg(e.ts[0])} y el ${seg(e.ts[e.ts.length - 1])}). Muévelo a la izquierda o acórtalo.`}));
     return {ok: problemas.length === 0, problemas, zonaSegura, instantes: ts.length};
   } finally { await nav.close(); await srv.cerrar(); }
 }
@@ -132,7 +136,7 @@ export function sonda(archivo) {
  */
 export async function renderizar(spec, informe, {nombre, calidad = 'final', alfa = true, salidaDir = path.join(RAIZ, 'salidas'), onProgreso, forzar = false} = {}) {
   const aud = await auditarColisiones(spec);
-  if (!aud.ok && !forzar) throw new Error('Textos que se pisan o se salen del cuadro: ' + aud.problemas.slice(0, 6).map((p) => `${p.a}${p.b ? ' × ' + p.b : ''} (${p.desde}–${p.hasta} s)`).join('; ') + '. Corrige la spec (separa llamadas en el tiempo, acorta textos) o usa forzar.');
+  if (!aud.ok && !forzar) throw new Error('Hay textos que se tapan entre sí o se salen del cuadro: ' + aud.problemas.slice(0, 4).map((p) => p.mensaje).join(' ') + ' Corrige la pieza (separa las anotaciones en el tiempo o acorta los textos) o usa «forzar».');
   const base = (nombre ?? spec.titulo ?? 'grafica').replace(/[^\w.-]+/g, '_').slice(0, 60) || 'grafica';
   const dir = path.join(salidaDir, base);
   const v = siguienteVersion(dir, base), pref = path.join(dir, `${base}_v${v}`);

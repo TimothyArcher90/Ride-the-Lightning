@@ -145,7 +145,7 @@ async function cargarPaises() {
   if (!paisesCat) { try { const [p, i] = await Promise.all([api('/api/paises'), api('/api/indicadores-pais')]); paisesCat = {paises: p.paises ?? [], indicadores: i.indicadores ?? []}; } catch (e) { paisesCat = {error: e.message, paises: [], indicadores: []}; } }
   return paisesCat;
 }
-function aplicarSeries(lista) { S.series = lista; S.sel = null; S.analisis = null; S.modo = 'guiado'; S.tituloEditado = false; S.foco = 0; guardar(); pintarSeleccion(); pintarPasos(); regenerar(); }
+function aplicarSeries(lista, titulo = '') { S.series = lista; S.sel = null; S.analisis = null; S.modo = 'guiado'; S.titulo = titulo; S.tituloEditado = !!titulo; S.foco = 0; guardar(); pintarSeleccion(); pintarPasos(); regenerar(); }
 const porRegion = (paises) => paises.reduce((m, p) => ((m[p.region] ??= []).push(p), m), {});
 async function paso1Pais() {
   $('#bloque').innerHTML = `<p class="ayuda">Elige un país y verás sus cifras clave, cada una con su año y su fuente. Toca las que quieras animar (la historia completa de cada una).</p>
@@ -173,8 +173,8 @@ async function elegirPais(iso) {
     <p class="ayuda" style="margin-top:10px">Cada cifra es el último dato publicado por la fuente oficial; nada se estima ni se interpola.</p>`;
   box.querySelectorAll('.kpi').forEach((b) => (b.onclick = () => {
     const ind = f.indicadores.find((x) => x.serieId === b.dataset.id), i = S.series.findIndex((s) => s.id === ind.serieId), lista = S.series.slice();
-    if (i >= 0) lista.splice(i, 1); else { if (lista.length >= 10) { aviso('Puedes combinar hasta 10 datos.'); return; } lista.push({origen: 'biblioteca', id: ind.serieId, nombre: `${f.pais.nombre} · ${ind.nombre}`}); }
-    aplicarSeries(lista); b.setAttribute('aria-pressed', i < 0);
+    if (i >= 0) lista.splice(i, 1); else { if (lista.length >= 10) { aviso('Puedes combinar hasta 10 datos.'); return; } lista.push({origen: 'biblioteca', id: ind.serieId, nombre: ind.nombre.split(' (')[0]}); }
+    aplicarSeries(lista, lista.length === 1 ? `${f.pais.nombre}: ${lista[0].nombre}` : lista.length ? `${f.pais.nombre}: datos clave` : ''); b.setAttribute('aria-pressed', i < 0);
   }));
 }
 async function paso1Paises() {
@@ -186,7 +186,7 @@ async function paso1Paises() {
   if (cat.error || !cat.paises.length) { $('#indP').innerHTML = `<div class="aviso mal">${ic('warn')}<div>No se pudo cargar la lista de países${cat.error ? ': ' + esc(cat.error) : ''}.</div></div>`; return; }
   const clave = () => S.indPais ?? cat.indicadores[0]?.clave, isos = () => S.series.map((s) => String(s.id).split('_')[1]).filter(Boolean);
   const nombreDe = (iso) => cat.paises.find((p) => p.iso3 === iso)?.nombre ?? iso;
-  const poner = (lista) => aplicarSeries(lista.slice(0, 8).map((iso) => ({origen: 'biblioteca', id: `pais_${iso}_${clave()}`, nombre: nombreDe(iso)})));
+  const poner = (lista) => aplicarSeries(lista.slice(0, 8).map((iso) => ({origen: 'biblioteca', id: `pais_${iso}_${clave()}`, nombre: nombreDe(iso)})), lista.length ? (cat.indicadores.find((i) => i.clave === clave())?.nombre ?? '').split(' (')[0] : '');
   const pintar = () => {
     const temas = cat.indicadores.reduce((m, i) => ((m[i.tema ?? 'Otros'] ??= []).push(i), m), {});
     $('#indP').innerHTML = Object.entries(temas).map(([t, l]) => `<p class="tag" style="margin:8px 0 6px">${esc(t)}</p><div class="chips" style="margin:0" role="radiogroup" aria-label="${esc(t)}">${l.map((i) => `<button type="button" class="chip" role="radio" data-k="${esc(i.clave)}" aria-checked="${clave() === i.clave}" aria-pressed="${clave() === i.clave}" title="${esc(i.fuente ?? '')}">${esc(i.nombre)}</button>`).join('')}</div>`).join('');

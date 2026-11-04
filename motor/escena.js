@@ -1,9 +1,11 @@
 // Escena: ordena las capas por z y las pinta para un instante t. Determinista: sin Math.random, sin Date.now.
 import {DIBUJO, Z} from './capas.js';
 import {PALETA, TEMA, rgba, clamp, aplicarTema} from './nucleo.js';
+import {fijarFormato} from './diseno.js';
+import {TIPOS_EXTRA} from './capas_extra.js';
 
 const ANOTACION = new Set(['llamada', 'contador', 'titulo', 'cortina', 'sello']);
-const GRAFICA = new Set(['linea', 'barras', 'carrera', 'dispersion', 'calor', 'sankey', 'donut', 'cascada', 'pendiente', 'bump', 'treemap', 'waffle', 'lollipop', 'divergente', 'zona', 'imagen']);
+const GRAFICA = new Set(['linea', 'barras', 'carrera', 'dispersion', 'calor', 'sankey', 'donut', 'cascada', 'pendiente', 'bump', 'treemap', 'waffle', 'lollipop', 'divergente', ...TIPOS_EXTRA, 'zona', 'imagen']);
 
 export class Escena {
   scratch(W, H) {
@@ -46,6 +48,7 @@ export class Escena {
 
   /** modo: 'todo' | 'graficas' (fondo + gráficas, para promediar el desenfoque) | 'texto' (anotaciones nítidas, sin desenfoque). */
   dibujar(ctx, W, H, t, {sinFondo = false, modo = 'todo'} = {}) {
+    fijarFormato(H > W, Math.min(W, H) / 1080);
     ctx.clearRect(0, 0, W, H);
     if (!sinFondo && modo !== 'texto') this.fondo(ctx, W, H, t);
     const env = {ctx, W, H, u: Math.min(W, H) / 1080, t, tablas: this.spec.tablas, imgs: this.imgs, vistas: {}, cabezas: {}, proy: {}, registro: [], capasTodas: this.capas};

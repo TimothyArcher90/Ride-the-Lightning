@@ -4,12 +4,12 @@
 // mano en píxeles, todo se ancla a un dato.
 import {
   PALETA, clamp, lerp, ease, prog, colorDe, mezcla, rgba, fmtNum, fmtFecha, ticksNum, ticksFecha, etiquetaTick,
-  lowerBound, valorEn, mezclaRango, fmtSigno, COLOR, TEMA,
+  lowerBound, valorEn, mezclaRango, fmtSigno, COLOR, TEMA, utc,
 } from './nucleo.js';
 
-const SANS = '"Geist", system-ui, sans-serif';
-const MONO = '"Geist Mono", ui-monospace, monospace';
-const fnt = (peso, px, mono = false) => `${peso} ${Math.round(px)}px ${mono ? MONO : SANS}`;
+import {escalarFuente, fuenteCss, tipo, ZONA, margenes, envolver, textoPie, MOV, CURVA, entrada as entradaEsc, retardo, contraste, legible} from './diseno.js';
+// TODA fuente pasa por el sistema de diseño (motor/diseno.js): nunca baja del piso de legibilidad de su banda y formato.
+const fnt = (peso, px, mono = false) => fuenteCss(peso, escalarFuente(px), mono);
 
 export const Z = {imagen: 5, zona: 8, sankey: 10, donut: 10, cascada: 10, pendiente: 10, bump: 10, treemap: 10, waffle: 10, lollipop: 10, divergente: 10, linea: 10, barras: 10, carrera: 10, dispersion: 10, calor: 10, llamada: 20, contador: 25, titulo: 30, cortina: 40, sello: 50};
 
@@ -17,15 +17,22 @@ function caja(env, capa, def) {
   const c = capa.caja ?? def;
   return {x: c[0] * env.W, y: c[1] * env.H, w: c[2] * env.W, h: c[3] * env.H};
 }
-const CAJA_DEF = (env) => (env.H > env.W ? [0.12, 0.33, 0.6, 0.46] : [0.065, 0.24, 0.87, 0.6]);   // vertical: margen izquierdo para que las cifras del eje Y no salgan del cuadro
+const CAJA_DEF = (env) => (env.H > env.W ? [0.16, 0.31, 0.55, 0.5] : [0.07, 0.25, 0.86, 0.58]);   // vertical: margen izquierdo para que las cifras del eje Y no salgan del cuadro
 const aparece = (env, capa, t0) => prog(env.t, (capa.aparece ?? t0 - 0.5), (capa.aparece ?? t0 - 0.5) + 0.5, ease.out3);
 
 function texto(ctx, s, x, y, font, color, align = 'left', base = 'alphabetic', alpha = 1) {
   ctx.save();
-  ctx.globalAlpha *= alpha; ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = base;
+  ctx.globalAlpha *= alpha; ctx.font = font; ctx.fillStyle = legible(color, PALETA.fondo, 6.2); ctx.textAlign = align; ctx.textBaseline = base;
   ctx.fillText(s, x, y);
   ctx.restore();
 }
+/** Marca del eje X centrada en x, pero sin salirse por la derecha de la zona útil (en vertical, la zona segura del celular). */
+function marcaX(env, s, x, y, font, color) {
+  const {ctx, W, H, u} = env, lim = H > W ? ZONA.x * W - 6 : W - 20 * u;
+  ctx.save(); ctx.font = font; const w = ctx.measureText(s).width; ctx.restore();
+  if (x + w / 2 > lim) texto(ctx, s, lim, y, font, color, 'right'); else texto(ctx, s, x, y, font, color, 'center');
+}
+const mid = (px) => 0.35 * escalarFuente(px);   // desplazamiento para centrar en vertical un texto de tamaño px
 const decTicks = (paso) => (paso >= 1 ? 0 : Math.min(4, Math.ceil(-Math.log10(paso) - 1e-9)));
 
 // ── Cámara por keyframes (en el espacio de los DATOS, no en píxeles: el texto siempre queda nítido) ─────────────
@@ -100,6 +107,12 @@ function ticksLog(a, b) {
 }
 const fmtLog = (v) => { const x = Math.pow(10, v); return fmtNum(x, {decimales: Math.max(0, Math.min(4, -Math.floor(v + 1e-9)))}); };
 
+/** Nombre junto a la cabeza de una línea: a la derecha si cabe dentro de la zona útil, si no a la izquierda. */
+function etiquetaCabeza(env, h, nombre, y, px, peso, color, B) {
+  const {ctx, u, W, H} = env, lim = H > W ? ZONA.x * W - 6 : W - 40 * u;
+  ctx.font = fnt(peso, px); const w = ctx.measureText(nombre).width, der = h.x + 16 * u + w <= lim;
+  texto(ctx, nombre, der ? h.x + 16 * u : h.x - 16 * u, y, fnt(peso, px), color, der ? 'left' : 'right');
+}
 // ── LÍNEA (multi-serie, doble eje, escala log, área, brillo, cabeza con pulso) ──────────────────────────────
 function linea(env, capa) {
   const {ctx, u, t} = env;
@@ -152,38 +165,38 @@ function linea(env, capa) {
     const y = pyL(v);
     if (y < B.y - 4 * u || y > B.y + B.h + 4 * u) continue;
     ctx.strokeStyle = rgba(PALETA.piedra, 0.06); ctx.beginPath(); ctx.moveTo(B.x, y); ctx.lineTo(B.x + B.w, y); ctx.stroke();
-    texto(ctx, log ? fmtLog(v) : fmtNum(v, {decimales: dec}), B.x - 16 * u, y + 7 * u, fnt(400, 20 * u, true), rgba(PALETA.piedraOscura, 0.8), 'right');
+    texto(ctx, log ? fmtLog(v) : fmtNum(v, {decimales: dec}), B.x - 14 * u, y + mid(20 * u), fnt(500, 20 * u, true), PALETA.piedraOscura, 'right');
   }
   if (capa.ejeUnidad && fmtL?.unidad) texto(ctx, fmtL.unidad.toUpperCase(), B.x, B.y - 22 * u, fnt(500, 17 * u, true), PALETA.piedraOscura, 'left');
   if (yR) {
     const tr = ticksNum(yR[0], yR[1], 4), pr = tr.length > 1 ? tr[1] - tr[0] : 1;
     const c = colorDe(tab.series[[...der][0]].color, [...der][0]);
-    for (const v of tr) texto(ctx, fmtNum(v, {decimales: decTicks(pr)}), B.x + B.w + 16 * u, pyR(v) + 7 * u, fnt(400, 20 * u, true), c, 'left');
+    for (const v of tr) texto(ctx, fmtNum(v, {decimales: decTicks(pr)}), B.x + B.w + 14 * u, pyR(v) + mid(20 * u), fnt(500, 20 * u, true), c, 'left');
     const fu = tab.series[[...der][0]].fmt?.unidad; if (fu) texto(ctx, fu.toUpperCase(), B.x + B.w, B.y - 22 * u, fnt(500, 17 * u, true), c, 'right');
   }
   // eje X + marca del año en curso (la cabeza siempre dice en qué año estamos: no se pierde el hilo)
   if (tab.tipoX === 'fecha') {
-    const tf = ticksFecha(cam.x[0], cam.x[1], Math.max(3, Math.floor(B.w / (200 * u))));
+    const tf = ticksFecha(cam.x[0], cam.x[1], Math.max(2, Math.floor(B.w / (260 * u))));
     const enCurso = reveal > 0.001 && reveal < 0.999 && capa.marcaAnio !== false && hx >= B.x && hx <= B.x + B.w;
     for (const tk of tf.ticks) {
       const x = px(tk);
       if (x < B.x - 2 || x > B.x + B.w + 2) continue;
-      if (enCurso && Math.abs(x - hx) < 80 * u) continue;
-      texto(ctx, etiquetaTick(tk, tf.unidad), x, B.y + B.h + 34 * u, fnt(400, 20 * u, true), rgba(PALETA.piedraOscura, 0.8), 'center');
+      if (enCurso && Math.abs(x - hx) < 120 * u) continue;
+      marcaX(env, etiquetaTick(tk, tf.unidad), x, B.y + B.h + 40 * u, fnt(500, 20 * u, true), PALETA.piedraOscura);
     }
     if (enCurso) {
       const largo = cam.x[1] - cam.x[0] > 3 * 365.25 * 86400000, et = fmtFecha(xh, largo ? 'anio' : 'mes');
       ctx.font = fnt(800, 26 * u, true);
-      const w = ctx.measureText(et).width + 30 * u, h = 40 * u, xx = clamp(hx - w / 2, B.x, B.x + B.w - w), yy = B.y + B.h + 10 * u;
+      const w = ctx.measureText(et).width + 30 * u, h = escalarFuente(26 * u) * 1.5, xx = clamp(hx - w / 2, B.x, B.x + B.w - w), yy = B.y + B.h + 10 * u;
       ctx.strokeStyle = colorMarca; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.moveTo(hx, B.y + B.h); ctx.lineTo(hx, yy); ctx.stroke();
       ctx.fillStyle = colorMarca; ctx.fillRect(xx, yy, w, h);
-      texto(ctx, et, xx + w / 2, yy + h - 11 * u, fnt(800, 26 * u, true), PALETA.fondo, 'center');
+      texto(ctx, et, xx + w / 2, yy + h / 2 + mid(26 * u), fnt(800, 26 * u, true), PALETA.fondo, 'center');
     }
   } else {
-    for (const tk of ticksNum(cam.x[0], cam.x[1], 6)) texto(ctx, fmtNum(tk, {decimales: 0}), px(tk), B.y + B.h + 34 * u, fnt(400, 20 * u, true), rgba(PALETA.piedraOscura, 0.8), 'center');
+    for (const tk of ticksNum(cam.x[0], cam.x[1], 4)) marcaX(env, fmtNum(tk, {decimales: 0}), px(tk), B.y + B.h + 40 * u, fnt(500, 20 * u, true), PALETA.piedraOscura);
   }
-  reg(env, 'eje-y', [B.x - 120 * u, B.y - 8 * u, B.x - 4 * u, B.y + B.h + 8 * u], capa.id);
-  reg(env, 'eje-x', [B.x, B.y + B.h + 6 * u, B.x + B.w, B.y + B.h + 56 * u], capa.id);
+  reg(env, 'eje-y', [Math.max(0, B.x - 130 * u), B.y - 8 * u, B.x - 4 * u, B.y + B.h + 8 * u], capa.id);
+  reg(env, 'eje-x', [B.x, B.y + B.h + 6 * u, B.x + B.w, B.y + B.h + 70 * u], capa.id);
   // eje base
   ctx.strokeStyle = rgba(PALETA.piedra, 0.3); ctx.lineWidth = 1.5 * u;
   ctx.beginPath(); ctx.moveTo(B.x, B.y + B.h); ctx.lineTo(B.x + B.w, B.y + B.h); ctx.stroke();
@@ -228,12 +241,14 @@ function linea(env, capa) {
   });
   ctx.restore();
 
-  // cabezas: punto + ondas + etiqueta
+  // cabezas: punto + ondas + etiqueta. Los nombres se separan en vertical para que dos series cercanas no se pisen.
+  const gapEt = escalarFuente(24 * u) * 1.2, visibles = cabezas.filter((h) => reveal > 0 && h.x >= B.x - 4 && h.x <= B.x + B.w + 4), yEt = new Map();
+  if (visibles.length > 1) separar(visibles.map((h) => h.y), gapEt, B.y + gapEt / 2, B.y + B.h - gapEt / 2).forEach((y, i) => yEt.set(visibles[i], y));
   for (const h of cabezas) {
     if (reveal <= 0 || h.x < B.x - 4 || h.x > B.x + B.w + 4) continue;
     if (h.mudo) {   // serie de contexto: punto pequeño y nombre tenue, sin ondas
       ctx.fillStyle = rgba(h.color, 0.6); ctx.beginPath(); ctx.arc(h.x, h.y, 4.5 * u, 0, 7); ctx.fill();
-      if (capa.etiquetas !== false) texto(ctx, h.nombre, Math.min(h.x + 12 * u, env.W - 40 * u), h.y + 7 * u, fnt(500, 20 * u), rgba(h.color, 0.75), h.x + 12 * u + 160 * u > env.W - 40 * u ? 'right' : 'left');
+      if (capa.etiquetas !== false) etiquetaCabeza(env, h, h.nombre, (yEt.get(h) ?? h.y) + mid(24 * u), 24 * u, 500, h.color, B);
       continue;
     }
     const ciclo = (t * 0.9) % 1;
@@ -242,8 +257,7 @@ function linea(env, capa) {
     ctx.fillStyle = PALETA.blanco; ctx.beginPath(); ctx.arc(h.x, h.y, 6.5 * u, 0, 7); ctx.fill();
     ctx.strokeStyle = h.color; ctx.lineWidth = 3 * u; ctx.beginPath(); ctx.arc(h.x, h.y, 9.5 * u, 0, 7); ctx.stroke();
     if (capa.etiquetas !== false && idxs.length > 1) {
-      const ex = Math.min(h.x + 18 * u, env.W - 40 * u);
-      texto(ctx, h.nombre, ex, h.y - 18 * u, fnt(600, 24 * u), h.color, ex > h.x + 200 * u ? 'left' : 'right');
+      etiquetaCabeza(env, h, h.nombre, (yEt.get(h) ?? h.y) + mid(24 * u), 24 * u, 700, h.color, B);
     }
   }
   ctx.restore();
@@ -256,74 +270,94 @@ function linea(env, capa) {
 
 // ── BARRAS (vertical/horizontal, agrupadas, con signo) ──────────────────────────────────────────────────────
 function barras(env, capa) {
-  const {ctx, u, t} = env;
+  const {ctx, u, t, W, H} = env, vert = H > W;
   const tab = env.tablas[capa.datos], n = tab.x.length;
-  const B = caja(env, capa, CAJA_DEF(env));
+  const B = caja(env, capa, vert ? [0.065, 0.3, 0.64, 0.5] : CAJA_DEF(env));
   const [t0, t1] = capa.t ?? [0.5, 3];
   const ap = aparece(env, capa, t0); if (ap <= 0) return;
   const idxs = capa.series ?? tab.series.map((_, i) => i);
-  const horiz = capa.orientacion === 'h';
+  const horiz = capa.orientacion ? capa.orientacion === 'h' : (vert && n > 3);   // en vertical (celular) las barras van acostadas: los nombres se leen enteros
   let orden = [...Array(n).keys()];
   if (capa.orden === 'desc') orden.sort((a, b) => (tab.series[idxs[0]].y[b] ?? -Infinity) - (tab.series[idxs[0]].y[a] ?? -Infinity));
   if (capa.maxBarras) orden = orden.slice(0, capa.maxBarras);
   let lo = 0, hi = -Infinity;
   for (const i of idxs) for (const k of orden) { const v = tab.series[i].y[k]; if (v != null) { lo = Math.min(lo, v); hi = Math.max(hi, v); } }
   const span = hi - lo || 1; hi += span * 0.12; if (lo < 0) lo -= span * 0.08;
-  const L = horiz ? B.w : B.h;
-  const val = (v) => ((v - lo) / (hi - lo)) * L;
-  const m = orden.length, ng = idxs.length;
-  const banda = (horiz ? B.h : B.w) / m, gap = banda * 0.22, bw = (banda - gap) / ng;
-  const fmt = tab.series[idxs[0]].fmt;
+  const m = orden.length, ng = idxs.length, fmt = tab.series[idxs[0]].fmt;
+  const fmtV = {...tab.series[idxs[0]].fmt, prefijo: '', sufijo: ''};
+  const etiqueta = (k) => (tab.tipoX === 'fecha' ? fmtFecha(tab.x[k], capa.formatoX ?? 'anio') : String(tab.x[k]));
   ctx.save(); ctx.globalAlpha = ap;
-  const ty = ticksNum(lo, hi, 5), pasoT = ty.length > 1 ? ty[1] - ty[0] : 1;
-  for (const v of ty) {
-    ctx.strokeStyle = rgba(PALETA.piedra, 0.1); ctx.lineWidth = u; ctx.beginPath();
-    if (horiz) { const x = B.x + val(v); ctx.moveTo(x, B.y); ctx.lineTo(x, B.y + B.h); } else { const y = B.y + B.h - val(v); ctx.moveTo(B.x, y); ctx.lineTo(B.x + B.w, y); }
-    ctx.stroke();
-    if (horiz) texto(ctx, fmtNum(v, {decimales: decTicks(pasoT)}), B.x + val(v), B.y + B.h + 32 * u, fnt(400, 20 * u, true), PALETA.piedraOscura, 'center');
-    else texto(ctx, fmtNum(v, {decimales: decTicks(pasoT)}), B.x - 14 * u, B.y + B.h - val(v) + 7 * u, fnt(400, 20 * u, true), PALETA.piedraOscura, 'right');
-  }
+  const ty = ticksNum(lo, hi, horiz ? 4 : 5), pasoT = ty.length > 1 ? ty[1] - ty[0] : 1, fT = fnt(500, 20 * u, true);
+  const colorBarra = (v, si) => (capa.colorSigno ? (v >= 0 ? PALETA.teal : '#A24FB0') : colorDe(tab.series[si].color, si));
   if (fmt?.unidad) texto(ctx, fmt.unidad.toUpperCase(), B.x, B.y - 26 * u, fnt(500, 19 * u, true), PALETA.piedraOscura, 'left');
-  const z = horiz ? B.x + val(0) : B.y + B.h - val(0);
-  ctx.strokeStyle = rgba(PALETA.piedra, 0.45); ctx.lineWidth = 1.5 * u; ctx.beginPath();
-  if (horiz) { ctx.moveTo(z, B.y); ctx.lineTo(z, B.y + B.h); } else { ctx.moveTo(B.x, z); ctx.lineTo(B.x + B.w, z); }
-  ctx.stroke();
+  if (horiz) {
+    ctx.font = fnt(600, 26 * u); const LW = Math.min(B.w * 0.38, Math.max(...orden.map((k) => ctx.measureText(etiqueta(k)).width)) + 20 * u);
+    ctx.font = fnt(600, 26 * u, true); const VW = Math.max(...orden.flatMap((k) => idxs.map((si) => ctx.measureText(fmtNum(tab.series[si].y[k] ?? 0, fmtV)).width))) + 16 * u;
+    const x0 = B.x + LW, L = Math.max(40 * u, B.w - LW - VW), val = (v) => ((v - lo) / (hi - lo)) * L, rowH = Math.min(B.h / m, 120 * u), bh = (rowH * 0.64) / ng, y0 = B.y;
+    for (const v of ticksNum(lo, hi, Math.max(2, Math.floor(L / (150 * u))))) { const x = x0 + val(v); ctx.strokeStyle = rgba(PALETA.piedra, 0.1); ctx.lineWidth = u; ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y0 + rowH * m); ctx.stroke(); marcaX(env, fmtNum(v, {decimales: decTicks(pasoT)}), x, y0 + rowH * m + 40 * u, fT, PALETA.piedraOscura); }   // (pasoT sale de ty; con pocas marcas basta)
+    reg(env, 'eje-x', [x0 - 30 * u, y0 + rowH * m + 6 * u, x0 + L + 30 * u, y0 + rowH * m + 56 * u], capa.id);
+    const z = x0 + val(0);
+    ctx.strokeStyle = rgba(PALETA.piedra, 0.45); ctx.lineWidth = 1.5 * u; ctx.beginPath(); ctx.moveTo(z, y0); ctx.lineTo(z, y0 + rowH * m); ctx.stroke();
+    orden.forEach((k, j) => {
+      const g = entradaEsc(t, t0, j, m, 0.6), yb = y0 + j * rowH + (rowH - bh * ng) / 2;
+      const et = etiqueta(k); texto(ctx, et, B.x + LW - 14 * u, y0 + j * rowH + rowH / 2 + mid(26 * u), fnt(600, 26 * u), PALETA.piedraClara, 'right');
+      ctx.font = fnt(600, 26 * u); reg(env, 'etiqueta', [B.x + LW - 14 * u - ctx.measureText(et).width, y0 + j * rowH + rowH / 2 - 22 * u, B.x + LW - 14 * u, y0 + j * rowH + rowH / 2 + 12 * u], `${capa.id ?? 'barras'}:n:${k}`);
+      idxs.forEach((si, q) => {
+        const v = tab.series[si].y[k]; if (v == null) return;
+        const color = colorBarra(v, si), xe = x0 + val(0) + (val(v) - val(0)) * g, y = yb + q * bh;
+        const gr = ctx.createLinearGradient(z, 0, z + Math.abs(xe - z) + 1, 0); gr.addColorStop(0, rgba(color, 0.55)); gr.addColorStop(1, color);
+        ctx.fillStyle = gr; ctx.fillRect(Math.min(z, xe), y, Math.max(Math.abs(xe - z), 1.5 * u), bh - 3 * u);
+        if (capa.etiquetas !== false && g > 0.6) {
+          const lbl = fmtNum(v * g, fmtV); ctx.font = fnt(600, 26 * u, true); const w = ctx.measureText(lbl).width, xv = v >= 0 ? xe + 10 * u : xe - 10 * u - w;
+          texto(ctx, lbl, xv, y + bh / 2 + mid(26 * u), fnt(600, 26 * u, true), PALETA.piedraClara, 'left', 'alphabetic', g);
+          reg(env, 'etiqueta', [xv, y + bh / 2 - 24 * u, xv + w, y + bh / 2 + 10 * u], `${capa.id ?? 'barras'}:v:${k}:${q}`);
+        }
+      });
+    });
+    ctx.restore(); return;
+  }
+  const L = B.h, val = (v) => ((v - lo) / (hi - lo)) * L, banda = B.w / m, gap = banda * 0.22, bw = (banda - gap) / ng;
+  for (const v of ty) {
+    const y = B.y + B.h - val(v);
+    ctx.strokeStyle = rgba(PALETA.piedra, 0.1); ctx.lineWidth = u; ctx.beginPath(); ctx.moveTo(B.x, y); ctx.lineTo(B.x + B.w, y); ctx.stroke();
+    texto(ctx, fmtNum(v, {decimales: decTicks(pasoT)}), B.x - 14 * u, y + mid(20 * u), fT, PALETA.piedraOscura, 'right');
+  }
+  reg(env, 'eje-y', [Math.max(0, B.x - 130 * u), B.y - 8 * u, B.x - 4 * u, B.y + B.h + 8 * u], capa.id);
+  const z = B.y + B.h - val(0);
+  ctx.strokeStyle = rgba(PALETA.piedra, 0.45); ctx.lineWidth = 1.5 * u; ctx.beginPath(); ctx.moveTo(B.x, z); ctx.lineTo(B.x + B.w, z); ctx.stroke();
+  ctx.font = fnt(500, 21 * u, true);
+  const eti = orden.map((k) => etiqueta(k)), salto = Math.max(1, Math.ceil((Math.max(...eti.map((s) => ctx.measureText(s).width)) + 12 * u) / banda));   // si no caben todas, se rotula una de cada «salto»
+  ctx.font = fnt(600, 20 * u, true); const vw = Math.max(...orden.map((k) => ctx.measureText(fmtNum(tab.series[idxs[0]].y[k] ?? 0, fmtV)).width));
+  const rotuloValor = capa.etiquetas !== false && m <= 24 && vw * ng + 6 * u <= banda;
   orden.forEach((k, j) => {
-    const ini = t0 + (j / m) * (t1 - t0) * 0.6, dur = Math.max(0.5, (t1 - t0) * 0.4);
-    const g = prog(t, ini, ini + dur, ease.outExpo);
+    const g = entradaEsc(t, t0, j, m, 0.6);
     idxs.forEach((si, q) => {
       const v = tab.series[si].y[k]; if (v == null) return;
-      const color = capa.colorSigno ? (v >= 0 ? PALETA.teal : '#A24FB0') : colorDe(tab.series[si].color, si);
-      const pos0 = (horiz ? B.y : B.x) + j * banda + gap / 2 + q * bw;
-      const len = (val(v) - val(0)) * g;
-      const x = horiz ? z : pos0, y = horiz ? pos0 : z - Math.max(0, len), w = horiz ? len : bw, h = horiz ? bw : Math.abs(len);
-      const gr = horiz ? ctx.createLinearGradient(z, 0, z + Math.abs(w) + 1, 0) : ctx.createLinearGradient(0, z, 0, z - Math.max(1, len));
-      gr.addColorStop(0, rgba(color, 0.55)); gr.addColorStop(1, color);
-      ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 14 * u; ctx.fillStyle = gr;
-      if (horiz) ctx.fillRect(Math.min(x, x + w), y, Math.abs(w), h); else ctx.fillRect(x, len >= 0 ? z - len : z, w, Math.abs(len));
-      ctx.restore();
-      if (capa.etiquetas !== false && m <= 24 && g > 0.6) {
-        const lbl = fmtNum(v * g, {...tab.series[si].fmt, prefijo: '', sufijo: ''});
-        if (horiz) texto(ctx, lbl, z + len + 10 * u, pos0 + bw / 2 + 7 * u, fnt(500, 21 * u, true), PALETA.piedraClara, 'left', 'alphabetic', g);
-        else texto(ctx, lbl, pos0 + bw / 2, (len >= 0 ? z - len - 12 * u : z - len + 28 * u), fnt(500, 20 * u, true), PALETA.piedraClara, 'center', 'alphabetic', g);
+      const color = colorBarra(v, si), len = (val(v) - val(0)) * g, x = B.x + j * banda + gap / 2 + q * bw;
+      const gr = ctx.createLinearGradient(0, z, 0, z - Math.max(1, len)); gr.addColorStop(0, rgba(color, 0.55)); gr.addColorStop(1, color);
+      ctx.fillStyle = gr; ctx.fillRect(x, len >= 0 ? z - len : z, bw, Math.max(Math.abs(len), 1.5 * u));
+      if (rotuloValor && g > 0.6) {
+        const lbl = fmtNum(v * g, fmtV), yv = len >= 0 ? z - len - 12 * u : z - len + 34 * u;
+        texto(ctx, lbl, x + bw / 2, yv, fnt(600, 20 * u, true), PALETA.piedraClara, 'center', 'alphabetic', g);
+        reg(env, 'etiqueta', [x + bw / 2 - ctx.measureText(lbl).width / 2, yv - 30 * u, x + bw / 2 + ctx.measureText(lbl).width / 2, yv + 6 * u], `${capa.id ?? 'barras'}:v:${k}:${q}`);
       }
     });
-    const et = tab.tipoX === 'fecha' ? fmtFecha(tab.x[k], capa.formatoX ?? 'anio') : String(tab.x[k]);
-    if (horiz) texto(ctx, et, B.x - 14 * u, (B.y + j * banda + banda / 2) + 7 * u, fnt(500, 22 * u), PALETA.piedraClara, 'right');
-    else texto(ctx, et, B.x + j * banda + banda / 2, B.y + B.h + 34 * u, fnt(400, m > 14 ? 17 * u : 21 * u, true), PALETA.piedraOscura, 'center');
+    if (j % salto === 0) marcaX(env, eti[j], B.x + j * banda + banda / 2, B.y + B.h + 40 * u, fnt(500, 21 * u, true), PALETA.piedraOscura);
   });
+  reg(env, 'eje-x', [B.x, B.y + B.h + 6 * u, B.x + B.w, B.y + B.h + 70 * u], capa.id);
   ctx.restore();
 }
 
 // ── CARRERA (bar chart race con rangos que se deslizan) ─────────────────────────────────────────────────────
+// Diseño legible: en horizontal, nombre | barra | valor en una fila; en vertical (celular) el nombre y la cifra van arriba de cada barra.
 function carrera(env, capa) {
-  const {ctx, u, t} = env;
+  const {ctx, u, t, W, H} = env, vert = H > W;
   const tab = env.tablas[capa.datos], n = tab.x.length;
   const B = caja(env, capa, CAJA_DEF(env));
   const [t0, t1] = capa.t ?? [0.5, 10];
   const ap = aparece(env, capa, t0); if (ap <= 0) return;
-  const f = prog(t, t0, t1, ease.lin) * (n - 1), i0 = Math.min(n - 2, Math.floor(f)), k = f - i0, ke = ease.io2(k);
-  const top = capa.top ?? 8, S = tab.series.length;
+  const f = prog(t, t0, t1, ease.lin) * (n - 1), i0 = Math.min(n - 2, Math.floor(f)), k = f - i0, ke = ease.io2(k);   // el tiempo de los datos avanza a ritmo constante (no es movimiento de interfaz)
+  const S = tab.series.length, fila = vert ? 112 * u : 84 * u, top = Math.max(2, Math.min(capa.top ?? 8, S, Math.floor((B.h - (vert ? 70 * u : 0)) / fila)));
   const rango = (i) => {
     const o = tab.series.map((s, q) => ({q, v: s.y[i] ?? -Infinity})).sort((a, b) => b.v - a.v || a.q - b.q);
     const r = new Array(S); o.forEach((e, p) => (r[e.q] = p)); return r;
@@ -331,22 +365,33 @@ function carrera(env, capa) {
   const r0 = rango(i0), r1 = rango(i0 + 1);
   const vals = tab.series.map((s) => { const a = s.y[i0], b = s.y[i0 + 1]; return a == null && b == null ? null : lerp(a ?? b, b ?? a, k); });
   const vmax = Math.max(...vals.filter((v) => v != null)) * 1.04 || 1;
-  const banda = B.h / top, bh = banda * 0.74;
+  const y0 = B.y + (vert ? 70 * u : 0);
   ctx.save(); ctx.globalAlpha = ap;
+  const fecha = tab.tipoX === 'fecha' ? fmtFecha(lerp(tab.x[i0], tab.x[i0 + 1], k), capa.formatoX ?? 'mes') : String(tab.x[Math.round(f)]);
+  texto(ctx, fecha, vert ? B.x : B.x + B.w, vert ? B.y + 34 * u : B.y - 14 * u, fnt(800, 56 * u, true), PALETA.oro, vert ? 'left' : 'right');
+  reg(env, 'etiqueta', vert ? [B.x, B.y - 30 * u, B.x + 360 * u, B.y + 50 * u] : [B.x + B.w - 360 * u, B.y - 70 * u, B.x + B.w, B.y + 4 * u], `${capa.id ?? 'carrera'}:fecha`);
+  ctx.font = fnt(700, 26 * u); const LW = vert ? 0 : Math.min(B.w * 0.26, Math.max(...tab.series.map((s) => ctx.measureText(s.nombre).width)) + 24 * u);
+  ctx.font = fnt(600, 24 * u, true); const VW = vert ? 0 : Math.max(...vals.filter((v) => v != null).map((v) => ctx.measureText(fmtNum(v, tab.series[0].fmt)).width)) + 24 * u;
   const orden = tab.series.map((_, q) => q).filter((q) => vals[q] != null).sort((a, b) => lerp(r0[b], r1[b], ke) - lerp(r0[a], r1[a], ke));
   for (const q of orden) {
-    const pos = lerp(r0[q], r1[q], ke); if (pos > top + 0.5) continue;
-    const y = B.y + pos * banda + (banda - bh) / 2, w = Math.max(2, (vals[q] / vmax) * (B.w - 220 * u));
-    const color = colorDe(tab.series[q].color, q);
-    const alfa = clamp(top + 0.5 - pos, 0, 1);
-    ctx.save(); ctx.globalAlpha *= alfa; ctx.shadowColor = color; ctx.shadowBlur = 14 * u;
-    const g = ctx.createLinearGradient(B.x, 0, B.x + w, 0); g.addColorStop(0, rgba(color, 0.55)); g.addColorStop(1, color);
-    ctx.fillStyle = g; ctx.fillRect(B.x, y, w, bh); ctx.restore();
-    texto(ctx, tab.series[q].nombre, B.x + 16 * u, y + bh / 2 + 8 * u, fnt(600, 26 * u), PALETA.fondo, 'left', 'alphabetic', alfa);
-    texto(ctx, fmtNum(vals[q], tab.series[q].fmt), B.x + w + 14 * u, y + bh / 2 + 8 * u, fnt(500, 24 * u, true), PALETA.piedraClara, 'left', 'alphabetic', alfa);
+    const pos = lerp(r0[q], r1[q], ke); if (pos > top - 0.5) continue;   // «top» filas visibles
+    const y = y0 + pos * fila, color = colorDe(tab.series[q].color, q), alfa = clamp(top + 0.5 - pos, 0, 1);
+    const bx = B.x + LW, bw = Math.max(3 * u, (vals[q] / vmax) * (B.w - LW - VW)), bh = vert ? 26 * u : 44 * u, by = vert ? y + fila - bh - 14 * u : y + (fila - bh) / 2;
+    ctx.save(); ctx.globalAlpha *= alfa; ctx.shadowColor = color; ctx.shadowBlur = 12 * u;
+    const g = ctx.createLinearGradient(bx, 0, bx + bw, 0); g.addColorStop(0, rgba(color, 0.55)); g.addColorStop(1, color);
+    ctx.fillStyle = g; ctx.fillRect(bx, by, bw, bh); ctx.restore();
+    const vtxt = fmtNum(vals[q], tab.series[q].fmt); ctx.font = fnt(600, 26 * u, true); const wV = (capa._wv ??= Math.max(...tab.series.flatMap((sr) => sr.y.filter((v) => v != null).map((v) => ctx.measureText(fmtNum(v, sr.fmt)).width)))); ctx.font = fnt(700, 26 * u);
+    const nom = vert ? cortar(ctx, tab.series[q].nombre, B.w - wV - 24 * u) : tab.series[q].nombre;
+    if (vert) {
+      texto(ctx, nom, B.x, y + 40 * u, fnt(700, 26 * u), PALETA.blanco, 'left', 'alphabetic', alfa);
+      texto(ctx, vtxt, B.x + B.w, y + 40 * u, fnt(600, 26 * u, true), PALETA.piedraClara, 'right', 'alphabetic', alfa);
+      if (alfa > 0.5) { ctx.font = fnt(700, 26 * u); reg(env, 'etiqueta', [B.x, y + 6 * u, B.x + ctx.measureText(nom).width, y + 50 * u], `${capa.id ?? 'carrera'}:n:${q}`); ctx.font = fnt(600, 26 * u, true); reg(env, 'etiqueta', [B.x + B.w - ctx.measureText(vtxt).width, y + 6 * u, B.x + B.w, y + 50 * u], `${capa.id ?? 'carrera'}:v:${q}`); }
+    } else {
+      texto(ctx, nom, bx - 16 * u, by + bh / 2 + mid(26 * u), fnt(700, 26 * u), PALETA.blanco, 'right', 'alphabetic', alfa);
+      texto(ctx, vtxt, bx + bw + 14 * u, by + bh / 2 + mid(24 * u), fnt(600, 24 * u, true), PALETA.piedraClara, 'left', 'alphabetic', alfa);
+      if (alfa > 0.5) { ctx.font = fnt(700, 26 * u); reg(env, 'etiqueta', [bx - 16 * u - ctx.measureText(nom).width, by - 4 * u, bx - 16 * u, by + bh + 4 * u], `${capa.id ?? 'carrera'}:n:${q}`); ctx.font = fnt(600, 24 * u, true); reg(env, 'etiqueta', [bx + bw + 14 * u, by - 4 * u, bx + bw + 14 * u + ctx.measureText(vtxt).width, by + bh + 4 * u], `${capa.id ?? 'carrera'}:v:${q}`); }
+    }
   }
-  const fecha = tab.tipoX === 'fecha' ? fmtFecha(lerp(tab.x[i0], tab.x[i0 + 1], k), capa.formatoX ?? 'mes') : String(tab.x[Math.round(f)]);
-  texto(ctx, fecha, B.x + B.w, B.y + B.h - 6 * u, fnt(700, 96 * u), rgba(PALETA.piedra, 0.22), 'right');
   ctx.restore();
 }
 
@@ -364,17 +409,18 @@ function dispersion(env, capa) {
   const X = (x) => B.x + ((x - xl) / (xh - xl)) * B.w, Y = (y) => B.y + B.h - ((y - yl) / (yh - yl)) * B.h;
   ctx.save(); ctx.globalAlpha = ap;
   const ty = ticksNum(yl, yh, 5), py_ = ty.length > 1 ? ty[1] - ty[0] : 1;
-  for (const v of ty) { ctx.strokeStyle = rgba(PALETA.piedra, 0.1); ctx.beginPath(); ctx.moveTo(B.x, Y(v)); ctx.lineTo(B.x + B.w, Y(v)); ctx.stroke(); texto(ctx, fmtNum(v, {decimales: decTicks(py_)}), B.x - 14 * u, Y(v) + 7 * u, fnt(400, 20 * u, true), PALETA.piedraOscura, 'right'); }
-  const tx = ticksNum(xl, xh, 7), px_ = tx.length > 1 ? tx[1] - tx[0] : 1;
-  for (const v of tx) { ctx.strokeStyle = rgba(PALETA.piedra, 0.07); ctx.beginPath(); ctx.moveTo(X(v), B.y); ctx.lineTo(X(v), B.y + B.h); ctx.stroke(); texto(ctx, fmtNum(v, {decimales: decTicks(px_)}), X(v), B.y + B.h + 34 * u, fnt(400, 20 * u, true), PALETA.piedraOscura, 'center'); }
-  if (capa.etiquetaX) texto(ctx, capa.etiquetaX, B.x + B.w, B.y + B.h + 70 * u, fnt(500, 20 * u, true), PALETA.piedraOscura, 'right');
-  if (capa.etiquetaY) texto(ctx, capa.etiquetaY.toUpperCase(), B.x, B.y - 26 * u, fnt(500, 20 * u, true), PALETA.piedraOscura, 'left');
+  for (const v of ty) { ctx.strokeStyle = rgba(PALETA.piedra, 0.1); ctx.beginPath(); ctx.moveTo(B.x, Y(v)); ctx.lineTo(B.x + B.w, Y(v)); ctx.stroke(); texto(ctx, fmtNum(v, {decimales: decTicks(py_)}), B.x - 14 * u, Y(v) + mid(20 * u), fnt(500, 20 * u, true), PALETA.piedraOscura, 'right'); }
+  const tx = ticksNum(xl, xh, 4), px_ = tx.length > 1 ? tx[1] - tx[0] : 1;
+  for (const v of tx) { ctx.strokeStyle = rgba(PALETA.piedra, 0.07); ctx.beginPath(); ctx.moveTo(X(v), B.y); ctx.lineTo(X(v), B.y + B.h); ctx.stroke(); marcaX(env, fmtNum(v, {decimales: decTicks(px_)}), X(v), B.y + B.h + 40 * u, fnt(500, 20 * u, true), PALETA.piedraOscura); }
+  if (capa.etiquetaX) { texto(ctx, capa.etiquetaX, B.x + B.w, B.y + B.h + 84 * u, fnt(500, 20 * u, true), PALETA.piedraOscura, 'right'); ctx.font = fnt(500, 20 * u, true); reg(env, 'etiqueta', [B.x + B.w - ctx.measureText(capa.etiquetaX).width, B.y + B.h + 52 * u, B.x + B.w, B.y + B.h + 94 * u], `${capa.id ?? 'dispersion'}:ex`); }
+  reg(env, 'eje-x', [B.x, B.y + B.h + 6 * u, B.x + B.w, B.y + B.h + 52 * u], capa.id); reg(env, 'eje-y', [Math.max(0, B.x - 130 * u), B.y - 8 * u, B.x - 4 * u, B.y + B.h + 8 * u], capa.id);
+  if (capa.etiquetaY) { texto(ctx, capa.etiquetaY.toUpperCase(), B.x, B.y - 78 * u, fnt(500, 20 * u, true), PALETA.piedraOscura, 'left'); ctx.font = fnt(500, 20 * u, true); reg(env, 'etiqueta', [B.x, B.y - 116 * u, B.x + ctx.measureText(capa.etiquetaY.toUpperCase()).width, B.y - 70 * u], `${capa.id ?? 'dispersion'}:ey`); }
   for (let i = 0; i < n; i++) {
     if (s.y[i] == null) continue;
     const ini = t0 + (i / n) * (t1 - t0) * 0.8, g = prog(t, ini, ini + 0.35, ease.outBack);
     if (g <= 0) continue;
     ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 10 * u; ctx.fillStyle = rgba(color, 0.78);
-    ctx.beginPath(); ctx.arc(X(tab.x[i]), Y(s.y[i]), 7 * u * g, 0, 7); ctx.fill(); ctx.restore();
+    ctx.beginPath(); ctx.arc(X(tab.x[i]), Y(s.y[i]), 8 * u * g, 0, 7); ctx.fill(); ctx.restore();
   }
   const R = capa.regresion;
   if (R) {
@@ -383,7 +429,7 @@ function dispersion(env, capa) {
       const xa = Math.max(xl, tab.x[0]), xb = lerp(xa, Math.min(xh, tab.x[n - 1]), w);
       ctx.save(); ctx.strokeStyle = PALETA.blanco; ctx.lineWidth = 3 * u; ctx.setLineDash([14 * u, 9 * u]);
       ctx.beginPath(); ctx.moveTo(X(xa), Y(R.m * xa + R.b)); ctx.lineTo(X(xb), Y(R.m * xb + R.b)); ctx.stroke(); ctx.restore();
-      texto(ctx, `R² = ${fmtNum(R.r2, {decimales: 2})}  ·  n = ${R.n}`, B.x + B.w, B.y + 30 * u, fnt(600, 26 * u, true), PALETA.blanco, 'right', 'alphabetic', w);
+      { const rt = `R² = ${fmtNum(R.r2, {decimales: 2})} · ${R.n} datos`; texto(ctx, rt, B.x + B.w, B.y - 22 * u, fnt(700, 26 * u, true), PALETA.blanco, 'right', 'alphabetic', w); ctx.font = fnt(700, 26 * u, true); reg(env, 'etiqueta', [B.x + B.w - ctx.measureText(rt).width, B.y - 62 * u, B.x + B.w, B.y - 8 * u], `${capa.id ?? 'dispersion'}:r2`); }
     }
   }
   ctx.restore();
@@ -393,24 +439,29 @@ function dispersion(env, capa) {
 function calor(env, capa) {
   const {ctx, u, t} = env;
   const M = capa.matriz; if (!M) return;
-  const B = caja(env, capa, [0.2, 0.2, 0.6, 0.66]);
+  const B = caja(env, capa, env.H > env.W ? [0.05, 0.27, 0.66, 0.5] : [0.2, 0.2, 0.6, 0.66]);
   const [t0, t1] = capa.t ?? [0.5, 3];
   const ap = aparece(env, capa, t0); if (ap <= 0) return;
-  const m = M.etiquetas.length, side = Math.min(B.w, B.h) * 0.86, c = side / m;
-  const ox = B.x + (B.w - side) / 2 + 40 * u, oy = B.y + (B.h - side) / 2 + 40 * u;
+  const m = M.etiquetas.length, vert = env.H > env.W;
+  ctx.font = fnt(700, 22 * u); const LW = Math.min(B.w * 0.36, Math.max(...M.etiquetas.map((e) => ctx.measureText(e).width)) + 24 * u);
+  const cabeza = (vert ? 200 : 120) * u, side = Math.min(B.w - LW, B.h - cabeza) * 0.98, c = side / m;
+  const ox = B.x + LW, oy = B.y + cabeza;
   const col = (v) => (v >= 0 ? mezcla(PALETA.tarjeta, PALETA.teal, v) : mezcla(PALETA.tarjeta, '#A24FB0', -v));
   ctx.save(); ctx.globalAlpha = ap;
   for (let i = 0; i < m; i++) {
-    texto(ctx, M.etiquetas[i], ox - 14 * u, oy + i * c + c / 2 + 8 * u, fnt(600, 22 * u), PALETA.piedraClara, 'right');
-    ctx.save(); ctx.translate(ox + i * c + c / 2, oy - 14 * u); ctx.rotate(-Math.PI / 5);
-    texto(ctx, M.etiquetas[i], 0, 0, fnt(600, 22 * u), PALETA.piedraClara, 'left'); ctx.restore();
+    ctx.font = fnt(700, 22 * u); const nomC = cortar(ctx, M.etiquetas[i], LW - 20 * u);
+    texto(ctx, nomC, ox - 14 * u, oy + i * c + c / 2 + mid(22 * u), fnt(700, 22 * u), PALETA.piedraClara, 'right');
+    reg(env, 'etiqueta', [ox - 14 * u - ctx.measureText(nomC).width, oy + i * c + c / 2 - 26 * u, ox - 14 * u, oy + i * c + c / 2 + 12 * u], `${capa.id ?? 'calor'}:f:${i}`);
+    ctx.save(); ctx.translate(ox + i * c + c / 2, oy - 14 * u); ctx.rotate(-Math.PI / 4);
+    ctx.font = fnt(700, 22 * u); const nomR = cortar(ctx, M.etiquetas[i], cabeza * 1.5); texto(ctx, nomR, 0, 0, fnt(700, 22 * u), PALETA.piedraClara, 'left'); ctx.restore();
     for (let j = 0; j < m; j++) {
       const ini = t0 + ((Math.abs(i - j) + (i + j) * 0.15) / (m * 1.3)) * (t1 - t0), g = prog(t, ini, ini + 0.45, ease.outBack);
       if (g <= 0) continue;
       const v = M.valores[i][j];
       ctx.save(); ctx.translate(ox + j * c + c / 2, oy + i * c + c / 2); ctx.scale(g, g);
-      ctx.fillStyle = col(v == null ? 0 : v); ctx.fillRect(-c / 2 + 2 * u, -c / 2 + 2 * u, c - 4 * u, c - 4 * u);
-      texto(ctx, v == null ? '—' : fmtNum(v, {decimales: 2}), 0, 8 * u, fnt(600, Math.min(26 * u, c * 0.28), true), PALETA.blanco, 'center');
+      const fondoC = col(v == null ? 0 : v), tinta = contraste(fondoC, PALETA.blanco) >= contraste(fondoC, PALETA.fondo) ? PALETA.blanco : PALETA.fondo;   // la cifra elige la tinta que más contrasta con su celda
+      ctx.fillStyle = fondoC; ctx.fillRect(-c / 2 + 2 * u, -c / 2 + 2 * u, c - 4 * u, c - 4 * u);
+      texto(ctx, v == null ? '—' : fmtNum(v, {decimales: 2}), 0, mid(26 * u), fnt(700, 26 * u, true), tinta, 'center');
       ctx.restore();
     }
   }
@@ -422,7 +473,7 @@ function zona(env, capa) {
   const V = env.vistas[capa.capa]; if (!V) return;
   const {ctx, u, t} = env, {B} = V;
   const [t0, t1] = capa.t ?? [0, 99];
-  const g = prog(t, t0, t0 + 0.6, ease.io3) * (1 - prog(t, t1, t1 + 0.3, ease.lin)); if (g <= 0) return;
+  const g = prog(t, t0, t0 + 0.6, ease.io3) * (1 - prog(t, t1, t1 + 0.4, ease.in2)); if (g <= 0) return;
   const color = colorDe(capa.color, 1);
   const xa = clamp(V.px(capa.x0), B.x, B.x + B.w), xb = clamp(V.px(capa.x1), B.x, B.x + B.w);
   if (xb - xa < 2) return;
@@ -447,34 +498,52 @@ const chocan = (a, b, m = 0) => a[0] < b[2] + m && a[2] + m > b[0] && a[1] < b[3
 const solape = (a, b) => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
 
 function cajaTitulo(env, capa) {
-  const {ctx, u, W, H} = env, pos = capa.pos ?? (H > W ? [0.08, 0.085] : [0.065, 0.115]), x = pos[0] * W, y = pos[1] * H;
-  // el título se ajusta solo al ancho libre (no invade el contador del año): primero encoge, y si aun así no cabe, se acorta con «…»
-  const cont = env.capasTodas.find((k) => k.tipo === 'contador' && (k.alinea ?? (H > W ? 'left' : 'right')) === 'right' && k.modo !== 'compacto');
-  const libre = (cont && H <= W ? cajaContador(env, cont).caja[0] - 28 * u : W * 0.92) - x;
-  let tam = (capa.tam ?? 60) * u, texto = String(capa.texto ?? '');
-  ctx.font = fnt(800, tam);
-  while (ctx.measureText(texto).width > libre && tam > 30 * u) { tam -= 2 * u; ctx.font = fnt(800, tam); }
-  while (ctx.measureText(texto).width > libre && texto.length > 4) texto = texto.slice(0, -2);
-  if (texto.length < String(capa.texto ?? '').length) texto = texto.trimEnd() + '…';
-  const w = ctx.measureText(texto).width;
-  return {x, y, w, tam, texto, caja: [x - 6 * u, y - tam, x + w + 6 * u, y + 24 * u + (capa.sub ? 46 * u : 0)]};
+  // BLOQUE DE TÍTULO (diseño): título (hasta 2 líneas en vertical) + subrayado + subtítulo/unidad. Se ajusta solo al ancho libre.
+  const {ctx, u, W, H} = env, vert = H > W, pos = capa.pos ?? (vert ? [0.0667, 0.085] : [0.0417, 0.115]), x = pos[0] * W, y = pos[1] * H;
+  const cont = env.capasTodas.find((k) => k.tipo === 'contador' && (k.alinea ?? (vert ? 'left' : 'right')) === 'right' && k.modo !== 'compacto');
+  const libre = (cont && !vert ? cajaContador(env, cont).caja[0] - 28 * u : (vert ? ZONA.x * W - 6 : W * 0.94)) - x;
+  const T = vert ? tipo(env, 'titulo') : tipo(env, 'titulo'), minimo = tipo(env, 'tituloMin'), maxL = vert ? 2 : 1;
+  let tam = capa.tam ? capa.tam * u : T, lineas = [];
+  const medir = () => { ctx.font = fuenteCssT(tam); return envolver(ctx, String(capa.texto ?? ''), libre, maxL); };
+  lineas = medir();
+  while ((lineas.length > maxL || lineas.some((l) => ctx.measureText(l).width > libre)) && tam > minimo) { tam -= 2 * u; lineas = medir(); }
+  ctx.font = fuenteCssT(tam);
+  const w = Math.max(...lineas.map((l) => ctx.measureText(l).width)), lh = tam * 1.12, ult = y + (lineas.length - 1) * lh;
+  const subT = capa.sub ? tipo(env, 'sub') : 0, abajo = ult + 24 * u + (capa.sub ? subT * 1.25 + 6 * u : 0);
+  return {x, y, w, tam, lh, lineas, texto: lineas.join(' '), ult, subT, caja: [x - 6 * u, y - tam, x + w + 6 * u, abajo]};
 }
+const fuenteCssT = (px) => fuenteCss(800, px);
 function cajaContador(env, capa) {
   const {u, W, H} = env, vert = H > W;
-  const pos = capa.pos ?? (vert ? [0.08, 0.215] : [0.935, 0.16]), al = capa.alinea ?? (vert ? 'left' : 'right');
-  const x = pos[0] * W, y = pos[1] * H, compacto = capa.modo === 'compacto', ancho = (compacto ? 360 : 440) * u;
-  const arriba = y - (compacto ? 30 : 96) * u, abajo = y + (compacto ? 84 : (capa.modo === 'fecha' ? 20 : 150)) * u;
-  return {x, y, al, caja: al === 'right' ? [x - ancho, arriba, x, abajo] : [x, arriba, x + ancho, abajo]};
+  const pos = capa.pos ?? (vert ? [0.0667, 0.215] : [0.9583, 0.16]), al = capa.alinea ?? (vert ? 'left' : 'right');
+  const x = pos[0] * W, y = pos[1] * H, compacto = capa.modo === 'compacto', ancho = (compacto ? (vert ? 640 : 460) : 520) * u;
+  const arriba = y - (compacto ? 44 : 100) * u, abajo = y + (compacto ? 52 : (capa.modo === 'fecha' ? 20 : 160)) * u;
+  return {x, y, al, ancho, caja: al === 'right' ? [x - ancho, arriba, x, abajo] : [x, arriba, x + ancho, abajo]};
+}
+/** Último dato mostrado: de los datos del plano (series de tiempo); si no hay fechas (tablas), la fecha de obtención. */
+function datosSello(env, capa) {
+  let txt = String(capa.texto ?? '').replace(/\s*\(obtenido [^)]*\) ?/g, '').replace(/^FUENTE\s*·\s*/i, '').trim();
+  const m = String(capa.texto ?? '').match(/obtenido (\d{4})-(\d{2})-(\d{2})/);
+  let fecha = capa.fecha ?? null;
+  if (!fecha) {
+    let best = null;
+    for (const tab of Object.values(env.tablas ?? {})) if (tab.tipoX === 'fecha' && tab.x?.length > 1 && (!best || tab.x[tab.x.length - 1] > best.x[best.x.length - 1])) best = tab;
+    if (best) {
+      const n = best.x.length, pasos = []; for (let i = 1; i < Math.min(n, 400); i++) pasos.push((best.x[i] - best.x[i - 1]) / 86400000);
+      pasos.sort((a, b) => a - b); const med = pasos[pasos.length >> 1];
+      fecha = fmtFecha(best.x[n - 1], med <= 8 ? 'dia' : med >= 300 ? 'anio' : 'mes');
+    } else if (m) fecha = 'obtenido ' + fmtFecha(utc(+m[1], +m[2], +m[3]), 'dia');
+  }
+  return {nombre: txt, fecha};
 }
 function cajaSello(env, capa) {
-  const {ctx, u, W, H} = env;
-  let txt = 'FUENTE · ' + capa.texto, px = 15 * u;
-  ctx.font = fnt(500, px, true);
-  while (ctx.measureText(txt).width > W * 0.87 && px > 11 * u) { px -= 0.5 * u; ctx.font = fnt(500, px, true); }
-  while (ctx.measureText(txt).width > W * 0.87 && txt.length > 8) txt = txt.slice(0, -2);
-  if (txt.length < ('FUENTE · ' + capa.texto).length) txt = txt.slice(0, -1) + '…';
-  const w = ctx.measureText(txt).width, x = 0.065 * W;
-  return {txt, px, x, y: H - 34 * u, caja: [x - 4 * u, H - 34 * u - px - 4 * u, x + w + 4 * u, H - 34 * u + 8 * u]};
+  // PIE OBLIGATORIO: «Fuente: <nombre> · <fecha del último dato> · RTL». Dentro de la zona segura y con tantas líneas como haga falta.
+  const {ctx, u, W, H} = env, vert = H > W, px = tipo(env, 'pie'), D = margenes(env);
+  const {nombre, fecha} = datosSello(env, capa);
+  ctx.font = fuenteCss(500, px);
+  const ancho = (vert ? ZONA.x * W - 8 : W - D.m) - D.m, lineas = envolver(ctx, textoPie(nombre, fecha), ancho, 3), lh = px * 1.3;
+  const yTop = H - (vert ? 0.03 : 0.045) * H - (lineas.length - 1) * lh, w = Math.max(...lineas.map((l) => ctx.measureText(l).width));
+  return {lineas, px, lh, x: D.m, y: yTop, caja: [D.m - 4 * u, yTop - px, D.m + w + 4 * u, yTop + (lineas.length - 1) * lh + px * 0.3]};
 }
 /** Cajas que no se mueven (título, contador, fuente, ejes): las tarjetas las esquivan. */
 function fijas(env, S) {
@@ -501,7 +570,7 @@ function colocar(env, capa, cw, ch, k) {
   const {u, W, H} = env, proy = env.proy[capa.capa];
   const S = proy((capa.t?.[0] ?? 0) + 0.4), B = S.B;
   const P = [S.px(capa.x), S.py(capa.y, capa.serie ?? 0)], g = (capa.dy ?? 70) * u * k;
-  const lim = k < 1 ? {x0: B.x, x1: B.x + B.w, y0: B.y, y1: B.y + B.h + 4 * u} : {x0: 28 * u, x1: W - 28 * u, y0: 28 * u, y1: H - 70 * u};
+  const lim = k < 1 ? {x0: B.x, x1: B.x + B.w, y0: B.y, y1: B.y + B.h + 4 * u} : {x0: 28 * u, x1: (H > W ? ZONA.x * W - 8 : W - 28 * u), y0: 28 * u, y1: H * 0.86};
   const F = fijas(env, S);
   const orden = (capa.lado ?? 'arriba') === 'abajo' ? ['abajo', 'arriba', 'der', 'izq'] : ['arriba', 'abajo', 'der', 'izq'];
   let mejor = null, mejorPen = Infinity, n = 0;
@@ -528,7 +597,7 @@ function llamada(env, capa) {
   const {ctx, u, t, W, H} = env, {B} = V;
   const [t0, t1] = capa.t ?? [0, 99];
   const tt = t - t0; if (tt < 0) return;
-  const fin = 1 - prog(t, t1, t1 + 0.3, ease.lin); if (fin <= 0) return;
+  const fin = 1 - prog(t, t1, t1 + 0.4, ease.in2); if (fin <= 0) return;
   const P = [V.px(capa.x), V.py(capa.y, capa.serie ?? 0)];
   if (P[0] < B.x - 10 * u || P[0] > B.x + B.w + 10 * u || P[1] < B.y - 40 * u || P[1] > B.y + B.h + 40 * u) return;
   const color = colorDe(capa.color, capa.serie ?? 0), k = clamp(B.w / (0.62 * W), 0.62, 1);
@@ -558,7 +627,7 @@ function llamada(env, capa) {
     const tw = ctx.measureText(msg).width, px_ = 22 * u * k, cw = tw + px_ * 2, ch = 56 * u * k;
     const off = (capa._off ??= colocar(env, capa, pil ? cw : tw + 16 * u, pil ? ch : 44 * u * k, k));
     let cx = P[0] + off[0], cy = P[1] + off[1];
-    const lw = pil ? cw : tw + 16 * u, lh = pil ? ch : 44 * u * k, lim = k < 1 ? {x0: B.x, x1: B.x + B.w, y0: B.y, y1: B.y + B.h + 4 * u} : {x0: 28 * u, x1: W - 28 * u, y0: 28 * u, y1: H - 70 * u};
+    const lw = pil ? cw : tw + 16 * u, lh = pil ? ch : 44 * u * k, lim = k < 1 ? {x0: B.x, x1: B.x + B.w, y0: B.y, y1: B.y + B.h + 4 * u} : {x0: 28 * u, x1: (H > W ? ZONA.x * W - 8 : W - 28 * u), y0: 28 * u, y1: H * 0.86};
     cx = clamp(cx, lim.x0, Math.max(lim.x0, lim.x1 - lw)); cy = clamp(cy, lim.y0, Math.max(lim.y0, lim.y1 - lh));
     ctx.save(); ctx.globalAlpha *= fin * V.ap;
     const rad = (capa.radio ?? 44) * u * k;
@@ -591,17 +660,18 @@ function llamada(env, capa) {
   }
   // contenido de la tarjeta: año grande · qué pasó (corto) · el dato. Nada más.
   const L = [];
-  if (capa.anioTxt) L.push({s: capa.anioTxt, f: fnt(800, 60 * u * k, true), c: color, h: 64 * u * k});
-  if (capa.texto) L.push({s: capa.texto, f: fnt(700, 34 * u * k), c: PALETA.blanco, h: 44 * u * k});
-  if (capa.valorTxt && !capa.sinValor) L.push({s: capa.valorTxt, f: fnt(600, 28 * u * k, true), c: PALETA.piedraClara, h: 38 * u * k});
-  if (capa.detalle) L.push({s: capa.detalle, f: fnt(500, 22 * u * k, true), c: PALETA.piedraOscura, h: 32 * u * k});
+  const fila = (s, peso, px, c, mono) => ({s, f: fnt(peso, px, mono), c, h: escalarFuente(px) * 1.25});
+  if (capa.anioTxt) L.push(fila(capa.anioTxt, 800, 60 * u * k, color, true));
+  if (capa.texto) L.push(fila(capa.texto, 700, 34 * u * k, PALETA.blanco));
+  if (capa.valorTxt && !capa.sinValor) L.push(fila(capa.valorTxt, 600, 30 * u * k, PALETA.piedraClara, true));
+  if (capa.detalle) L.push(fila(capa.detalle, 500, 22 * u * k, PALETA.piedraOscura, true));
   const pad = 26 * u * k;
   let cw = 0; for (const l of L) { ctx.font = l.f; cw = Math.max(cw, ctx.measureText(l.s).width); }
   cw += pad * 2 + 8 * u * k;
   const ch = L.reduce((a, l) => a + l.h, 0) + pad * 1.5;
   const off = (capa._off ??= colocar(env, capa, cw, ch, k));
   let cx = P[0] + off[0], cy = P[1] + off[1];
-  const lim = k < 1 ? {x0: B.x, x1: B.x + B.w, y0: B.y, y1: B.y + B.h + 4 * u} : {x0: 28 * u, x1: W - 28 * u, y0: 28 * u, y1: H - 70 * u};
+  const lim = k < 1 ? {x0: B.x, x1: B.x + B.w, y0: B.y, y1: B.y + B.h + 4 * u} : {x0: 28 * u, x1: (H > W ? ZONA.x * W - 8 : W - 28 * u), y0: 28 * u, y1: H * 0.86};
   cx = clamp(cx, lim.x0, Math.max(lim.x0, lim.x1 - cw)); cy = clamp(cy, lim.y0, Math.max(lim.y0, lim.y1 - ch));
   const a = ctx.globalAlpha;
   ctx.save(); ctx.globalAlpha = a * fin * V.ap;
@@ -632,26 +702,31 @@ function llamada(env, capa) {
 function contador(env, capa) {
   const H = env.cabezas[capa.capa]; if (!H) return;
   const s = H.series[capa.serie ?? Object.keys(H.series)[0]]; if (!s) return;
-  const {ctx, u, t} = env, V = env.vistas[capa.capa];
+  const {ctx, u, t} = env, V = env.vistas[capa.capa], vert = env.H > env.W;
   const [, t1] = capa.t ?? [0, 99];
-  // mientras una tarjeta está activa, la tarjeta lleva el año y el dato: el contador se aparta (una idea a la vez)
+  // mientras una tarjeta está activa, la tarjeta lleva el año y el dato: el contador se aparta (un protagonista a la vez)
   let activa = 0;
-  for (const l of env.capasTodas) if (l.tipo === 'llamada' && l.capa === capa.capa) activa = Math.max(activa, prog(t, l.t[0], l.t[0] + 0.2, ease.lin) * (1 - prog(t, l.t[1] + 0.3, l.t[1] + 0.55, ease.lin)));   // el contador vuelve cuando la tarjeta ya se ha ido del todo
-  const g = H.ap * (1 - prog(t, t1, t1 + 0.3, ease.lin)) * (1 - activa); if (g <= 0.01) { reg(env, 'contador-oculto', [0, 0, 0, 0], capa.id); return; }
+  for (const l of env.capasTodas) if (l.tipo === 'llamada' && l.capa === capa.capa) activa = Math.max(activa, prog(t, l.t[0], l.t[0] + 0.2, ease.out2) * (1 - prog(t, l.t[1] + 0.3, l.t[1] + 0.55, ease.in2)));
+  const g = H.ap * (1 - prog(t, t1, t1 + 0.3, ease.in2)) * (1 - activa); if (g <= 0.01) { reg(env, 'contador-oculto', [0, 0, 0, 0], capa.id); return; }
   const C = cajaContador(env, capa), {x, y, al} = C;
   ctx.save(); ctx.globalAlpha *= g;
-  const fecha = V?.tab.tipoX === 'fecha';
+  const fecha = V?.tab.tipoX === 'fecha', un = String(s.fmt?.unidad ?? '').match(/\(([^)]+)\)/)?.[1] ?? s.fmt?.unidad;   // la unidad siempre acompaña al dato
   if (capa.modo === 'compacto') {
-    texto(ctx, (capa.etiqueta ?? s.nombre).toUpperCase(), x, y, fnt(700, 22 * u, true), s.color, al);
-    texto(ctx, fmtNum(s.valor, s.fmt), x, y + 44 * u, fnt(700, 36 * u, true), PALETA.blanco, al);
-    const un = String(s.fmt?.unidad ?? '').match(/(([^)]+))/)?.[1] ?? s.fmt?.unidad;   // la unidad siempre acompaña al dato
-    if (un) texto(ctx, String(un).toUpperCase(), x, y + 72 * u, fnt(500, 15 * u, true), PALETA.piedraOscura, al);
+    // una fila: nombre (color de la serie) a la izquierda, cifra a la derecha; la unidad debajo
+    const vtxt = fmtNum(s.valor, s.fmt), fV = fnt(700, 36 * u, true), fN = fnt(700, 30 * u, true);
+    ctx.font = fV; const wv = ctx.measureText(vtxt).width; ctx.font = fN;
+    let nom = String(capa.etiqueta ?? s.nombre).toUpperCase(); const lim = C.ancho - wv - 20 * u;
+    while (nom.length > 4 && ctx.measureText(nom).width > lim) nom = nom.slice(0, -2);
+    if (nom.length < String(capa.etiqueta ?? s.nombre).length) nom = nom.trimEnd() + '…';
+    texto(ctx, nom, x, y, fN, s.color, 'left');
+    texto(ctx, vtxt, x + C.ancho, y, fV, PALETA.blanco, 'right');
+    if (un) texto(ctx, String(un).toUpperCase(), x, y + 44 * u, fnt(500, 18 * u, true), PALETA.piedraOscura, 'left');
   } else {
-    // el año manda: grande y en el color de la serie; debajo el dato y su unidad, en pequeño
+    // el año manda: grande y en el color de la serie; debajo el dato y su unidad
     texto(ctx, fecha ? fmtFecha(H.xh, 'anio') : fmtNum(H.xh, {decimales: 0}), x, y, fnt(800, 96 * u, true), s.color, al);
     if (capa.modo !== 'fecha') {
       texto(ctx, fmtNum(s.valor, s.fmt), x, y + 74 * u, fnt(700, 46 * u, true), PALETA.blanco, al);
-      if (s.fmt?.unidad) texto(ctx, String(s.fmt.unidad).toUpperCase(), x, y + 112 * u, fnt(500, 17 * u, true), PALETA.piedraOscura, al);
+      if (un) texto(ctx, String(un).toUpperCase(), x, y + 74 * u + 44 * u, fnt(500, 18 * u, true), PALETA.piedraOscura, al);
     }
   }
   ctx.restore();
@@ -662,15 +737,16 @@ function titulo(env, capa) {
   const {ctx, u, t} = env;
   const [t0, t1] = capa.t ?? [0, 4];
   const sal = 1 - prog(t, t1, t1 + 0.4, ease.in2); if (t < t0 || sal <= 0) return;
-  const T = cajaTitulo(env, capa), {x, y, w, tam, texto: txt} = T, color = colorDe(capa.color, 0);
+  const T = cajaTitulo(env, capa), {x, y, w, tam, lh, lineas} = T, color = colorDe(capa.color, 0);
   ctx.save(); ctx.globalAlpha *= sal;
   const p = prog(t, t0, t0 + 0.55, ease.io3);
-  ctx.save(); ctx.beginPath(); ctx.rect(x - 4 * u, y - tam, (w + 8 * u) * p, tam * 1.5); ctx.clip();
-  texto(ctx, txt, x, y, fnt(800, tam), PALETA.blanco); ctx.restore();
-  if (p < 1) { ctx.fillStyle = color; ctx.fillRect(x + w * p, y - tam * 0.9, 12 * u, tam * 1.05); }
+  lineas.forEach((l, i) => { ctx.save(); ctx.beginPath(); ctx.rect(x - 4 * u, y + i * lh - tam, (w + 8 * u) * p, tam * 1.5); ctx.clip(); texto(ctx, l, x, y + i * lh, fnt(800, tam), PALETA.blanco); ctx.restore(); });
   const r = prog(t, t0 + 0.2, t0 + 0.9, ease.out3);
-  ctx.fillStyle = color; ctx.fillRect(x, y + 16 * u, Math.min(w, 200 * u) * r, 4 * u);
-  if (capa.sub) texto(ctx, capa.sub, x, y + 62 * u, fnt(500, (capa.tamSub ?? 24) * u), PALETA.piedraOscura, 'left', 'alphabetic', prog(t, t0 + 0.5, t0 + 1.0, ease.out3));
+  ctx.fillStyle = color; ctx.fillRect(x, T.ult + 16 * u, Math.min(w, 200 * u) * r, 4 * u);
+  if (capa.sub) {
+    ctx.font = fuenteCss(500, T.subT); let sb = String(capa.sub); while (sb.length > 6 && ctx.measureText(sb).width > T.w + 400 * u && ctx.measureText(sb).width > (env.H > env.W ? ZONA.x * env.W - x : env.W * 0.5)) sb = sb.slice(0, -2);
+    texto(ctx, sb, x, T.ult + 24 * u + T.subT, fuenteCss(500, T.subT), PALETA.piedraClara, 'left', 'alphabetic', prog(t, t0 + 0.5, t0 + 1.0, ease.out3));
+  }
   ctx.restore();
   reg(env, 'titulo', T.caja, capa.id);
 }
@@ -687,7 +763,7 @@ function cortina(env, capa) {
 function imagen(env, capa) {
   const img = env.imgs[capa.archivo]; if (!img) return;
   const {ctx, u, t, W, H} = env, [t0, t1] = capa.t ?? [0, 99];
-  const g = prog(t, t0, t0 + 0.5, ease.out3) * (1 - prog(t, t1, t1 + 0.4, ease.lin)); if (g <= 0) return;
+  const g = prog(t, t0, t0 + 0.5, ease.out3) * (1 - prog(t, t1, t1 + 0.4, ease.in2)); if (g <= 0) return;
   const B = caja(env, capa, [0, 0, 1, 1]);
   const z = lerp(capa.zoom?.[0] ?? 1, capa.zoom?.[1] ?? 1, prog(t, t0, t1, ease.lin));
   const cubrir = (capa.ajuste ?? 'cubrir') === 'cubrir';
@@ -702,7 +778,7 @@ function imagen(env, capa) {
 function sello(env, capa) {
   const {ctx} = env, S = cajaSello(env, capa);
   ctx.save();
-  texto(ctx, S.txt, S.x, S.y, fnt(500, S.px, true), rgba(PALETA.piedraOscura, 0.6), 'left');
+  S.lineas.forEach((l, i) => texto(ctx, l, S.x, S.y + i * S.lh, fuenteCss(500, S.px), rgba(PALETA.piedraClara, 0.92), 'left'));
   ctx.restore();
   reg(env, 'sello', S.caja, null);
 }
@@ -715,24 +791,26 @@ const variacionTxt = (v, ant) => { if (!(ant > 0)) return null; const p = (v / a
 /** Texto con halo del color del fondo: legible aunque pase sobre una cinta o una barra. */
 function rotulo(ctx, s, x, y, font, color, align = 'left', u = 1) {
   ctx.save(); ctx.font = font; ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
-  ctx.lineWidth = 5 * u; ctx.strokeStyle = rgba(PALETA.fondo, 0.9); ctx.strokeText(s, x, y); ctx.fillStyle = color; ctx.fillText(s, x, y); ctx.restore();
+  ctx.lineWidth = 5 * u; ctx.strokeStyle = rgba(PALETA.fondo, 0.9); ctx.strokeText(s, x, y); ctx.fillStyle = legible(color, PALETA.fondo, 6.2); ctx.fillText(s, x, y); ctx.restore();
 }
 function cortar(ctx, s, ancho) { if (ctx.measureText(s).width <= ancho) return s; while (s.length > 3 && ctx.measureText(s + '…').width > ancho) s = s.slice(0, -1); return s.trimEnd() + '…'; }
 
 function disenarSankey(env, capa, tab, B) {
-  const {ctx, u, H, W} = env, vert = H > W, k = vert ? 0.74 : 1;
+  const {ctx, u, H, W} = env, vert = H > W, k = 1;
   const byName = new Map(tab.nodos.map((n) => [n.nombre, {...n}])), nodos = [...byName.values()];
   const enl = tab.enlaces.map((e) => ({...e, a: byName.get(e.origen), b: byName.get(e.destino)}));
   const ncol = Math.max(...nodos.map((n) => n.nivel)) + 1, base = byName.get(tab.baseNodo).valor;
   const cols = Array.from({length: ncol}, (_, c) => nodos.filter((n) => n.nivel === c));
-  const f1 = fnt(700, 23 * u * k), f2 = fnt(500, 19 * u * k, true);
-  const det = (n) => `${fmtNum(n.valor, tab.fmt)}${n === byName.get(tab.baseNodo) ? '' : ` · ${pctTxt((n.valor / base) * 100)}`}`;
-  nodos.forEach((n) => { ctx.font = f1; n.l1 = cortar(ctx, n.nombre, B.w * 0.27); n.l2 = det(n); n.l3 = variacionTxt(n.valor, n.anterior); });
-  const ancho = (n) => { ctx.font = f1; const a = ctx.measureText(n.l1).width; ctx.font = f2; return Math.max(a, ctx.measureText(n.l2).width, n.l3 ? ctx.measureText(n.l3).width : 0); };
-  const LW = clamp(Math.max(...cols[0].map(ancho)) + 30 * u, 120 * u, B.w * 0.3), RW = clamp(Math.max(...cols[ncol - 1].map(ancho)) + 30 * u, 120 * u, B.w * 0.3);
+  const f1 = fnt(700, 23 * u * k), f2 = fnt(500, 19 * u * k, true), s1 = escalarFuente(23 * u) * 1.2, s2 = escalarFuente(19 * u) * 1.25, s3 = escalarFuente(17 * u) * 1.25;
+  const fmtV = vert ? {...tab.fmt, prefijo: '', sufijo: ''} : tab.fmt, det = (n) => `${fmtNum(n.valor, fmtV)}${n === byName.get(tab.baseNodo) || vert ? '' : ` · ${pctTxt((n.valor / base) * 100)}`}`;
+  const colMax = Math.max(...nodos.map((n) => n.nivel)), esBorde0 = (n) => n.nivel === 0 || n.nivel === colMax;
+  // vertical: nombre · cifra · % en tres líneas en los bordes; los nodos del medio solo llevan su nombre (si hay hueco)
+  nodos.forEach((n) => { ctx.font = f1; n.l1 = cortar(ctx, n.nombre, vert ? (esBorde0(n) ? 245 * u - 20 * u : 240 * u) : B.w * 0.27); n.l2 = vert && !esBorde0(n) ? null : det(n); n.l3 = vert ? (esBorde0(n) && n !== byName.get(tab.baseNodo) ? pctTxt((n.valor / base) * 100) : null) : variacionTxt(n.valor, n.anterior); });
+  const ancho = (n) => { ctx.font = f1; const a = ctx.measureText(n.l1).width; ctx.font = f2; return Math.max(a, n.l2 ? ctx.measureText(n.l2).width : 0, n.l3 ? ctx.measureText(n.l3).width : 0); };
+  const LW = vert ? 245 * u : clamp(Math.max(...cols[0].map(ancho)) + 30 * u, 120 * u, B.w * 0.3), RW = vert ? 245 * u : clamp(Math.max(...cols[ncol - 1].map(ancho)) + 30 * u, 120 * u, B.w * 0.3);
   const nw = 26 * u * k, px0 = B.x + LW, px1 = B.x + B.w - RW, paso = (px1 - px0 - nw) / (ncol - 1);
   cols.forEach((c, i) => c.forEach((n) => { n.x = px0 + i * paso; }));
-  const LH = (cols.flat().some((n) => n.l3) ? 78 : 56) * u * k, GAP = 14 * u * k, GAPM = 64 * u * k, MARGEN = 50 * u, alto = B.h - MARGEN * 2, y0 = B.y + MARGEN;
+  const LH = s1 + s2 + (cols.flat().some((n) => n.l3) ? s3 : 0) + 10 * u, GAP = 10 * u, GAPM = (vert ? 40 : 64) * u, MARGEN = 50 * u, alto = B.h - MARGEN * 2, y0 = B.y + MARGEN;
   const esBorde = (c) => c === 0 || c === ncol - 1, gapDe = (c) => (esBorde(c) ? GAP : GAPM);
   const suma = (c, s) => cols[c].reduce((a, n) => a + Math.max(n.valor * s, esBorde(c) ? LH : 0), 0) + gapDe(c) * (cols[c].length - 1);
   let s = (alto * 0.96) / Math.max(...cols.map((c) => c.reduce((a, n) => a + n.valor, 0)));
@@ -764,8 +842,8 @@ function disenarSankey(env, capa, tab, B) {
     o = 0; enl.filter((e) => e.b === n).sort((p, q) => cy(p.a) - cy(q.a)).forEach((e) => { e.ob = o; o += e.valor * s; });
   });
   // rótulos: los de los bordes van a los lados; los de en medio prueban arriba / abajo / a la derecha y se quedan con el primer sitio libre
-  const f3 = fnt(600, 17 * u * k, true), cajas = [], libre = (c) => c[0] >= B.x - 2 && c[2] <= B.x + B.w + 2 && c[1] >= B.y - 30 * u && c[3] <= B.y + B.h + 30 * u && !cajas.some((o) => chocan(c, o, 6 * u));
-  const medida = (n) => { ctx.font = f1; const w1 = ctx.measureText(n.l1).width; ctx.font = f2; const w2 = ctx.measureText(n.l2).width; ctx.font = f3; const w3 = n.l3 ? ctx.measureText(n.l3).width : 0; return {w: Math.max(w1, w2, w3), alto: 26 * u * k + 24 * u * k + (n.l3 ? 22 * u * k : 0)}; };
+  const f3 = fnt(600, 17 * u * k, true), cajas = [], lhs = [s1, s2, s3], libre = (c) => c[0] >= B.x - 2 && c[2] <= B.x + B.w + 2 && c[1] >= B.y - 30 * u && c[3] <= B.y + B.h + 30 * u && !cajas.some((o) => chocan(c, o, 6 * u));
+  const medida = (n) => { ctx.font = f1; const w1 = ctx.measureText(n.l1).width; ctx.font = f2; const w2 = n.l2 ? ctx.measureText(n.l2).width : 0; ctx.font = f3; const w3 = n.l3 ? ctx.measureText(n.l3).width : 0; return {w: Math.max(w1, w2, w3), alto: s1 + (n.l2 ? s2 : 0) + (n.l3 ? s3 : 0) + 6 * u}; };
   for (const n of [...nodos].sort((a, b) => (a.nivel === 0 || a.nivel === ncol - 1 ? 0 : 1) - (b.nivel === 0 || b.nivel === ncol - 1 ? 0 : 1))) {
     const {w, alto: al} = medida(n), cxn = n.x + nw / 2, ccy = n.y + n.h / 2;
     const opts = n.nivel === 0 ? [['izq']] : n.nivel === ncol - 1 ? [['der']] : (n.tipo === 'costo' ? ['abajo', 'arriba', 'der', 'izq'] : ['arriba', 'abajo', 'izq', 'der']).map((x) => [x]);
@@ -781,18 +859,23 @@ function disenarSankey(env, capa, tab, B) {
       if (pen < mejorPen) { mejorPen = pen; mejor = {x, aling, yTop, w, al, caja}; }
       if (libre(caja)) { mejor = {x, aling, yTop, w, al, caja}; break; }
     }
+    if (vert && !(n.nivel === 0 || n.nivel === ncol - 1) && mejorPen > 0) { n.lab = null; continue; }   // en vertical un nodo del medio sin hueco libre queda sin rótulo antes que pisar otro
     n.lab = mejor; cajas.push(mejor.caja);
   }
-  return {nodos, enl, nw, ncol, cols, base, k};
+  return {nodos, enl, nw, ncol, cols, base, k, lhs};
 }
 
 function sankey(env, capa) {
   const {ctx, u, t, W, H} = env, tab = env.tablas[capa.datos], vert = H > W;
-  const B = caja(env, capa, vert ? [0.04, 0.26, 0.66, 0.62] : [0.035, 0.235, 0.93, 0.66]);
+  const B = caja(env, capa, vert ? [0.02, 0.26, 0.7, 0.6] : [0.035, 0.235, 0.93, 0.66]);
   const [t0, t1] = capa.t ?? [0.5, 6], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const L = (capa._lay ??= disenarSankey(env, capa, tab, B));
   const p = prog(t, t0, t1, ease.io2), rx = lerp(B.x, B.x + B.w, p), k = L.k;
   ctx.save(); ctx.globalAlpha *= ap;
+  if (vert) {   // la unidad de todas las cifras, una sola vez y siempre visible
+    const un = `${tab.fmt.prefijo ?? ''}${tab.fmt.sufijo ?? ''}`.trim() || tab.fmt.unidad || '', cap = `CIFRAS EN ${un}`.toUpperCase();
+    if (un) { texto(ctx, cap, B.x, B.y - 10 * u, fnt(500, 18 * u, true), PALETA.piedraClara, 'left'); ctx.font = fnt(500, 18 * u, true); reg(env, 'etiqueta', [B.x, B.y - 10 * u - escalarFuente(18 * u), B.x + ctx.measureText(cap).width, B.y + 6 * u], `${capa.id ?? 'sankey'}:unidad`); }
+  }
   // cintas: se dibujan de izquierda a derecha con un borde que avanza
   ctx.save(); ctx.beginPath(); ctx.rect(B.x - 4, B.y - 80 * u, rx - B.x + 4, B.h + 160 * u); ctx.clip();
   for (const e of L.enl) {
@@ -808,26 +891,50 @@ function sankey(env, capa) {
     const a = clamp((rx - n.x) / (34 * u)); if (a <= 0) continue;
     const col = colorTipo(n.tipo), hh = n.h * ease.out3(a), cx = n.x + L.nw / 2, ccy = n.y + n.h / 2;
     ctx.fillStyle = col; ctx.fillRect(n.x, ccy - hh / 2, L.nw, Math.max(hh, 1.5 * u));
-    const la = clamp((rx - n.x - 14 * u) / (70 * u)); if (la <= 0) continue;
+    const la = clamp((rx - n.x - 14 * u) / (70 * u)); if (la <= 0 || !n.lab) continue;
     ctx.save(); ctx.globalAlpha *= la;
     const f1 = fnt(700, 23 * u * k), f2 = fnt(500, 19 * u * k, true), f3 = fnt(600, 17 * u * k, true), {x, aling: al, yTop, al: alto, caja} = n.lab;
-    const lh1 = 26 * u * k, lh2 = 24 * u * k;
+    const [lh1, lh2, lh3] = L.lhs;
     rotulo(ctx, n.l1, x, yTop + lh1 - 4 * u, f1, PALETA.blanco, al, u);
-    rotulo(ctx, n.l2, x, yTop + lh1 + lh2 - 4 * u, f2, PALETA.piedraClara, al, u);
-    if (n.l3) rotulo(ctx, n.l3, x, yTop + alto - 4 * u, f3, n.valor >= n.anterior ? COLOR.verde : COLOR.rojo, al, u);
+    if (n.l2) rotulo(ctx, n.l2, x, yTop + lh1 + lh2 - 4 * u, f2, PALETA.piedraClara, al, u);
+    if (n.l3) rotulo(ctx, n.l3, x, yTop + lh1 + (n.l2 ? lh2 : 0) + lh3 - 4 * u, f3, env.H > env.W ? PALETA.piedraClara : (n.valor >= n.anterior ? COLOR.verde : COLOR.rojo), al, u);
     reg(env, 'etiqueta', caja, `${capa.id ?? 'sankey'}:${n.nombre}`);
     ctx.restore();
   }
   ctx.restore();
 }
 
+/** Filas de una leyenda: caben `maxF`; si hay más partes, las más pequeñas se suman en una fila «Otras N partes» (suma y % exactos de los datos). */
+function filasLeyenda(items, total, maxF, pal) {
+  const fila = (it, i) => ({nombre: it.nombre, valor: it.valor, pct: (it.valor / total) * 100, col: pal[i % pal.length], idx: [i]});
+  if (items.length <= maxF) return items.map(fila);
+  const vis = items.slice(0, maxF - 1), resto = items.slice(maxF - 1), sum = resto.reduce((a, x) => a + x.valor, 0);
+  return [...vis.map(fila), {nombre: `Otras ${resto.length} partes`, valor: sum, pct: (sum / total) * 100, col: PALETA.piedra, idx: resto.map((_, j) => maxF - 1 + j), agregada: true}];
+}
+/** Una fila de leyenda con nombre (clave), cifra con unidad (secundario) y porcentaje grande. Ocupa `rh` de alto. */
+function filaLeyenda(env, capa, f, x, y, rh, lw, la, idBase) {
+  const {ctx, u} = env, fN = fnt(700, 26 * u), fV = fnt(500, 20 * u, true), fP = fnt(800, 38 * u, true);
+  ctx.save(); ctx.globalAlpha *= la;
+  ctx.fillStyle = f.col; ctx.beginPath(); ctx.arc(x + 12 * u, y + rh * 0.36, 9 * u, 0, 7); ctx.fill();
+  ctx.font = fP; const wP = ctx.measureText(pctTxt(f.pct)).width;
+  ctx.font = fN; const nombre = cortar(ctx, f.nombre, lw - 44 * u - wP - 16 * u), wN = ctx.measureText(nombre).width;
+  rotulo(ctx, nombre, x + 36 * u, y + rh * 0.43, fN, PALETA.blanco, 'left', u);
+  rotulo(ctx, fmtNum(f.valor, idBase.fmt), x + 36 * u, y + rh * 0.84, fV, PALETA.piedraClara, 'left', u);
+  rotulo(ctx, pctTxt(f.pct), x + lw, y + rh * 0.5, fP, f.col, 'right', u);
+  ctx.font = fV; const wV = ctx.measureText(fmtNum(f.valor, idBase.fmt)).width;
+  reg(env, 'etiqueta', [x + 36 * u, y + rh * 0.43 - 34 * u, x + 36 * u + wN, y + rh * 0.43 + 8 * u], `${capa.id ?? idBase.id}:n:${f.nombre}`);
+  reg(env, 'etiqueta', [x + 36 * u, y + rh * 0.84 - 26 * u, x + 36 * u + wV, y + rh * 0.84 + 6 * u], `${capa.id ?? idBase.id}:v:${f.nombre}`);
+  reg(env, 'etiqueta', [x + lw - wP, y + rh * 0.5 - 34 * u, x + lw, y + rh * 0.5 + 8 * u], `${capa.id ?? idBase.id}:p:${f.nombre}`);
+  ctx.restore();
+}
+
 function donut(env, capa) {
   const {ctx, u, t, W, H} = env, tab = env.tablas[capa.datos], vert = H > W;
-  const B = caja(env, capa, vert ? [0.06, 0.26, 0.64, 0.64] : [0.05, 0.24, 0.9, 0.64]);
+  const B = caja(env, capa, vert ? [0.0667, 0.26, 0.64, 0.64] : [0.05, 0.24, 0.9, 0.64]);
   const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const items = (capa._it ??= [...tab.items].filter((x) => x.valor > 0).sort((a, b) => (capa.orden === 'archivo' ? 0 : b.valor - a.valor)));
   const total = items.reduce((a, x) => a + x.valor, 0), TAU = Math.PI * 2;
-  const R = vert ? Math.min(B.w * 0.36, B.h * 0.3) : Math.min(B.h * 0.46, B.w * 0.27), cx = vert ? B.x + B.w / 2 : B.x + R + 40 * u, cy = vert ? B.y + R + 10 * u : B.y + B.h / 2, grosor = R * 0.38;
+  const R = vert ? Math.min(B.w * 0.28, 190 * u) : Math.min(B.h * 0.46, B.w * 0.27), cx = vert ? B.x + B.w / 2 : B.x + R + 40 * u, cy = vert ? B.y + R + 10 * u : B.y + B.h / 2, grosor = R * 0.38;
   const p = prog(t, t0, t1, ease.io2) * TAU, paleta = [colorTipo('ingreso'), COLOR.teal, COLOR.purpura, COLOR.verde, COLOR.rojo, PALETA.piedra, COLOR.amarillo, COLOR.rosa];
   ctx.save(); ctx.globalAlpha *= ap;
   let a0 = -Math.PI / 2; const arr = [];
@@ -838,65 +945,57 @@ function donut(env, capa) {
     a0 += sw;
   });
   const g = clamp(p / TAU);
-  // total al centro: el tamaño se ajusta para caber siempre dentro del hueco
-  const txtTotal = fmtNum(total * g, tab.fmt), hueco = (R - grosor) * 1.7; let tam = R * 0.3; ctx.font = fnt(800, tam, true);
-  while (ctx.measureText(fmtNum(total, tab.fmt)).width > hueco && tam > 14 * u) { tam -= 2 * u; ctx.font = fnt(800, tam, true); }
-  rotulo(ctx, txtTotal, cx, cy + tam * 0.2, fnt(800, tam, true), PALETA.blanco, 'center', u);
-  rotulo(ctx, (capa.etiquetaTotal ?? 'Total').toUpperCase(), cx, cy + tam * 0.2 + 30 * u, fnt(600, 18 * u, true), PALETA.piedraOscura, 'center', u);
+  // total al centro en tres líneas (cifra grande · unidad · «TOTAL»): así cabe siempre dentro del hueco y la unidad nunca falta
+  const num = fmtNum(total * g, {...tab.fmt, prefijo: '', sufijo: ''}), un = `${tab.fmt.prefijo ?? ''}${tab.fmt.sufijo ?? ''}`.trim(), hueco = (R - grosor) * 1.75;
+  let tam = Math.max(R * 0.34, 36 * u); ctx.font = fnt(800, tam, true);
+  while (ctx.measureText(fmtNum(total, {...tab.fmt, prefijo: '', sufijo: ''})).width > hueco && tam > 30 * u) { tam -= 2 * u; ctx.font = fnt(800, tam, true); }
+  const s2 = escalarFuente(20 * u);
+  rotulo(ctx, num, cx, cy - s2 * 0.1, fnt(800, tam, true), PALETA.blanco, 'center', u);
+  if (un) rotulo(ctx, un, cx, cy - s2 * 0.1 + s2 * 1.2, fnt(600, 20 * u, true), PALETA.piedraClara, 'center', u);
+  rotulo(ctx, (capa.etiquetaTotal ?? 'Total').toUpperCase(), cx, cy - s2 * 0.1 + s2 * 2.4, fnt(600, 18 * u, true), PALETA.piedraOscura, 'center', u);
   // leyenda: una fila por parte, con su valor y su porcentaje calculados de los datos
-  const lx = vert ? B.x + 10 * u : cx + R + 90 * u, ly0 = vert ? cy + R + 40 * u : B.y, area = vert ? B.y + B.h - ly0 : B.h, lw = vert ? B.w - 20 * u : B.x + B.w - lx;
-  const rh = Math.min(vert ? 62 * u : 74 * u, area / items.length), k = clamp(rh / (74 * u), 0.6, 1);
-  const y0 = ly0 + (area - rh * items.length) / 2;
-  arr.forEach(({it, i, a0: s0, col}) => {
-    const la = clamp((p - (s0 + Math.PI / 2)) / 0.5); if (la <= 0) return;
-    const y = y0 + i * rh + (1 - ease.out3(la)) * 14 * u, pct = (it.valor / total) * 100;
-    ctx.save(); ctx.globalAlpha *= la;
-    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(lx + 12 * u, y + rh / 2, 9 * u * k, 0, 7); ctx.fill();
-    ctx.font = fnt(700, 26 * u * k); const nombre = cortar(ctx, it.nombre, lw - 190 * u);
-    rotulo(ctx, nombre, lx + 36 * u, y + rh / 2 - 2 * u, fnt(700, 26 * u * k), PALETA.blanco, 'left', u);
-    rotulo(ctx, fmtNum(it.valor, tab.fmt), lx + 36 * u, y + rh / 2 + 24 * u * k, fnt(500, 20 * u * k, true), PALETA.piedraClara, 'left', u);
-    rotulo(ctx, pctTxt(pct), lx + lw, y + rh / 2 + 10 * u * k, fnt(800, 38 * u * k, true), col, 'right', u);
-    reg(env, 'etiqueta', [lx, y + 2 * u, lx + lw, y + rh - 2 * u], `${capa.id ?? 'donut'}:${it.nombre}`);
-    ctx.restore();
+  const lx = vert ? B.x : cx + R + 90 * u, ly0 = vert ? cy + R + 36 * u : B.y, area = vert ? B.y + B.h - ly0 : B.h, lw = vert ? B.w : B.x + B.w - lx;
+  const paso = vert ? 92 * u : 70 * u, maxF = Math.max(3, Math.floor(area / paso)), filas = filasLeyenda(items, total, maxF, paleta), rh = Math.min(vert ? 100 * u : 78 * u, area / filas.length);
+  const y0 = ly0 + (area - rh * filas.length) / 2;
+  filas.forEach((f, i) => {
+    const s0 = arr[f.idx[0]].a0, la = p >= TAU - 1e-6 ? 1 : clamp((p - (s0 + Math.PI / 2)) / 0.5); if (la <= 0) return;
+    filaLeyenda(env, capa, f, lx, y0 + i * rh + (1 - ease.out3(la)) * 14 * u, rh, lw, la, {fmt: tab.fmt, id: 'donut'});
   });
   ctx.restore();
 }
 
-/** Cascada en vertical (reel): filas horizontales, una por concepto, dentro de la zona segura (nada pasa del 72 % del ancho). */
+/** Cascada en vertical (reel): una fila por concepto — nombre y cifra arriba, barra debajo — dentro de la zona segura. */
 function cascadaVertical(env, capa) {
   const {ctx, u, t, W, H} = env, tab = env.tablas[capa.datos];
-  const B = caja(env, capa, [0.04, 0.26, 0.67, 0.6]);
+  const B = caja(env, capa, H > W ? [0.0667, 0.26, 0.64, 0.62] : [0.05, 0.23, 0.9, 0.67]);
   const [t0, t1] = capa.t ?? [0.5, 6], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const barras = (capa._b ??= (() => { let run = 0; return tab.items.map((it) => { let ini, fin; if (it.tipo === 'inicio' || it.tipo === 'total') { ini = 0; fin = it.valor; run = it.valor; } else { ini = run; fin = run + it.valor; run = fin; } return {...it, ini, fin}; }); })());
   const n = barras.length, vmin = Math.min(0, ...barras.flatMap((b) => [b.ini, b.fin])), vmax = Math.max(0, ...barras.flatMap((b) => [b.ini, b.fin]));
-  const fila = Math.min(96 * u, (B.h - 30 * u) / n), k = clamp(fila / (86 * u), 0.55, 1), fN = fnt(700, 22 * u * k), fV = fnt(800, 24 * u * k, true);
-  ctx.font = fN; const wNom = Math.min(B.w * 0.36, Math.max(...barras.map((b) => ctx.measureText(String(b.nombre)).width)) + 16 * u);
-  ctx.font = fV; const wVal = Math.max(...barras.map((b) => ctx.measureText((b.tipo === 'inicio' || b.tipo === 'total') ? fmtNum(b.valor, tab.fmt) : fmtSigno(b.valor, tab.fmt)).width)) + 14 * u;
-  const x0 = B.x + wNom, x1 = B.x + B.w - wVal, px = (v) => x0 + ((v - vmin) / ((vmax - vmin) || 1)) * (x1 - x0), p = prog(t, t0, t1, ease.io2) * n, y0 = B.y + 10 * u;
+  const fila = Math.min(110 * u, B.h / n), px = (v) => B.x + ((v - vmin) / ((vmax - vmin) || 1)) * B.w, p = prog(t, t0, t1, ease.io2) * n, y0 = B.y;
+  const fN = fnt(700, 26 * u), fV = fnt(800, 26 * u, true), bh = Math.min(26 * u, fila * 0.26);
   ctx.save(); ctx.globalAlpha *= ap;
   ctx.strokeStyle = rgba(PALETA.piedra, 0.35); ctx.lineWidth = 1.5 * u; ctx.beginPath(); ctx.moveTo(px(0), y0); ctx.lineTo(px(0), y0 + fila * n); ctx.stroke();
   barras.forEach((b, i) => {
     const a = clamp(p - i), e = ease.out3(a); if (a <= 0) return;
-    const esTotal = b.tipo === 'inicio' || b.tipo === 'total', col = esTotal ? colorTipo('ingreso') : b.valor >= 0 ? COLOR.verde : COLOR.rojo, y = y0 + i * fila, bh = fila * 0.62, yb = y + (fila - bh) / 2;
-    const xa = px(b.ini), xb = lerp(xa, px(b.fin), e), xl = Math.min(xa, xb), ww = Math.max(Math.abs(xb - xa), 1.5 * u);
+    const esTotal = b.tipo === 'inicio' || b.tipo === 'total', col = esTotal ? colorTipo('ingreso') : b.valor >= 0 ? COLOR.verde : COLOR.rojo, y = y0 + i * fila, yb = y + fila - bh - Math.max(0.06 * fila, 3 * u);
+    const xa = px(b.ini), xb = lerp(xa, px(b.fin), e), xl = Math.min(xa, xb), ww = Math.max(Math.abs(xb - xa), 2 * u);
     ctx.fillStyle = col; ctx.fillRect(xl, yb, ww, bh);
-    if (i < n - 1 && a >= 1) { ctx.strokeStyle = rgba(PALETA.piedra, 0.4); ctx.lineWidth = 1.2 * u; ctx.setLineDash([5 * u, 4 * u]); ctx.beginPath(); ctx.moveTo(px(b.fin), yb + bh); ctx.lineTo(px(b.fin), y + fila + (fila - bh) / 2); ctx.stroke(); ctx.setLineDash([]); }
-    const la = clamp((a - 0.5) / 0.5); if (la <= 0) return;
+    const la = clamp((a - 0.4) / 0.6); if (la <= 0) return;
     ctx.save(); ctx.globalAlpha *= la;
-    ctx.font = fN; const nom = cortar(ctx, String(b.nombre), wNom - 16 * u), wn = ctx.measureText(nom).width;
-    rotulo(ctx, nom, B.x + wNom - 14 * u, y + fila / 2 + 8 * u * k, fN, esTotal ? PALETA.blanco : PALETA.piedraClara, 'right', u);
-    reg(env, 'etiqueta', [B.x + wNom - 14 * u - wn, y + fila / 2 - 14 * u * k, B.x + wNom - 14 * u, y + fila / 2 + 14 * u * k], `${capa.id ?? 'cascada'}:n:${i}`);
     const txt = esTotal ? fmtNum(b.valor, tab.fmt) : fmtSigno(b.valor, tab.fmt);
-    ctx.font = fV; const xv = Math.max(px(b.ini), px(b.fin)) + 10 * u, wv = ctx.measureText(txt).width;
-    rotulo(ctx, txt, xv, y + fila / 2 + 8 * u * k, fV, esTotal ? PALETA.blanco : col, 'left', u);
-    reg(env, 'etiqueta', [xv, y + fila / 2 - 16 * u * k, xv + wv, y + fila / 2 + 12 * u * k], `${capa.id ?? 'cascada'}:v:${i}`);
+    ctx.font = fV; const wv = ctx.measureText(txt).width; ctx.font = fN;
+    const nom = cortar(ctx, String(b.nombre), B.w - wv - 24 * u), wn = ctx.measureText(nom).width, yt = y + Math.max(fila * 0.4, escalarFuente(26 * u) + 2 * u);
+    rotulo(ctx, nom, B.x, yt, fN, esTotal ? PALETA.blanco : PALETA.piedraClara, 'left', u);
+    rotulo(ctx, txt, B.x + B.w, yt, fV, esTotal ? PALETA.blanco : col, 'right', u);
+    reg(env, 'etiqueta', [B.x, yt - 34 * u, B.x + wn, yt + 8 * u], `${capa.id ?? 'cascada'}:n:${i}`);
+    reg(env, 'etiqueta', [B.x + B.w - wv, yt - 34 * u, B.x + B.w, yt + 8 * u], `${capa.id ?? 'cascada'}:v:${i}`);
     ctx.restore();
   });
   ctx.restore();
 }
 
 function cascada(env, capa) {
-  if (env.H > env.W) return cascadaVertical(env, capa);
+  if (env.H > env.W || env.tablas[capa.datos].items.length > 8) return cascadaVertical(env, capa);   // muchos conceptos: filas con el nombre entero (también en horizontal)
   const {ctx, u, t, W, H} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = caja(env, capa, vert ? [0.06, 0.27, 0.88, 0.56] : [0.05, 0.25, 0.9, 0.56]);
   const [t0, t1] = capa.t ?? [0.5, 6], ap = aparece(env, capa, t0); if (ap <= 0) return;
@@ -951,41 +1050,52 @@ function separar(ys, gap, lo, hi) {
 
 /** Pendiente (slope chart): dos momentos, una línea por serie. Responde «¿quién subió y quién bajó entre A y B?». */
 function pendiente(env, capa) {
-  const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W, k = vert ? 0.82 : 1;
-  const B = caja(env, capa, vert ? [0.04, 0.27, 0.66, 0.6] : [0.05, 0.25, 0.9, 0.62]);
+  const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
+  const B = caja(env, capa, vert ? [0.0667, 0.27, 0.64, 0.54] : [0.05, 0.25, 0.9, 0.62]);
   const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const n = tab.x.length, i0 = capa.de ?? 0, i1 = capa.a ?? n - 1;
+  const xl = B.x + B.w * (vert ? 0.4 : 0.36), xr = B.x + B.w * (vert ? 0.62 : 0.64), fT = fnt(700, 26 * u), fL = fnt(500, 20 * u, true), fR = fnt(800, 26 * u, true), fD = fnt(700, 20 * u, true);
+  const sT = escalarFuente(26 * u), sS = escalarFuente(20 * u);
   const L = (capa._pl ??= (() => {
     const idxs = (capa.series ?? tab.series.map((_, i) => i)).filter((si) => tab.series[si].y[i0] != null && tab.series[si].y[i1] != null);
-    const vs = idxs.flatMap((si) => [tab.series[si].y[i0], tab.series[si].y[i1]]), lo = Math.min(...vs), hi = Math.max(...vs), top = B.y + 70 * u, bajo = B.y + B.h - 24 * u;
+    const vs = idxs.flatMap((si) => [tab.series[si].y[i0], tab.series[si].y[i1]]), lo = Math.min(...vs), hi = Math.max(...vs), top = B.y + 130 * u, bajo = B.y + B.h - 24 * u;
     const logE = lo > 0 && hi / lo > 8 && capa.escala !== 'lineal', f = logE ? Math.log10 : (v) => v;   // magnitudes muy distintas: escala logarítmica (se avisa en pantalla)
-    const py = (v) => bajo - ((f(v) - f(lo)) / ((f(hi) - f(lo)) || 1)) * (bajo - top), gap = 56 * u * k;
+    const py = (v) => bajo - ((f(v) - f(lo)) / ((f(hi) - f(lo)) || 1)) * (bajo - top);
+    ctx.font = fT;
+    const nombres = idxs.map((si) => envolver(ctx, tab.series[si].nombre, xl - 22 * u - B.x, vert ? 2 : 1));
+    const alto = Math.max(...nombres.map((l) => l.length)) * sT * 1.15 + sS * 1.3, gap = Math.min(alto + 14 * u, Math.max(sT * 2, (bajo - top) / Math.max(1, idxs.length)));
     const yl = separar(idxs.map((si) => py(tab.series[si].y[i0])), gap, top - 10 * u, bajo + 10 * u), yr = separar(idxs.map((si) => py(tab.series[si].y[i1])), gap, top - 10 * u, bajo + 10 * u);
-    return {idxs, py, yl, yr, logE, omitidas: (capa.series ?? tab.series.map((_, i) => i)).length - idxs.length};
+    return {idxs, py, yl, yr, logE, nombres, omitidas: (capa.series ?? tab.series.map((_, i) => i)).length - idxs.length};
   })());
-  const xl = B.x + B.w * (vert ? 0.42 : 0.36), xr = B.x + B.w * (vert ? 0.78 : 0.64), p = prog(t, t0, t1, ease.io2), fT = fnt(700, 26 * u * k, true);
+  const p = prog(t, t0, t1, ease.io2);
   ctx.save(); ctx.globalAlpha *= ap;
-  [[xl, i0], [xr, i1]].forEach(([x, i]) => { rotulo(ctx, etiquetaX(tab, i), x, B.y + 26 * u, fnt(800, 30 * u * k, true), PALETA.piedraClara, 'center', u); reg(env, 'etiqueta', [x - 70 * u, B.y - 2 * u, x + 70 * u, B.y + 34 * u], `${capa.id ?? 'pendiente'}:x${i}`); });
-  if (L.logE) { rotulo(ctx, 'ESCALA LOGARÍTMICA · LA DISTANCIA ES PROPORCIONAL AL CAMBIO PORCENTUAL', B.x, B.y + B.h + 44 * u, fnt(600, 16 * u, true), PALETA.piedraOscura, 'left', u); reg(env, 'etiqueta', [B.x, B.y + B.h + 24 * u, B.x + 760 * u * k, B.y + B.h + 50 * u], `${capa.id ?? 'pendiente'}:escala`); }
+  [[xl, i0], [xr, i1]].forEach(([x, i]) => { rotulo(ctx, etiquetaX(tab, i), x, B.y + 40 * u, fnt(800, 30 * u, true), PALETA.piedraClara, 'center', u); ctx.font = fnt(800, 30 * u, true); const w = ctx.measureText(etiquetaX(tab, i)).width; reg(env, 'etiqueta', [x - w / 2, B.y - 4 * u, x + w / 2, B.y + 50 * u], `${capa.id ?? 'pendiente'}:x${i}`); });
+  if (L.logE) {
+    ctx.font = fnt(600, 16 * u); const lin = envolver(ctx, 'Escala logarítmica: la distancia entre los puntos es proporcional al cambio en %.', B.w, 3), s = escalarFuente(16 * u);
+    lin.forEach((l, q) => rotulo(ctx, l, B.x, B.y + B.h + 30 * u + s + q * s * 1.25, fnt(600, 16 * u), PALETA.piedraOscura, 'left', u));
+    reg(env, 'etiqueta', [B.x, B.y + B.h + 30 * u, B.x + B.w, B.y + B.h + 30 * u + s * (1.25 * lin.length + 0.5)], `${capa.id ?? 'pendiente'}:escala`);
+  }
   L.idxs.forEach((si, j) => {
-    const s = tab.series[si], v0 = s.y[i0], v1 = s.y[i1], color = capa.foco != null ? (si === capa.foco ? colorDe(s.color, si) : rgba(colorDe(s.color, si), 0.45)) : colorDe(s.color, si);
+    const s = tab.series[si], v0 = s.y[i0], v1 = s.y[i1], color = capa.foco != null ? (si === capa.foco ? colorDe(s.color, si) : rgba(colorDe(s.color, si), 0.55)) : colorDe(s.color, si);
     const ya = L.py(v0), yb = L.py(v1), pr = clamp(p * 1.25 - j * 0.04), yEnd = lerp(ya, yb, pr), xEnd = lerp(xl, xr, pr);
     ctx.strokeStyle = color; ctx.lineWidth = (capa.foco === si ? 8 : 5.5) * u; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(xl, ya); ctx.lineTo(xEnd, yEnd); ctx.stroke();
     ctx.fillStyle = color; ctx.beginPath(); ctx.arc(xl, ya, 9 * u, 0, 7); ctx.fill(); if (pr >= 1) { ctx.beginPath(); ctx.arc(xr, yb, 9 * u, 0, 7); ctx.fill(); }
     const la = clamp(p * 4 - 0.2);
     ctx.save(); ctx.globalAlpha *= la;
-    ctx.font = fT; const nom = cortar(ctx, s.nombre, B.w * 0.3), lw = Math.max(ctx.measureText(nom).width, ctx.measureText(fmtNum(v0, s.fmt)).width);
-    rotulo(ctx, nom, xl - 22 * u, L.yl[j] - 2 * u, fT, PALETA.blanco, 'right', u);
-    rotulo(ctx, fmtNum(v0, s.fmt), xl - 22 * u, L.yl[j] + 24 * u * k, fnt(500, 21 * u * k, true), PALETA.piedraClara, 'right', u);
-    reg(env, 'etiqueta', [xl - 22 * u - lw, L.yl[j] - 26 * u * k, xl - 22 * u, L.yl[j] + 30 * u * k], `${capa.id ?? 'pendiente'}:l:${si}`);
+    const nl = L.nombres[j], bloque = nl.length * sT * 1.15 + sS * 1.3, y1 = L.yl[j] - bloque / 2 + sT * 0.9;
+    ctx.font = fT; nl.forEach((l, q) => rotulo(ctx, l, xl - 22 * u, y1 + q * sT * 1.15, fT, PALETA.blanco, 'right', u));
+    const vt = fmtNum(v0, s.fmt), yv = y1 + (nl.length - 1) * sT * 1.15 + sS * 1.3; rotulo(ctx, vt, xl - 22 * u, yv, fL, PALETA.piedraClara, 'right', u);
+    ctx.font = fT; const wn = Math.max(...nl.map((l) => ctx.measureText(l).width)); ctx.font = fL; const wv = ctx.measureText(vt).width;
+    reg(env, 'etiqueta', [xl - 22 * u - wn, y1 - sT, xl - 22 * u, y1 + (nl.length - 1) * sT * 1.15 + 8 * u], `${capa.id ?? 'pendiente'}:l:${si}`);
+    reg(env, 'etiqueta', [xl - 22 * u - wv, yv - sS, xl - 22 * u, yv + 6 * u], `${capa.id ?? 'pendiente'}:lv:${si}`);
     ctx.restore();
     const ra = clamp((pr - 0.85) / 0.15); if (ra <= 0) return;
     ctx.save(); ctx.globalAlpha *= ra;
     const delta = v0 > 0 ? (v1 / v0 - 1) * 100 : null, dTxt = delta == null ? null : `${delta >= 0 ? '+' : '−'}${Math.abs(delta).toFixed(Math.abs(delta) < 10 ? 1 : 0).replace('.', ',')} %`;
-    const vTxt = fmtNum(v1, s.fmt); ctx.font = fnt(800, 26 * u * k, true); const rw = Math.max(ctx.measureText(vTxt).width, dTxt ? ctx.measureText(dTxt).width : 0);
-    rotulo(ctx, vTxt, xr + 22 * u, L.yr[j] - 2 * u, fnt(800, 26 * u * k, true), PALETA.blanco, 'left', u);
-    if (dTxt) rotulo(ctx, dTxt, xr + 22 * u, L.yr[j] + 24 * u * k, fnt(700, 21 * u * k, true), delta >= 0 ? COLOR.verde : COLOR.rojo, 'left', u);
-    reg(env, 'etiqueta', [xr + 22 * u, L.yr[j] - 26 * u * k, xr + 22 * u + rw, L.yr[j] + 30 * u * k], `${capa.id ?? 'pendiente'}:r:${si}`);
+    const vTxt = fmtNum(v1, s.fmt), yr0 = L.yr[j] - (sT + sS * 1.3) / 2 + sT * 0.9; ctx.font = fR; const rw = Math.max(ctx.measureText(vTxt).width, dTxt ? (ctx.font = fD, ctx.measureText(dTxt).width) : 0);
+    rotulo(ctx, vTxt, xr + 22 * u, yr0, fR, PALETA.blanco, 'left', u);
+    if (dTxt) rotulo(ctx, dTxt, xr + 22 * u, yr0 + sS * 1.3, fD, delta >= 0 ? COLOR.verde : COLOR.rojo, 'left', u);
+    reg(env, 'etiqueta', [xr + 22 * u, yr0 - sT, xr + 22 * u + rw, yr0 + sS * 1.3 + 8 * u], `${capa.id ?? 'pendiente'}:r:${si}`);
     ctx.restore();
   });
   ctx.restore();
@@ -993,8 +1103,8 @@ function pendiente(env, capa) {
 
 /** Bump chart: la posición (1.º, 2.º…) de cada serie en varios momentos. Responde «¿quién superó a quién y cuándo?». */
 function bump(env, capa) {
-  const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W, k = vert ? 0.8 : 1;
-  const B = caja(env, capa, vert ? [0.04, 0.27, 0.92, 0.6] : [0.04, 0.25, 0.92, 0.62]);
+  const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
+  const B = caja(env, capa, vert ? [0.0667, 0.27, 0.64, 0.58] : [0.04, 0.25, 0.92, 0.62]);
   const [t0, t1] = capa.t ?? [0.5, 6], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const L = (capa._bm ??= (() => {
     const n = tab.x.length, m = Math.min(capa.puntos ?? 8, n), pts = Array.from({length: m}, (_, q) => Math.round((q * (n - 1)) / Math.max(1, m - 1)));
@@ -1005,31 +1115,42 @@ function bump(env, capa) {
     return {pts, idxs, rank};
   })());
   const S = L.idxs.length; if (S < 2) return;
-  ctx.font = fnt(700, 25 * u * k); const nombres = L.idxs.map((si) => tab.series[si].nombre);
-  const LW = Math.min(B.w * 0.34, Math.max(...nombres.map((nm) => ctx.measureText(cortar(ctx, nm, B.w * 0.34)).width)) + 28 * u), x0 = B.x + LW, x1 = B.x + B.w - LW, paso = (x1 - x0) / (L.pts.length - 1);
-  const top = B.y + 56 * u, fila = Math.min(86 * u * k, (B.h - 70 * u) / S), cyR = (r) => top + r * fila + fila / 2, cx = (q) => x0 + q * paso;
-  const rx = lerp(x0 - 20 * u, x1 + 20 * u, prog(t, t0, t1, ease.io2));
+  const sN = escalarFuente(26 * u), fN = fnt(700, 26 * u);
+  ctx.font = fN;
+  const LW = vert ? B.w * 0.4 : Math.min(B.w * 0.26, Math.max(...L.idxs.map((si) => ctx.measureText(cortar(ctx, tab.series[si].nombre, B.w * 0.26)).width)) + 28 * u);
+  const x0 = B.x + LW + 30 * u, x1 = vert ? B.x + B.w - 24 * u : B.x + B.w - LW - 10 * u, paso = (x1 - x0) / (L.pts.length - 1);
+  const top = B.y + 80 * u, fila = Math.min(vert ? 112 * u : 86 * u, (B.h - 120 * u) / S), cyR = (r) => top + r * fila + fila / 2, cx = (q) => x0 + q * paso;
+  const rx = lerp(x0 - 20 * u, x1 + 20 * u, prog(t, t0, t1, ease.io2)), rad = escalarFuente(20 * u) * 0.68;
   ctx.save(); ctx.globalAlpha *= ap;
-  L.pts.forEach((i, q) => { rotulo(ctx, etiquetaX(tab, i), cx(q), B.y + 24 * u, fnt(700, 21 * u * k, true), PALETA.piedraOscura, 'center', u); });
-  reg(env, 'etiqueta', [x0 - 40 * u, B.y - 2 * u, x1 + 40 * u, B.y + 34 * u], `${capa.id ?? 'bump'}:periodos`);
-  if (capa.orden !== 'valor') { const nota = `1.º = MAYOR CRECIMIENTO ACUMULADO DESDE ${etiquetaX(tab, L.pts[0]).toUpperCase()}`; rotulo(ctx, nota, B.x, B.y + B.h - 4 * u, fnt(600, 16 * u, true), PALETA.piedraOscura, 'left', u); ctx.font = fnt(600, 16 * u, true); reg(env, 'etiqueta', [B.x, B.y + B.h - 24 * u, B.x + ctx.measureText(nota).width, B.y + B.h + 2 * u], `${capa.id ?? 'bump'}:orden`); }
+  // años: solo los que caben (el primero y el último siempre)
+  ctx.font = fnt(700, 21 * u, true); const wy = ctx.measureText(etiquetaX(tab, L.pts[0])).width, cada = Math.max(1, Math.ceil((wy * 1.5) / paso));
+  L.pts.forEach((i, q) => { if ((q % cada === 0 && L.pts.length - 1 - q >= cada) || q === L.pts.length - 1) { const tx = etiquetaX(tab, i); rotulo(ctx, tx, cx(q), B.y + 44 * u, fnt(700, 21 * u, true), PALETA.piedraClara, 'center', u); const w = ctx.measureText(tx).width; reg(env, 'etiqueta', [cx(q) - w / 2, B.y + 8 * u, cx(q) + w / 2, B.y + 56 * u], `${capa.id ?? 'bump'}:p${q}`); } });
+  const nota = capa.orden !== 'valor' ? `El 1.º es el que más creció desde ${etiquetaX(tab, L.pts[0])}.` : 'El 1.º es el de mayor valor.';
+  ctx.font = fnt(600, 16 * u); const nl = envolver(ctx, nota, B.w, 2), sNota = escalarFuente(16 * u);
+  nl.forEach((l, q) => rotulo(ctx, l, B.x, B.y + B.h + 30 * u + sNota + q * sNota * 1.25, fnt(600, 16 * u), PALETA.piedraOscura, 'left', u));
+  reg(env, 'etiqueta', [B.x, B.y + B.h + 30 * u, B.x + B.w, B.y + B.h + 30 * u + sNota * (1.25 * nl.length + 0.4)], `${capa.id ?? 'bump'}:orden`);
   L.idxs.forEach((si, j) => {
-    const s = tab.series[si], color = colorDe(s.color, si), mudo = capa.foco != null && si !== capa.foco, a = mudo ? 0.35 : 1;
+    const s = tab.series[si], color = colorDe(s.color, si), mudo = capa.foco != null && si !== capa.foco, a = mudo ? 0.4 : 1;
     ctx.save(); ctx.beginPath(); ctx.rect(B.x - 4, B.y - 20 * u, rx - B.x + 4, B.h + 40 * u); ctx.clip(); ctx.globalAlpha *= a;
     ctx.strokeStyle = color; ctx.lineWidth = (capa.foco === si ? 11 : 8) * u; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx(0), cyR(L.rank[j][0]));
     for (let q = 1; q < L.pts.length; q++) { const m = (cx(q - 1) + cx(q)) / 2; ctx.bezierCurveTo(m, cyR(L.rank[j][q - 1]), m, cyR(L.rank[j][q]), cx(q), cyR(L.rank[j][q])); }
     ctx.stroke();
-    L.pts.forEach((_, q) => { const px = cx(q), py = cyR(L.rank[j][q]); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(px, py, 17 * u * k, 0, 7); ctx.fill(); texto(ctx, String(L.rank[j][q] + 1), px, py + 7 * u * k, fnt(800, 20 * u * k, true), PALETA.fondo, 'center'); });
+    L.pts.forEach((_, q) => { const px = cx(q), py = cyR(L.rank[j][q]); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(px, py, rad, 0, 7); ctx.fill(); texto(ctx, String(L.rank[j][q] + 1), px, py + mid(20 * u), fnt(800, 20 * u, true), contraste(color, PALETA.fondo) >= contraste(color, PALETA.blanco) ? PALETA.fondo : PALETA.blanco, 'center'); });
     ctx.restore();
+    // nombre: en vertical, a la izquierda, hasta en 2 líneas; en horizontal, a ambos lados
+    const lineas = envolver((ctx.font = fN, ctx), s.nombre, LW - 28 * u, vert ? 2 : 1), y0n = cyR(L.rank[j][0]) - ((lineas.length - 1) * sN * 1.1) / 2 + mid(26 * u);
     ctx.save(); ctx.globalAlpha *= a * clamp((rx - x0 + 40 * u) / (60 * u));
-    ctx.font = fnt(700, 25 * u * k); const nm = cortar(ctx, s.nombre, LW - 28 * u);
-    rotulo(ctx, nm, B.x + LW - 30 * u, cyR(L.rank[j][0]) + 8 * u, fnt(700, 25 * u * k), PALETA.blanco, 'right', u);
-    reg(env, 'etiqueta', [B.x + LW - 30 * u - ctx.measureText(nm).width, cyR(L.rank[j][0]) - 18 * u, B.x + LW - 30 * u, cyR(L.rank[j][0]) + 14 * u], `${capa.id ?? 'bump'}:i:${si}`);
+    lineas.forEach((l, q) => rotulo(ctx, l, B.x + LW - 6 * u, y0n + q * sN * 1.1, fN, PALETA.blanco, 'right', u));
+    const wI = Math.max(...lineas.map((l) => ctx.measureText(l).width));
+    reg(env, 'etiqueta', [B.x + LW - 6 * u - wI, y0n - sN, B.x + LW - 6 * u, y0n + (lineas.length - 1) * sN * 1.1 + 8 * u], `${capa.id ?? 'bump'}:i:${si}`);
     ctx.restore();
-    ctx.save(); ctx.globalAlpha *= a * clamp((rx - x1) / (50 * u));
-    rotulo(ctx, nm, x1 + 30 * u, cyR(L.rank[j][L.pts.length - 1]) + 8 * u, fnt(700, 25 * u * k), PALETA.blanco, 'left', u);
-    reg(env, 'etiqueta', [x1 + 30 * u, cyR(L.rank[j][L.pts.length - 1]) - 18 * u, x1 + 30 * u + ctx.measureText(nm).width, cyR(L.rank[j][L.pts.length - 1]) + 14 * u], `${capa.id ?? 'bump'}:f:${si}`);
-    ctx.restore();
+    if (!vert) {
+      const nm = cortar(ctx, s.nombre, LW - 28 * u), yf = cyR(L.rank[j][L.pts.length - 1]);
+      ctx.save(); ctx.globalAlpha *= a * clamp((rx - x1) / (50 * u));
+      rotulo(ctx, nm, x1 + 30 * u, yf + mid(26 * u), fN, PALETA.blanco, 'left', u);
+      reg(env, 'etiqueta', [x1 + 30 * u, yf - sN, x1 + 30 * u + ctx.measureText(nm).width, yf + 8 * u], `${capa.id ?? 'bump'}:f:${si}`);
+      ctx.restore();
+    }
   });
   ctx.restore();
 }
@@ -1037,10 +1158,11 @@ function bump(env, capa) {
 /** Treemap (rectángulos "squarified"): el ÁREA de cada parte es proporcional a su valor. Lo que no cabe rotulado se lista abajo con su cifra. */
 function treemap(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
-  const B = caja(env, capa, vert ? [0.04, 0.26, 0.67, 0.6] : [0.05, 0.24, 0.9, 0.62]);
+  const B = caja(env, capa, vert ? [0.0667, 0.26, 0.64, 0.6] : [0.05, 0.24, 0.9, 0.62]);
   const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
+  const sT = escalarFuente(26 * u), sV = escalarFuente(20 * u);
   const L = (capa._tm ??= (() => {
-    const items = [...tab.items].filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor), total = items.reduce((a, x) => a + x.valor, 0), pie = 70 * u, R = {x: B.x, y: B.y, w: B.w, h: B.h - pie};
+    const items = [...tab.items].filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor), total = items.reduce((a, x) => a + x.valor, 0), pie = (vert ? 200 : 96) * u, R = {x: B.x, y: B.y, w: B.w, h: B.h - pie};
     const esc = (R.w * R.h) / total, nodos = items.map((it) => ({it, a: it.valor * esc, rect: null}));
     const peor = (fila, lado) => { const s = fila.reduce((a, n) => a + n.a, 0), mx = Math.max(...fila.map((n) => n.a)), mn = Math.min(...fila.map((n) => n.a)); return Math.max((lado * lado * mx) / (s * s), (s * s) / (lado * lado * mn)); };
     let r = {...R}, fila = [], i = 0;
@@ -1052,6 +1174,9 @@ function treemap(env, capa) {
     };
     while (i < nodos.length) { const lado = Math.min(r.w, r.h), cand = [...fila, nodos[i]]; if (!fila.length || peor(cand, lado) <= peor(fila, lado)) { fila = cand; i++; } else colocar(); }
     if (fila.length) colocar();
+    // ¿cabe el nombre? Solo se rotula el rectángulo donde el nombre (cortado como mucho a ~60 %) cabe y hay alto para dos líneas.
+    ctx.font = fnt(800, 26 * u);
+    nodos.forEach((nd) => { const [, , w, h] = nd.rect, nom = cortar(ctx, nd.it.nombre, w - 20 * u); nd.rotulo = h >= sT * 1.5 + 14 * u && w >= 120 * u && nom.length >= Math.min(nd.it.nombre.length, 8) && nom.length >= nd.it.nombre.length * 0.6; });
     return {nodos, total, pie};
   })());
   const n = L.nodos.length, p = prog(t, t0, t1, ease.io2) * n, pal = paletaCat(), G = 4 * u, sinRotulo = [];
@@ -1059,25 +1184,24 @@ function treemap(env, capa) {
   L.nodos.forEach((nd, i) => {
     const a = ease.out3(clamp(p - i)); if (a <= 0) return;
     const [rx, ry, rw, rh] = nd.rect, col = pal[i % pal.length], x = rx + G / 2, y = ry + G / 2, w = rw - G, h = rh - G, cxm = x + w / 2, cym = y + h / 2;
-    ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = rgba(col, 0.88);
+    ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = col;
     const sw = w * (0.6 + 0.4 * a), sh = h * (0.6 + 0.4 * a); ctx.fillRect(cxm - sw / 2, cym - sh / 2, sw, sh); ctx.restore();
     const la = clamp((a - 0.6) / 0.4); if (la <= 0) return;
-    const pct = (nd.it.valor / L.total) * 100, ft = Math.min(30 * u, Math.max(15 * u, Math.min(w / 9, h / 3.2)));
-    ctx.font = fnt(800, ft); const nom = cortar(ctx, nd.it.nombre, w - 16 * u);
-    if (w < 76 * u || h < 44 * u) { sinRotulo.push(nd); return; }
+    if (!nd.rotulo) { sinRotulo.push(nd); return; }
+    const pct = (nd.it.valor / L.total) * 100, tinta = contraste(col, PALETA.fondo) >= contraste(col, PALETA.blanco) ? PALETA.fondo : PALETA.blanco;
+    ctx.font = fnt(800, 26 * u); const nom = cortar(ctx, nd.it.nombre, w - 20 * u);
     ctx.save(); ctx.globalAlpha *= la;
-    texto(ctx, nom, x + 10 * u, y + ft + 6 * u, fnt(800, ft), PALETA.fondo, 'left');
-    let alto = ft + 12 * u;
-    if (h > ft * 2.7) { texto(ctx, fmtNum(nd.it.valor, tab.fmt), x + 10 * u, y + ft * 2 + 8 * u, fnt(600, ft * 0.8, true), PALETA.fondo, 'left'); alto = ft * 2 + 14 * u; }
-    if (h > ft * 3.8) { texto(ctx, pctTxt(pct), x + 10 * u, y + ft * 3 + 10 * u, fnt(800, ft * 0.9, true), PALETA.fondo, 'left'); alto = ft * 3 + 16 * u; }
+    texto(ctx, nom, x + 10 * u, y + sT * 1.0 + 4 * u, fnt(800, 26 * u), tinta, 'left');
+    let alto = sT * 1.0 + 14 * u;
+    if (h > sT * 1.0 + sV * 1.25 + 22 * u) { const vt = `${fmtNum(nd.it.valor, tab.fmt)} · ${pctTxt(pct)}`; ctx.font = fnt(600, 20 * u, true); texto(ctx, cortar(ctx, vt, w - 20 * u), x + 10 * u, y + sT + sV * 1.3 + 8 * u, fnt(600, 20 * u, true), tinta, 'left'); alto = sT + sV * 1.3 + 18 * u; }
     ctx.restore();
-    ctx.font = fnt(800, ft); reg(env, 'etiqueta', [x + 8 * u, y + 4 * u, x + 12 * u + Math.min(w - 8 * u, ctx.measureText(nom).width), y + alto], `${capa.id ?? 'treemap'}:${nd.it.nombre}`);
+    ctx.font = fnt(800, 26 * u); reg(env, 'etiqueta', [x + 8 * u, y + 4 * u, x + 12 * u + Math.min(w - 8 * u, ctx.measureText(nom).width), y + alto], `${capa.id ?? 'treemap'}:${nd.it.nombre}`);
   });
   if (sinRotulo.length && p >= n - 0.2) {
-    const piezas = ['Sin rótulo por tamaño:', ...sinRotulo.map((nd) => `${nd.it.nombre} ${pctTxt((nd.it.valor / L.total) * 100)}`)], f = fnt(500, 18 * u, true); ctx.font = f;
+    const piezas = ['Partes pequeñas:', ...sinRotulo.map((nd) => `${nd.it.nombre} ${pctTxt((nd.it.valor / L.total) * 100)}`)], f = fnt(500, 18 * u); ctx.font = f;
     const lineas = ['']; piezas.forEach((pz) => { const l = lineas[lineas.length - 1], cand = l ? `${l} · ${pz}` : pz; if (ctx.measureText(cand).width <= B.w || !l) lineas[lineas.length - 1] = cand; else lineas.push(pz); });   // salto de línea, nunca «…»: no se pierde ninguna cifra
-    const y0 = B.y + B.h - 6 * u - (lineas.length - 1) * 24 * u;
-    lineas.forEach((l, q) => { rotulo(ctx, l, B.x, y0 + q * 24 * u, f, PALETA.piedraClara, 'left', u); reg(env, 'etiqueta', [B.x, y0 + q * 24 * u - 20 * u, B.x + Math.min(B.w, ctx.measureText(l).width), y0 + q * 24 * u + 6 * u], `${capa.id ?? 'treemap'}:pequenos${q}`); });
+    const s = escalarFuente(18 * u), y0 = B.y + B.h - L.pie + 18 * u + s;
+    lineas.forEach((l, q) => { rotulo(ctx, l, B.x, y0 + q * s * 1.3, f, PALETA.piedraClara, 'left', u); reg(env, 'etiqueta', [B.x, y0 + q * s * 1.3 - s, B.x + Math.min(B.w, ctx.measureText(l).width), y0 + q * s * 1.3 + 8 * u], `${capa.id ?? 'treemap'}:pequenos${q}`); });
   }
   ctx.restore();
 }
@@ -1085,7 +1209,7 @@ function treemap(env, capa) {
 /** Waffle: 100 cuadros, cada uno vale 1 %. Se reparten por «mayor resto», así suman exactamente 100 y se declara. */
 function waffle(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
-  const B = caja(env, capa, vert ? [0.06, 0.26, 0.64, 0.64] : [0.05, 0.24, 0.9, 0.64]);
+  const B = caja(env, capa, vert ? [0.0667, 0.26, 0.64, 0.64] : [0.05, 0.24, 0.9, 0.64]);
   const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const L = (capa._wf ??= (() => {
     const items = [...tab.items].filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor), total = items.reduce((a, x) => a + x.valor, 0);
@@ -1094,7 +1218,7 @@ function waffle(env, capa) {
     const celdas = []; base.forEach((b, i) => { for (let q = 0; q < b.n; q++) celdas.push(i); });
     return {base, celdas, total};
   })());
-  const lado = vert ? Math.min(B.w * 0.8, B.h * 0.46) : Math.min(B.h * 0.9, B.w * 0.4), cel = lado / 10, gx = vert ? B.x + (B.w - lado) / 2 : B.x + 30 * u, gy = vert ? B.y + 10 * u : B.y + (B.h - lado) / 2, pal = paletaCat();
+  const lado = vert ? Math.min(B.w * 0.62, 420 * u) : Math.min(B.h * 0.9, B.w * 0.4), cel = lado / 10, gx = vert ? B.x + (B.w - lado) / 2 : B.x + 30 * u, gy = vert ? B.y + 10 * u : B.y + (B.h - lado) / 2, pal = paletaCat();
   const p = prog(t, t0, t1, ease.io2) * 100;
   ctx.save(); ctx.globalAlpha *= ap;
   L.celdas.forEach((it, c) => {
@@ -1102,21 +1226,17 @@ function waffle(env, capa) {
     ctx.globalAlpha = ap * a; ctx.fillStyle = pal[it % pal.length]; ctx.fillRect(x + (cel - s) / 2, y + (cel - s) / 2, s, s);
   });
   ctx.globalAlpha = ap;
-  rotulo(ctx, 'CADA CUADRO = 1 % DEL TOTAL', gx, gy + lado + 30 * u, fnt(600, 18 * u, true), PALETA.piedraOscura, 'left', u);
-  reg(env, 'etiqueta', [gx, gy + lado + 8 * u, gx + 380 * u, gy + lado + 38 * u], `${capa.id ?? 'waffle'}:nota`);
-  const lx = vert ? B.x + 10 * u : gx + lado + 70 * u, ly0 = vert ? gy + lado + 56 * u : B.y, area = vert ? B.y + B.h - ly0 : B.h, lw = vert ? B.w - 20 * u : B.x + B.w - lx;
-  const rh = Math.min(vert ? 62 * u : 74 * u, area / L.base.length), kk = clamp(rh / (74 * u), 0.6, 1), y0 = ly0 + (area - rh * L.base.length) / 2;
-  let acum = 0;
-  L.base.forEach((b, i) => {
-    const la = clamp((p - acum + 4) / 4); acum += b.n; if (la <= 0) return;
-    const y = y0 + i * rh, col = pal[i % pal.length];
-    ctx.save(); ctx.globalAlpha = ap * la; ctx.fillStyle = col; ctx.fillRect(lx + 3 * u, y + rh / 2 - 9 * u * kk, 18 * u * kk, 18 * u * kk);
-    ctx.font = fnt(700, 26 * u * kk); const nom = cortar(ctx, b.it.nombre, lw - 190 * u);
-    rotulo(ctx, nom, lx + 36 * u, y + rh / 2 - 2 * u, fnt(700, 26 * u * kk), PALETA.blanco, 'left', u);
-    rotulo(ctx, fmtNum(b.it.valor, tab.fmt), lx + 36 * u, y + rh / 2 + 24 * u * kk, fnt(500, 20 * u * kk, true), PALETA.piedraClara, 'left', u);
-    rotulo(ctx, pctTxt(b.exacto), lx + lw, y + rh / 2 + 10 * u * kk, fnt(800, 38 * u * kk, true), col, 'right', u);
-    reg(env, 'etiqueta', [lx, y + 2 * u, lx + lw, y + rh - 2 * u], `${capa.id ?? 'waffle'}:${b.it.nombre}`);
-    ctx.restore();
+  const sN = escalarFuente(18 * u); ctx.font = fnt(600, 18 * u);
+  rotulo(ctx, 'Cada cuadro vale 1 % del total', gx, gy + lado + 14 * u + sN, fnt(600, 18 * u), PALETA.piedraOscura, 'left', u);
+  reg(env, 'etiqueta', [gx, gy + lado + 10 * u, gx + ctx.measureText('Cada cuadro vale 1 % del total').width, gy + lado + 24 * u + sN], `${capa.id ?? 'waffle'}:nota`);
+  const lx = vert ? B.x : gx + lado + 70 * u, ly0 = vert ? gy + lado + 24 * u + sN + 24 * u : B.y, area = vert ? B.y + B.h - ly0 : B.h, lw = vert ? B.w : B.x + B.w - lx;
+  const itemsL = L.base.map((b) => b.it), paso = vert ? 92 * u : 70 * u, maxF = Math.max(3, Math.floor(area / paso));
+  // las filas muestran el % EXACTO (no el redondeado a cuadros); si se agrupan, se suman los exactos
+  const filas = filasLeyenda(itemsL, L.total, maxF, pal), rh = Math.min(vert ? 100 * u : 78 * u, area / filas.length), y0 = ly0 + (area - rh * filas.length) / 2;
+  let acum = 0; const inicio = L.base.map((b) => { const a0 = acum; acum += b.n; return a0; });
+  filas.forEach((f, i) => {
+    const la = p >= 99.99 ? 1 : clamp((p - inicio[f.idx[0]] + 4) / 4); if (la <= 0) return;
+    filaLeyenda(env, capa, f, lx, y0 + i * rh, rh, lw, la, {fmt: tab.fmt, id: 'waffle'});
   });
   ctx.restore();
 }
@@ -1124,7 +1244,7 @@ function waffle(env, capa) {
 /** Lollipop: ranking de partes con palo desde CERO (base honesta) y un círculo; cada fila lleva valor y porcentaje. Pensada para vertical (tipografía grande). */
 function lollipop(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
-  const B = caja(env, capa, vert ? [0.05, 0.26, 0.66, 0.6] : [0.05, 0.24, 0.9, 0.64]);
+  const B = caja(env, capa, vert ? [0.0667, 0.26, 0.64, 0.6] : [0.05, 0.24, 0.9, 0.64]);
   const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const items = (capa._lp ??= [...tab.items].filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor)), total = items.reduce((a, x) => a + x.valor, 0), n = items.length;
   const fila = Math.min(vert ? 118 * u : 96 * u, B.h / n), k = clamp(fila / (100 * u), 0.6, 1), fN = fnt(700, 31 * u * k), fV = fnt(800, 29 * u * k, true), fP = fnt(700, 24 * u * k, true);
@@ -1151,7 +1271,7 @@ function lollipop(env, capa) {
 /** Divergente: cambio porcentual de cada serie entre dos momentos, en UNA escala común (comparable aunque las unidades difieran). Ganadores a la derecha, perdedores a la izquierda. */
 function divergente(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
-  const B = caja(env, capa, vert ? [0.05, 0.26, 0.66, 0.6] : [0.05, 0.25, 0.9, 0.62]);
+  const B = caja(env, capa, vert ? [0.0667, 0.26, 0.64, 0.64] : [0.05, 0.25, 0.9, 0.62]);
   const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const n = tab.x.length, i0 = capa.de ?? 0, i1 = capa.a ?? n - 1;
   const L = (capa._dv ??= (() => {
@@ -1159,7 +1279,8 @@ function divergente(env, capa) {
     return {filas, lo: Math.min(0, ...filas.map((f) => f.pct)), hi: Math.max(0, ...filas.map((f) => f.pct))};
   })());
   const S = L.filas.length; if (!S) return;
-  const fila = Math.min(vert ? 128 * u : 100 * u, B.h / S), k = clamp(fila / (110 * u), 0.6, 1), fN = fnt(700, 29 * u * k), fV = fnt(800, 30 * u * k, true), fS = fnt(500, 20 * u * k, true);
+  const sN = escalarFuente(29 * u), sS = escalarFuente(20 * u), fN = fnt(700, 29 * u), fV = fnt(800, 30 * u, true), fS = fnt(500, 20 * u, true);
+  const sV = escalarFuente(30 * u), yN = sN + 4 * u, yBar = yN + 8 * u + sV * 0.75, yS = yBar + sV * 0.35 + 8 * u + sS, fila = Math.min(vert ? 170 * u : 130 * u, B.h / S);   // nombre · barra · «de → a»
   const fmtP = (x) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(Math.abs(x) < 10 ? 1 : 0).replace('.', ',')} %`;
   ctx.font = fV; const wP = Math.max(...L.filas.map((f) => ctx.measureText(fmtP(f.pct)).width)) + 16 * u;
   const xa = B.x + (L.lo < 0 ? wP : 0) + 8 * u, xb = B.x + B.w - (L.hi > 0 ? wP : 0) - 8 * u, px = (v) => xa + ((v - L.lo) / ((L.hi - L.lo) || 1)) * (xb - xa), y0 = B.y + (B.h - fila * S) / 2, p = prog(t, t0, t1, ease.io2) * S;
@@ -1167,20 +1288,21 @@ function divergente(env, capa) {
   ctx.strokeStyle = rgba(PALETA.piedra, 0.5); ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.moveTo(px(0), y0 - 6 * u); ctx.lineTo(px(0), y0 + fila * S); ctx.stroke();
   L.filas.forEach((f, i) => {
     const a = clamp(p - i), e = ease.out3(a); if (a <= 0) return;
-    const s = tab.series[f.si], y = y0 + i * fila, col = f.pct >= 0 ? COLOR.verde : COLOR.rojo, bh = fila * 0.26, yb = y + fila * 0.62;
-    ctx.font = fN; const nom = cortar(ctx, s.nombre, B.w * 0.9), alin = 'left', xn = B.x + 8 * u;
-    rotulo(ctx, nom, xn, y + fila * 0.3, fN, PALETA.blanco, alin, u);
-    const wn = ctx.measureText(nom).width; reg(env, 'etiqueta', alin === 'left' ? [xn, y + fila * 0.3 - 26 * u * k, xn + wn, y + fila * 0.3 + 8 * u] : [xn - wn, y + fila * 0.3 - 26 * u * k, xn, y + fila * 0.3 + 8 * u], `${capa.id ?? 'divergente'}:n:${f.si}`);
+    const s = tab.series[f.si], y = y0 + i * fila, col = f.pct >= 0 ? COLOR.verde : COLOR.rojo, bh = 22 * u, yb = y + yBar;
+    ctx.font = fN; const nom = cortar(ctx, s.nombre, B.w), xn = B.x;
+    rotulo(ctx, nom, xn, y + yN, fN, PALETA.blanco, 'left', u);
+    const wn = ctx.measureText(nom).width; reg(env, 'etiqueta', [xn, y + yN - sN, xn + wn, y + yN + 8 * u], `${capa.id ?? 'divergente'}:n:${f.si}`);
     const xe = lerp(px(0), px(f.pct), e); ctx.fillStyle = col; ctx.fillRect(Math.min(px(0), xe), yb - bh / 2, Math.max(Math.abs(xe - px(0)), 1.5 * u), bh);
     const la = clamp((a - 0.55) / 0.45); if (la <= 0) return;
     const txt = fmtP(f.pct); ctx.font = fV; const w = ctx.measureText(txt).width, xv = f.pct >= 0 ? px(f.pct) + 10 * u : px(f.pct) - 10 * u - w;
-    ctx.save(); ctx.globalAlpha *= la; rotulo(ctx, txt, xv, yb + 11 * u * k, fV, col, 'left', u);
-    const sub = `${fmtNum(f.v0, s.fmt)} → ${fmtNum(f.v1, s.fmt)}`; ctx.font = fS; const ws = ctx.measureText(sub).width, xs = f.pct >= 0 ? Math.min(px(0) + 8 * u, B.x + B.w - ws) : Math.max(px(0) - 8 * u - ws, B.x);
-    rotulo(ctx, sub, xs, y + fila * 0.93, fS, PALETA.piedraClara, 'left', u); ctx.restore();
-    reg(env, 'etiqueta', [xv, yb - 20 * u * k, xv + w, yb + 14 * u * k], `${capa.id ?? 'divergente'}:v:${f.si}`);
-    reg(env, 'etiqueta', [xs, y + fila * 0.93 - 18 * u * k, xs + ws, y + fila * 0.93 + 4 * u], `${capa.id ?? 'divergente'}:s:${f.si}`);
+    ctx.save(); ctx.globalAlpha *= la; rotulo(ctx, txt, xv, yb + escalarFuente(30 * u) * 0.35, fV, col, 'left', u);
+    const sub = `${fmtNum(f.v0, s.fmt)} → ${fmtNum(f.v1, s.fmt)}`; ctx.font = fS; const ws = ctx.measureText(sub).width, xs = Math.max(B.x, Math.min(f.pct >= 0 ? px(0) + 10 * u : px(0) - 10 * u - ws, B.x + B.w - ws));
+    rotulo(ctx, sub, xs, y + yS, fS, PALETA.piedraClara, 'left', u); ctx.restore();
+    reg(env, 'etiqueta', [xv, yb - escalarFuente(30 * u) * 0.7, xv + w, yb + escalarFuente(30 * u) * 0.5], `${capa.id ?? 'divergente'}:v:${f.si}`);
+    reg(env, 'etiqueta', [xs, y + yS - sS, xs + ws, y + yS + 6 * u], `${capa.id ?? 'divergente'}:s:${f.si}`);
   });
   ctx.restore();
 }
 
-export const DIBUJO = {linea, barras, carrera, dispersion, calor, zona, llamada, contador, titulo, cortina, imagen, sello, sankey, donut, cascada, pendiente, bump, treemap, waffle, lollipop, divergente};
+import {CAPAS_EXTRA} from './capas_extra.js';   // visualizador universal (capas nuevas)
+export const DIBUJO = {...CAPAS_EXTRA, linea, barras, carrera, dispersion, calor, zona, llamada, contador, titulo, cortina, imagen, sello, sankey, donut, cascada, pendiente, bump, treemap, waffle, lollipop, divergente};
