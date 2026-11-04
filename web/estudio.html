@@ -150,6 +150,10 @@
   .carta .tit { padding-right:34px; }
   .carta .recom { font-weight:500 !important; font-size:14px; }
   .vista { padding-bottom:80px; }
+  .ideas { background:var(--tarjeta); border:1px solid var(--linea2); border-left:4px solid var(--teal); border-radius:var(--r); padding:var(--s3); margin:var(--s3) 0; }
+  .ideas .tag { margin:0 0 var(--s2); } .ideas-fila { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:var(--s2); }
+  .idea { text-align:left; background:var(--prof); border:1.5px solid var(--linea2); border-radius:var(--r); padding:12px 14px; color:var(--texto); cursor:pointer; font:inherit; display:flex; flex-direction:column; gap:4px; min-height:76px; }
+  .idea:hover:not(:disabled) { border-color:var(--teal); } .idea b { font-size:16px; } .idea span { color:var(--suave); font-size:14px; }
   .seg { flex-wrap:wrap; } .seg button { font-size:15px; min-height:46px; }
   .resumen4 { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:var(--s2); margin:var(--s3) 0; }
   .resumen4 div { background:var(--tarjeta); border:1px solid var(--linea); border-radius:var(--r); padding:10px 14px; } .resumen4 small { display:block; color:var(--suave); font-size:13px; } .resumen4 b { font-size:16px; }

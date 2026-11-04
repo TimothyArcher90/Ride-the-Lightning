@@ -17,6 +17,8 @@ export function candidatas(series, {partes = null, haySignos = false, haAnterior
   if (tabla === 'categorias') {
     if (haySignos) { add('puente', 'Hay sumas y restas (o subtotales): la cascada es la única que enseña cómo se llega del inicio al resultado.'); return C; }
     const p = partes ?? 6;
+    // Con muchísimas partes (países, empresas) el anillo, las áreas y los cuadros no se leen: solo sirve un ranking ordenado.
+    if (p > 15) { reglasExtra(series, {partes: p, haAnterior}, add, 'tabla'); if (!C.length) add('lollipop', `Son ${p} partes: un ranking con palos desde cero es lo único que se lee.`); return C; }
     if (p <= 5) { add('composicion', `Son ${p} partes de un todo: el anillo es claro y rápido de leer.`); add('waffle', 'Cien cuadros de 1 %: la forma más fácil de decir «de cada 100, cuántos son…».'); add('lollipop', 'Ranking con palos desde cero y letra grande: el más legible en el celular.'); add('treemap', 'Áreas proporcionales: da otro ritmo visual y sirve de contraste.'); }
     else { add('lollipop', `Son ${p} partes: un ranking con palos desde cero se lee fácil y la letra puede ser grande.`); add('treemap', 'Áreas proporcionales: muestra el peso relativo de golpe.'); add('waffle', 'Cien cuadros de 1 %: simple y exacto aunque haya muchas partes.'); if (p <= 8) add('composicion', 'Anillo con leyenda: sirve hasta ~8 partes.'); }
     reglasExtra(series, {partes, haAnterior}, add, 'tabla');

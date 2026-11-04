@@ -240,3 +240,24 @@ export function compararPaises(isos, clave) {
   ids.omitidos = omitidos;
   return ids;
 }
+
+/**
+ * Ranking de TODOS los países para un indicador (último dato publicado de cada uno; el año varía y se declara en la fuente).
+ * Devuelve un dato de tabla («categorias») listo para la plantilla `ranking_pais`, con `resalta` = el país elegido.
+ * El CSV queda en datos/derivados/ (caché local, regenerable).
+ */
+export async function rankingPais(clave, iso3 = '') {
+  const ind = indDe(clave); if (!ind) throw new Error(`Indicador desconocido: ${clave}.`);
+  const c = await ultimos(), valores = c.ultimos[clave] ?? {}, filas = PAISES.filter((p) => valores[p.iso3] && Number.isFinite(valores[p.iso3].valor)).map((p) => ({p, v: valores[p.iso3]}));
+  if (filas.length < 5) throw new Error(`Hay datos de ${ind.nombre.toLowerCase()} para solo ${filas.length} países; no alcanza para un ranking.`);
+  filas.sort((a, b) => b.v.valor - a.v.valor);
+  const dir = path.join(RAIZ, 'datos', 'derivados'); fs.mkdirSync(dir, {recursive: true});
+  const ruta = path.posix.join('datos', 'derivados', `ranking_${clave}.csv`);
+  fs.writeFileSync(path.join(RAIZ, ruta), 'concepto,valor\n' + filas.map(({p, v}) => `${p.iso3} · ${p.nombre},${v.valor}`).join('\n') + '\n');
+  const anios = filas.map((f) => f.v.anio), a0 = Math.min(...anios), a1 = Math.max(...anios), wb = ind.ad === WB;
+  const fmt = {pct: {sufijo: ' %', decimales: 1}, usd: {prefijo: 'US$ ', divisor: 1e9, sufijo: ' mil M', decimales: 'auto'}, usdpc: {prefijo: 'US$ ', decimales: 0}, pob: {divisor: 1e6, sufijo: ' M', decimales: 1}, anios: {sufijo: ' años', decimales: 1}}[ind.fmt] ?? {decimales: ind.dec ?? 1};
+  return {origen: 'archivo', ruta, tabla: 'categorias', nombre: `${ind.nombre}: ranking de países`, unidad: ind.unidad, resalta: String(iso3 || '').toUpperCase() || undefined, ...fmt,
+    fuente: {nombre: `${wb ? 'Banco Mundial — World Development Indicators' : 'FMI — World Economic Outlook (DataMapper)'} · último dato de cada país (${a0 === a1 ? a0 : a0 + '–' + a1})`,
+      url: wb ? `https://data.worldbank.org/indicator/${ind.cod}` : `https://www.imf.org/external/datamapper/${ind.cod}@WEO`, obtenido: c.actualizado,
+      licencia: wb ? 'CC BY 4.0 (Banco Mundial)' : 'Términos del FMI: citando la fuente y sin alterar; uso comercial y descarga sistemática requieren permiso escrito'}};
+}

@@ -145,7 +145,7 @@ async function cargarPaises() {
   if (!paisesCat) { try { const [p, i] = await Promise.all([api('/api/paises'), api('/api/indicadores-pais')]); paisesCat = {paises: p.paises ?? [], indicadores: i.indicadores ?? []}; } catch (e) { paisesCat = {error: e.message, paises: [], indicadores: []}; } }
   return paisesCat;
 }
-function aplicarSeries(lista, titulo = '') { S.series = lista; S.sel = null; S.analisis = null; S.modo = 'guiado'; S.titulo = titulo; S.tituloEditado = !!titulo; S.foco = 0; guardar(); pintarSeleccion(); pintarPasos(); regenerar(); }
+function aplicarSeries(lista, titulo = '', resalta = undefined) { S.series = lista; S.sel = null; S.analisis = null; S.modo = 'guiado'; S.titulo = titulo; S.tituloEditado = !!titulo; S.foco = 0; S.resalta = resalta; guardar(); pintarSeleccion(); pintarPasos(); regenerar(); }
 const porRegion = (paises) => paises.reduce((m, p) => ((m[p.region] ??= []).push(p), m), {});
 async function paso1Pais() {
   $('#bloque').innerHTML = `<p class="ayuda">Elige un país y verás sus cifras clave, cada una con su año y su fuente. Toca las que quieras animar (la historia completa de cada una).</p>
@@ -388,15 +388,26 @@ const MINI = {
 };
 async function paso2() {
   const n = S.series.length;
+  // Primero se pregunta qué estilos cuentan BIEN este dato (reglas del visualizador); solo esos se muestran en grande.
+  let rec = null; try { rec = (await post('/api/recomendar', {series: S.series.map(limpio), formato: S.formato})).recomendadas ?? null; } catch { rec = null; }
+  if (S.paso !== 1) return;
+  if (S.series.length === 1 && /^pais_/.test(S.series[0].id ?? '')) await cargarPaises();
+  const porque = Object.fromEntries((rec ?? []).map((r) => [r.plantilla, r.porque])), orden = (rec ?? []).map((r) => r.plantilla);
   $('#paso').innerHTML = `
     <h2>Paso 2 · ¿Cómo lo quieres ver?</h2>
-    <p class="ayuda">Elige un estilo (la vista previa de la derecha cambia al instante). La marca <strong>★ Recomendada</strong> es la que mejor cuenta tus datos.</p>
+    <p class="ayuda">Te mostramos solo los estilos que <strong>cuentan bien tus datos</strong> (la marca <strong>★ Recomendada</strong> es la mejor). La vista previa de la derecha cambia al instante.</p>
+    ${ideasPais()}
     ${(() => {
       // solo se muestran los estilos que sirven para lo que elegiste; el resto queda plegado (sin regañar)
       const clase = claseDatos(), mios = S.plantillas.filter((p) => (p.datos ?? 'serie') === clase), encajan = mios.filter((p) => n >= p.necesita.min && n <= p.necesita.max), otros = mios.filter((p) => !encajan.includes(p));
-      const carta = (p, ok) => `<button type="button" class="carta tpl" role="radio" aria-checked="${S.plantilla === p.id}" aria-disabled="${!ok}" data-id="${p.id}">${MINI[p.id] ?? ''}<span class="marca">${ic('check')}</span><span class="tit">${esc(p.nombre)}</span><span class="sub">${esc(p.descripcion)}</span>${ok ? '' : `<span class="sub" style="color:var(--oro)">${ic('warn')} ${esc(p.ayuda)} Elegiste ${n}.</span>`}</button>`;
-      const casos = clase === 'categorias' && !esSerie() ? encajan.filter((p) => (S.intento === 'puente' ? p.id === 'puente' : p.id === 'composicion')).concat(encajan.filter((p) => !(S.intento === 'puente' ? p.id === 'puente' : p.id === 'composicion'))) : encajan;
-      return `<div class="rejilla galeria" role="radiogroup" aria-label="Estilos de animación">${casos.map((p) => carta(p, true)).join('')}</div>${otros.length ? `<details class="det"><summary>Otros estilos (necesitan otra cantidad de datos)</summary><div class="rejilla" style="margin-top:10px">${otros.map((p) => carta(p, false)).join('')}</div></details>` : ''}`;
+      const carta = (p, ok, extra = false) => `<button type="button" class="carta tpl${extra ? ' extra' : ''}" role="radio" aria-checked="${S.plantilla === p.id}" aria-disabled="${!ok}" data-id="${p.id}">${MINI[p.id] ?? ''}<span class="marca">${ic('check')}</span><span class="tit">${esc(p.nombre)}</span><span class="sub">${esc(p.descripcion)}</span>${ok ? (porque[p.id] ? `<span class="sub recom">${orden[0] === p.id ? '★ Recomendada: ' : '✓ Encaja: '}${esc(porque[p.id])}</span>` : '') : `<span class="sub" style="color:var(--oro)">${ic('warn')} ${esc(p.ayuda)} Elegiste ${n}.</span>`}</button>`;
+      let casos = clase === 'categorias' && !esSerie() ? encajan.filter((p) => (S.intento === 'puente' ? p.id === 'puente' : p.id === 'composicion')).concat(encajan.filter((p) => !(S.intento === 'puente' ? p.id === 'puente' : p.id === 'composicion'))) : encajan;
+      let sobran = [];
+      if (orden.length) { const rec2 = orden.map((id) => casos.find((p) => p.id === id)).filter(Boolean); if (rec2.length) { sobran = casos.filter((p) => !rec2.includes(p)); casos = rec2; } }
+      if (!casos.some((p) => p.id === S.plantilla) && casos[0]) { S.plantilla = casos[0].id; guardar(); setTimeout(regenerar, 0); }
+      return `<div class="rejilla galeria" role="radiogroup" aria-label="Estilos de animación">${casos.map((p) => carta(p, true)).join('')}</div>
+        ${sobran.length ? `<details class="det"><summary>Otros estilos que NO recomendamos para este dato (${sobran.length})</summary><p class="ayuda" style="margin-top:8px">Se pueden usar, pero no cuentan bien este dato: por ejemplo, velas necesitan precios diarios y el calendario de calor necesita retornos diarios o mensuales.</p><div class="rejilla" style="margin-top:10px">${sobran.map((p) => carta(p, true, true)).join('')}</div></details>` : ''}
+        ${otros.length ? `<details class="det"><summary>Estilos que necesitan otra cantidad de datos</summary><div class="rejilla" style="margin-top:10px">${otros.map((p) => carta(p, false, true)).join('')}</div></details>` : ''}`;
     })()}
     <h3>Título</h3>
     <label class="etq" for="titulo">Lo que se lee arriba del video (corto funciona mejor)</label>
@@ -416,21 +427,47 @@ async function paso2() {
   $('#paso').querySelectorAll('.tpl').forEach((b) => (b.onclick = () => { if (b.getAttribute('aria-disabled') === 'true') { aviso(S.plantillas.find((p) => p.id === b.dataset.id).ayuda); return; } S.plantilla = b.dataset.id; guardar(); paso2(); regenerar(); }));
   $('#titulo').oninput = (e) => { S.titulo = e.target.value; S.tituloEditado = !!S.titulo.trim(); guardar(); regenerarDebounce(); };
   $('#paso').querySelectorAll('.seg button').forEach((b) => (b.onclick = () => { S.formato = b.dataset.f; guardar(); paso2(); regenerar(); }));
-  enlazarNav(1);
+  enlazarNav(1); enlazarIdeas();
   miniaturas();
   if (S.plantilla === 'historia' && n === 1) await pintarMomentos();
+}
+// «Ideas»: un dato de país suelto es pobre; lo que lo vuelve historia es ponerlo frente a otros países o en un ranking.
+const datosPaisSel = () => { const m = S.series.length === 1 && /^pais_([A-Z]{3})_(.+)$/.exec(S.series[0].id ?? ''); return m ? {iso: m[1], clave: m[2]} : null; };
+function ideasPais() {
+  const d = datosPaisSel(); if (!d) return '';
+  const nom = paisesCat?.paises?.find((p) => p.iso3 === d.iso)?.nombre ?? d.iso, ind = paisesCat?.indicadores?.find((i) => i.clave === d.clave);
+  return `<div class="ideas"><p class="tag">Ideas para contar mejor este dato</p><div class="ideas-fila">
+    <button type="button" class="idea" id="ideaComparar"><b>Compara a ${esc(nom)} con otros países</b><span>${esc(ind?.nombre.split(' (')[0] ?? 'El mismo indicador')} de varios países en la misma gráfica.</span></button>
+    <button type="button" class="idea" id="ideaRanking"><b>¿En qué puesto está ${esc(nom)}?</b><span>Ranking de todos los países, con ${esc(nom)} resaltado.</span></button></div></div>`;
+}
+function enlazarIdeas() {
+  const d = datosPaisSel(); if (!d) return;
+  const c = $('#ideaComparar'), r = $('#ideaRanking');
+  if (c) c.onclick = async () => {
+    const cat = await cargarPaises(), reg = cat.paises.find((p) => p.iso3 === d.iso)?.region, base = reg === 'Latinoamérica y Caribe' ? GRUPOS_PAISES['América Latina'] : GRUPOS_PAISES['Mayores economías'];
+    const isos = [d.iso, ...base.filter((x) => x !== d.iso)].slice(0, 6), nombre = (cat.indicadores.find((i) => i.clave === d.clave)?.nombre ?? '').split(' (')[0];
+    S.intento = 'paises'; S.indPais = d.clave; S.plantilla = 'comparar';
+    aplicarSeries(isos.map((iso) => ({origen: 'biblioteca', id: `pais_${iso}_${d.clave}`, nombre: cat.paises.find((p) => p.iso3 === iso)?.nombre ?? iso})), nombre); ir(1);
+  };
+  if (r) r.onclick = async () => {
+    r.disabled = true; r.querySelector('span').textContent = 'Armando el ranking…';
+    try {
+      const {resalta, ...item} = await api(`/api/ranking-pais?clave=${d.clave}&iso=${d.iso}`);
+      S.intento = 'paises'; S.indPais = d.clave; S.plantilla = 'ranking_pais'; aplicarSeries([item], item.nombre, d.iso); ir(1);
+    } catch (e) { r.disabled = false; r.querySelector('span').textContent = e.message; }
+  };
 }
 // Galería viva: cada estilo muestra cómo se vería TU dato (no un dibujito genérico). Se dibuja un fotograma real de cada uno.
 let miniSeq = 0;
 const momentosSel = () => (S.analisis?.momentos ?? []).filter((m) => S.sel?.[m.id]).map((m) => ({tipo: m.tipo, ancla: m.ancla, etiqueta: (S.etiquetas[m.id] || m.etiqueta).slice(0, 30)}));
 async function miniaturas() {
-  const seq = ++miniSeq, cards = [...$('#paso').querySelectorAll('.tpl:not([aria-disabled="true"])')];
+  const seq = ++miniSeq, cards = [...$('#paso').querySelectorAll('.galeria .tpl:not([aria-disabled="true"])')];
   try { await document.fonts.load('800 40px Geist'); await document.fonts.load('500 20px "Geist Mono"'); } catch {}
   for (const card of cards) {
     if (seq !== miniSeq || S.paso !== 1) return;
     card.classList.add('cargando');
     try {
-      const r = await post('/api/generar', {plantilla: card.dataset.id, series: S.series.map(limpio), momentos: momentosSel(), camara: S.camara, formato: S.formato, titulo: '', foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema});
+      const r = await post('/api/generar', {plantilla: card.dataset.id, series: S.series.map(limpio), momentos: momentosSel(), camara: S.camara, formato: S.formato, titulo: '', foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, resalta: S.resalta});
       if (seq !== miniSeq || !card.isConnected) return;
       if (!r.plano || r.informe?.errores?.length) { card.classList.remove('cargando'); continue; }
       const vert = r.plano.formato === 'vertical', cv = document.createElement('canvas'); cv.width = vert ? 270 : 480; cv.height = vert ? 480 : 270; cv.className = 'mini-vivo' + (vert ? ' vert' : ''); cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', 'Vista de ' + card.querySelector('.tit').textContent);
@@ -548,7 +585,7 @@ async function regenerar() {
   try {
     if (S.plantilla === 'historia' && S.series.length === 1 && !S.analisis) { S.analisis = await post('/api/analizar', {series: S.series.map(limpio)}); if (S.analisis.ok && !S.sel) S.sel = Object.fromEntries(S.analisis.momentos.map((m) => [m.id, m.seleccionado])); }
     const momentos = (S.analisis?.momentos ?? []).filter((m) => S.sel?.[m.id]).map((m) => ({tipo: m.tipo, ancla: m.ancla, etiqueta: (S.etiquetas[m.id] || m.etiqueta).slice(0, 30)}));
-    const r = await post('/api/generar', {plantilla: S.plantilla, series: S.series.map(limpio), momentos, camara: S.camara, formato: S.formato, titulo: S.tituloEditado ? S.titulo : '', foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, vivo: S.vivo ? {render: 'final', alfa: true, minEntreRendersMin: 360} : null});
+    const r = await post('/api/generar', {plantilla: S.plantilla, series: S.series.map(limpio), momentos, camara: S.camara, formato: S.formato, titulo: S.tituloEditado ? S.titulo : '', foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, resalta: S.resalta, vivo: S.vivo ? {render: 'final', alfa: true, minEntreRendersMin: 360} : null});
     if (seq !== genSeq) return;
     Object.assign(S, {spec: r.spec, plano: r.plano ?? null, informe: r.informe, notas: r.notas ?? []});
     if (!S.tituloEditado) S.titulo = r.spec.titulo ?? '';
