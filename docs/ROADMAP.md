@@ -73,3 +73,18 @@ Status: ✅ done · ⬜ pending · 🔄 in progress.
 - ⬜ **Vertical typography**: text in the older models (19–26 px on a 1080-wide canvas) is small for phones; the research suggests ≥48 px for labels [hypothesis from a blog]. It must be raised model by model and re-audited (the auditor measures registered boxes: if the font grows, the box must grow too). *(Addressed afterwards by the design system and `scripts/prueba-calidad.mjs`; see the status block at the top.)*
 - ⬜ Automated tests for the amateur/pro checklist (§2 of the animation research): linear easing, text <3 s, >1 protagonist, contrast.
 - ⬜ Vertical Sankey is cramped (intermediate nodes with small labels).
+
+## Queue — open-source integrations
+Source: [research/OPEN_SOURCE_SURVEY.md](research/OPEN_SOURCE_SURVEY.md) (permissive licenses only: MIT, BSD, ISC, Apache-2.0, CC0). Vendor code into `motor/vendor/` with its license header and list it in `THIRD_PARTY_LICENSES.md`. Keep determinism (no `Math.random()`), run `npm run prueba`, `scripts/prueba-calidad.mjs` and `npm run gallery`, and compare frames before/after. Do them in this order.
+
+- [ ] 1. Axis ticks: replace `ticksNum` (`motor/nucleo.js`) with the d3-array `tickIncrement`/`ticks` algorithm (ISC) + `nice()` of the domain; keep "1-2-5 only, declared decimals".
+- [ ] 2. Text fitting in `motor/diseno.js`: wrap, then shrink to the per-format minimum, then catalog short name; use `…` only as last resort; the collision auditor must see the final boxes.
+- [ ] 3. Deterministic 1-D label relaxation (labella.js idea, Apache-2.0; fixed iteration count) with leader lines for sankey, treemap small cells and bump/ranking end labels.
+- [ ] 4. Sankey: d3-sankey layout (BSD-3) transposed for 9:16, labels outside the nodes; keep the current layout as fallback; update "Known issues".
+- [ ] 5. Palettes: viridis/cividis + light-neutral diverging scale from d3-scale-chromatic (read its full NOTICE first); add culori (MIT) color-blind simulation to `scripts/prueba-calidad.mjs` (dev only); print extreme values on the calendar heatmap.
+- [ ] 6. Lines: `curveStep` for rate-like series and opt-in `monotoneX` for sparse series (d3-shape, ISC); always declared on screen.
+- [ ] 7. Long lines: per-pixel-column min/max decimation (own code) keeping every extreme exactly.
+- [ ] 8. Treemap: d3-hierarchy `resquarify` (ISC) for quarter-to-quarter stability (also unblocks item 18 above) + semantic colors instead of one hue per cell.
+- [ ] 9. New models inspired by RAWGraphs (Apache-2.0): beeswarm (dodge), ridgeline, streamgraph.
+- [ ] 10. Spikes: 2x supersampled render, temporal sub-frame blur, declared LOESS trend (d3-regression, BSD-3).
+- [ ] 11. Create `THIRD_PARTY_LICENSES.md` and a test that fails if a vendored file lacks its license header.
