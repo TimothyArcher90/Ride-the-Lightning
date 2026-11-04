@@ -242,7 +242,7 @@ Example: [gdp-per-capita-ranking](../examples/gdp-per-capita-ranking/).
 
 ### `sankey`
 When: where money comes from and where it goes. Needs: flows table (`origen,destino,valor`). Declares: a node equals the sum of its flows; % over the largest node; a node that does not balance (> 0.5 %) warns, (> 5 %) is an error. For SEC reports the figures are derived so the diagram always balances.
-Limits: in vertical with 4 columns (company segments → revenue → costs → profit) labels are truncated and crowded; prefer horizontal for Sankey.
+In vertical the diagram runs top to bottom (d3-sankey layout, row-staggered labels with leader lines). Limits: mid-level nodes carry the name only, because of the vertical type floor.
 
 | Horizontal | Vertical |
 |---|---|

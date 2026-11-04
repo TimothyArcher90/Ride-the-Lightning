@@ -51,6 +51,7 @@ Takes a spec and returns a **plan** (resolved layers + data in pixel-ready form)
 - `nucleo.js`: data → pixel projection, scales, easing, formatting helpers.
 - `escena.js`: stacking by `z`, camera keyframes in *data space* (text stays crisp), per-format scaling.
 - `capas.js` and `capas_extra.js`: the chart layers, each a pure function `(env, layer)`; annotations (`llamada`, `zona`, `contador`) anchor to data (`{"fecha": …}`, `{"max": true}`), never to pixels.
+- `escalas.js` (color scales: divergent BrBG-based, viridis sequential), `arbol.js` (treemap layout: d3-hierarchy squarify/resquarify), `etiquetas.js` (deterministic 1-D label relaxation, whole-word wrapping with no `…`) and `vendor/` (vendored, permissively licensed d3 pieces, each with its LICENSE; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
 - `diseno.js`: the **design system** — type scale with per-format minimum sizes (vertical: names ≥ 40 px, axes/units ≥ 32, footer ≥ 28), WCAG contrast helpers, safe-zone constants, Material motion curves, 40 ms stagger, and the mandatory source footer *"Source: <name> · <date of last data point> · RTL"*.
 
 ### 5. Renderer (`servidor/render.mjs`)

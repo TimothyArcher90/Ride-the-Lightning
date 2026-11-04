@@ -60,9 +60,9 @@ Public domain: SEC EDGAR, Federal Reserve/BLS/EIA/Census series via FRED (check 
 
 Found while reviewing every image; none changes a figure.
 
-- **Sankey in vertical** with four columns (segments → revenue → costs → profit) crowds and truncates labels; use horizontal for flows. Some SEC labels arrive with an HTML entity (`US &amp;` in Meta's segments).
+- **Sankey in vertical** (fixed 2026-11-04): now a top-to-bottom layout from d3-sankey with row-staggered labels and leader lines; no label is truncated. Mid-level nodes carry the name only (no figures) because of the 40 px vertical type floor; the figures are in the first and last rows. Some SEC labels arrive with an HTML entity (`US &amp;` in Meta's segments).
 - **Truncated subtitles** (`…`) in vertical when the library's template subtitle is long; the explanatory note above charts now wraps up to 6 lines in vertical, but template subtitles are still cut to the frame width.
-- **Correlation heatmap in vertical** is small (4–5 series maximum) and series names are cut with `…`.
+- **Correlation heatmap in vertical** is small (4–5 series maximum); row names now wrap to two lines but a long name ("Bono del Tesoro 10 años (diario)") can still end in `…` there. The color scale is now the BrBG-based one (the old red/green scale had its center almost equal to the background).
 - **Waffle and donut over a "where each dollar went" table** divide by costs + profit + non-operating income, so the total is revenue plus non-operating income, not revenue alone (stated in the example README).
 - **Candlesticks** with only closing prices declare that wicks are the highest/lowest close; exact candles need OHLC columns, which no open source in the library provides.
 - The 16 models' gallery uses sensible but not "directed" cameras; the curated specs (`fed-balance-sheet`, `bitcoin-full-history`) show hand-directed callouts.

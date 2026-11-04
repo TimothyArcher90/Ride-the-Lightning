@@ -1,6 +1,8 @@
 // Núcleo compartido (navegador y Node): easing, escalas, formato numérico/fecha y paleta de marca.
 // Sin DOM. Todo es función pura del tiempo: el mismo t da siempre el mismo fotograma.
 
+import d3ticks from './vendor/d3-array/ticks.js';   // ISC, d3-array 3.2.4 (ver docs/THIRD_PARTY_NOTICES.md)
+
 export const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 export const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -95,15 +97,19 @@ export function fmtFecha(ms, modo = 'dia') {
 }
 
 // ── Escalas y ticks ─────────────────────────────────────────────────────────────────────────────────
-/** Ticks "bonitos" (1-2-5) para un rango numérico. */
+/**
+ * Ticks «bonitos» (1-2-5) para un rango numérico con el algoritmo de d3-array (vendorizado, ISC): sin error de coma flotante
+ * (0,1·3 da 0,3 y no 0,30000000000000004, que ensuciaba el paso y los decimales declarados). `max` = máximo de marcas por tramo
+ * (rango ÷ paso ≤ max, la misma regla de siempre): se elige el paso más fino que cumple, así un eje pequeño no se llena de números.
+ */
 export function ticksNum(a, b, max = 6) {
-  const span = b - a;
-  if (!(span > 0)) return [a];
-  const raw = span / max, mag = Math.pow(10, Math.floor(Math.log10(raw)));
-  const paso = [1, 2, 5, 10].map((m) => m * mag).find((s) => span / s <= max) ?? 10 * mag;
-  const out = [];
-  for (let v = Math.ceil(a / paso - 1e-9) * paso; v <= b + 1e-9; v += paso) out.push(Math.round(v / paso) * paso);
-  return out;
+  if (!(b - a > 0)) return [a];
+  for (let c = max + 1; c >= 1; c--) {
+    const t = d3ticks(a, b, c);
+    if (t.length >= 2 && (b - a) / (t[1] - t[0]) <= max + 1e-9) return t;
+  }
+  const t = d3ticks(a, b, 1);
+  return t.length ? t : [a];
 }
 /** Ticks de calendario para un eje de fechas (ms UTC). */
 export function ticksFecha(a, b, max = 7) {

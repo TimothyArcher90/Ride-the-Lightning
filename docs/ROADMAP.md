@@ -77,14 +77,31 @@ Status: ✅ done · ⬜ pending · 🔄 in progress.
 ## Queue — open-source integrations
 Source: [research/OPEN_SOURCE_SURVEY.md](research/OPEN_SOURCE_SURVEY.md) (permissive licenses only: MIT, BSD, ISC, Apache-2.0, CC0). Vendor code into `motor/vendor/` with its license header and list it in `THIRD_PARTY_LICENSES.md`. Keep determinism (no `Math.random()`), run `npm run prueba`, `scripts/prueba-calidad.mjs` and `npm run gallery`, and compare frames before/after. Do them in this order.
 
-- [ ] 1. Axis ticks: replace `ticksNum` (`motor/nucleo.js`) with the d3-array `tickIncrement`/`ticks` algorithm (ISC) + `nice()` of the domain; keep "1-2-5 only, declared decimals".
-- [ ] 2. Text fitting in `motor/diseno.js`: wrap, then shrink to the per-format minimum, then catalog short name; use `…` only as last resort; the collision auditor must see the final boxes.
-- [ ] 3. Deterministic 1-D label relaxation (labella.js idea, Apache-2.0; fixed iteration count) with leader lines for sankey, treemap small cells and bump/ranking end labels.
-- [ ] 4. Sankey: d3-sankey layout (BSD-3) transposed for 9:16, labels outside the nodes; keep the current layout as fallback; update "Known issues".
-- [ ] 5. Palettes: viridis/cividis + light-neutral diverging scale from d3-scale-chromatic (read its full NOTICE first); add culori (MIT) color-blind simulation to `scripts/prueba-calidad.mjs` (dev only); print extreme values on the calendar heatmap.
-- [ ] 6. Lines: `curveStep` for rate-like series and opt-in `monotoneX` for sparse series (d3-shape, ISC); always declared on screen.
+- [x] 1. Axis ticks: replace `ticksNum` (`motor/nucleo.js`) with the d3-array `tickIncrement`/`ticks` algorithm (ISC) + `nice()` of the domain; keep "1-2-5 only, declared decimals". *Done 2026-11-04: `ticksNum` now uses vendored d3-array `ticks`; the tick sets are identical to the old 1-2-5 rule, the fix is that 21 % of the old lists carried float noise like `0.6000000000000001`. `nice()` of the domain was evaluated and rejected on the scatter plot (it widened the padded domain to -2,000…6,000): see [research/INTEGRATION_LOG.md](research/INTEGRATION_LOG.md).*
+- [ ] 2. *(partial)* Text fitting in `motor/diseno.js`: wrap, then shrink to the per-format minimum, then catalog short name; use `…` only as last resort; the collision auditor must see the final boxes. *Partial 2026-11-04: `envolverEntero` (`motor/etiquetas.js`) wraps whole words with no `…` and is used by the vertical Sankey, treemap, bump and correlation labels (the quality test now fails on any `…` in Sankey/treemap). Left open: `envolver` in `motor/diseno.js` and `cortar` in other layers (ranking, titles/subtitles, vertical correlation rows) still cut with `…`; changing `envolver` globally changes line counts in every layer and needs its own pass.*
+- [ ] 3. *(partial)* Deterministic 1-D label relaxation (labella.js idea, Apache-2.0; fixed iteration count) with leader lines for sankey, treemap small cells and bump/ranking end labels. *Partial 2026-11-04: `relajar1D` (own code, labella idea) is used for the vertical Sankey label rows (with leader lines) and treemap small-cell callouts (color swatches, no lines). Bump end labels were fixed by wrapping instead; ranking is untouched.*
+- [x] 4. Sankey: d3-sankey layout (BSD-3) transposed for 9:16, labels outside the nodes; keep the current layout as fallback; update "Known issues". *Done 2026-11-04: vertical layout from d3-sankey transposed (top to bottom); horizontal untouched.*
+- [x] 5. Palettes: viridis/cividis + light-neutral diverging scale from d3-scale-chromatic (read its full NOTICE first); add culori (MIT) color-blind simulation to `scripts/prueba-calidad.mjs` (dev only); print extreme values on the calendar heatmap. *Done except printing extremes on the vertical calendar (cells are ~38 px wide; any legible number needs a font below the vertical floor). cividis intentionally not vendored (Battelle license): see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).*
+- [x] 6. Lines: `curveStep` for rate-like series and opt-in `monotoneX` for sparse series (d3-shape, ISC); always declared on screen. *Done 2026-11-04: `curva: "escalon"` (stepAfter) / `"monotono"`, opt-in per layer, default stays linear; tested for no overshoot.*
 - [ ] 7. Long lines: per-pixel-column min/max decimation (own code) keeping every extreme exactly.
-- [ ] 8. Treemap: d3-hierarchy `resquarify` (ISC) for quarter-to-quarter stability (also unblocks item 18 above) + semantic colors instead of one hue per cell.
+- [x] 8. Treemap: d3-hierarchy `resquarify` (ISC) for quarter-to-quarter stability (also unblocks item 18 above) + semantic colors instead of one hue per cell. *Done 2026-11-04: color = share of the total (viridis), because category tables carry no cost/benefit semantics; `resquarify` is on by default when every row has `anterior` (mean displacement 16 px vs 142 px).*
 - [ ] 9. New models inspired by RAWGraphs (Apache-2.0): beeswarm (dodge), ridgeline, streamgraph.
 - [ ] 10. Spikes: 2x supersampled render, temporal sub-frame blur, declared LOESS trend (d3-regression, BSD-3).
-- [ ] 11. Create `THIRD_PARTY_LICENSES.md` and a test that fails if a vendored file lacks its license header.
+- [x] 11. Create `THIRD_PARTY_LICENSES.md` (named [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)) and a test that fails if a vendored file lacks its license header.
+
+## Queue — product & UX (added 2026-11-04)
+
+Ordered; the Sunday scheduled task takes the first unchecked item after the open-source queue above.
+
+- [ ] **Single-series style for annual data**: bars per year/decade (`barras` template for one series). Today an annual series (e.g. urban population) only has `historia`.
+- [ ] **Translate SEC segment labels** in Sankey/treemap ("Sales, general and administrative", "China (including Hong Kong)") to Spanish with a fixed, reviewed dictionary (never machine-guessed); keep the original in the verification report.
+- [ ] **Calendar heat map, vertical**: numbers do not fit in ~38 px cells; design a month-strip variant with values on the extremes only.
+- [ ] **`envolver()` in `motor/diseno.js` still truncates with "…"** on ranking, subtitles and vertical correlation rows: needs its own pass (changes heights in every layer).
+- [ ] **Studio: thumbnail cache** per (style, data, format, theme) so changing a choice does not redraw every card.
+- [ ] **Studio: steps 3 and 4** (camera/pace, review/download): second UX pass with a non-technical user (record the session, list every hesitation).
+- [ ] **Test with a non-technical person**, 30 minutes, 3 tasks (country card → comparison → download); fix what blocks them first.
+- [ ] **"Surprise me"**: one click renders the 3 best-fitting styles as short drafts side by side.
+- [ ] **More ideas for single series** in step 2 (beyond country series): "compare with a related series", "show the biggest moves", suggested from the catalog category.
+- [ ] **Real OHLC for candlesticks** from an open source (Yahoo is personal-use only; look for CC BY/ public-domain daily OHLC).
+- [ ] **IMF permission**: send the licence request (copyright@imf.org) if debt/deficit series will be monetized at scale; until then keep them flagged *restricted*.
+- [ ] **Output language**: make the in-chart text language switchable (ES/EN) via a dictionary, so English channels can use the same pieces.

@@ -268,6 +268,7 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
         if (!Number.isInteger(de) || !Number.isInteger(a) || de < 0 || a >= n || de >= a) { E(`${donde}: "de" y "a" deben ser posiciones enteras de la tabla con de < a (hay ${n} filas).`); return; }
       }
       (capa.series ?? []).forEach((s) => { if (!tab.series[s]) E(`${donde}: serie ${s} no existe (hay ${tab.series.length}).`); });
+      if (capa.curva != null && (capa.tipo !== 'linea' || !['lineal', 'escalon', 'monotono'].includes(capa.curva))) E(`${donde}: "curva" solo existe en gráficas de línea y vale lineal (por defecto), escalon o monotono.`);
       if (capa.camara === 'seguir') {
         if (capa.tipo !== 'linea') E(`${donde}: la cámara "seguir" solo existe en gráficas de línea.`);
         else if (tab.tipoX !== 'fecha' && tab.tipoX !== 'num') E(`${donde}: la cámara requiere eje X numérico o de fechas.`);

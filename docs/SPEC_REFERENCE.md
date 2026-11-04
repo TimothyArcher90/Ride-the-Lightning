@@ -31,7 +31,7 @@ Combining library series into one wide table (join on **exact** date, no resampl
 ## Charts (each with `caja:[x,y,w,h]` as fractions of the canvas and `t:[start,end]` in seconds)
 | type | use | options |
 |---|---|---|
-| `linea` (line) | evolution over time | `datos`, `series:[i]`, `ejeDer:[i]` (right axis), `area`, `escala:"log"`, `camara:[{t,x:[a,b]\|"auto",y:[c,d]\|"auto"\|"ajustar",mov}]` (camera keyframes), `id` |
+| `linea` (line) | evolution over time | `datos`, `series:[i]`, `ejeDer:[i]` (right axis), `area`, `escala:"log"`, `curva:"lineal|escalon|monotono"` (default `lineal`; `escalon` holds each value until the next data point, for policy rates; `monotono` is a Steffen monotone curve; both are declared on screen and never invent a value), `camara:[{t,x:[a,b]\|"auto",y:[c,d]\|"auto"\|"ajustar",mov}]` (camera keyframes), `id` |
 | `barras` (bars) | categories / periods | `orientacion:"v\|h"`, `orden:"desc"`, `maxBarras`, `colorSigno` (color by sign), `formatoX:"anio\|mes\|dia"` |
 | `carrera` (bar-chart race) | ranking that changes | series = entities, x = date; `top`, `formatoX` |
 | `dispersion` (scatter) | x–y relationship | `tipoX:"num"`; computes OLS and R² (`regresion:false` to hide); `etiquetaX`, `etiquetaY` |

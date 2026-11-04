@@ -13,7 +13,11 @@ import {lanzarNavegador, auditarColisiones} from '../servidor/render.mjs';
 import {compilar, RAIZ} from '../servidor/compilar.mjs';
 import {generar} from '../servidor/plantillas.mjs';
 import {construirModelos, MODELOS} from './modelos-16.mjs';
-import {TIPO, ZONA, MOV, retardo, entrada, CURVA} from '../motor/diseno.js';
+import {TIPO, ZONA, MOV, retardo, entrada, CURVA, contraste} from '../motor/diseno.js';
+import {PALETA, COLOR, mezcla, ticksNum} from '../motor/nucleo.js';
+import {celdas} from '../motor/arbol.js';
+import {relajar1D} from '../motor/etiquetas.js';
+import {colorDivergente, colorSecuencial, DIV} from '../motor/escalas.js';
 
 const filtro = (process.argv[2] ?? '').split(',').filter(Boolean), soloFormato = process.argv[3];
 const ESCOGIDOS = filtro.length ? MODELOS.filter((m) => filtro.includes(m)) : MODELOS;
@@ -83,6 +87,8 @@ function evaluar(modelo, formato, frames, T, dur) {
   }
   // 3: zona segura del celular, en TODOS los fotogramas (incluye el pie)
   if (vert) { const malos = new Map(); for (const f of frames) for (const x of f.textos) if (x.a > 0.3 && x.x1 > ZONA.x * W + 2 && x.y1 > ZONA.y * H && x.x0 < W) { const k = x.s.slice(0, 30); (malos.get(k) ?? malos.set(k, []).get(k)).push(f.t); } for (const [k, ts] of malos) e.push(`zona de botones del celular: «${k}» entra en la zona prohibida (segundos ${ts[0].toFixed(1)}–${ts[ts.length - 1].toFixed(1)})`); }
+  // sankey y treemap: nada se corta con «…» (el nombre se envuelve o sale con muestra de color / hilo)
+  if (['sankey', 'treemap'].includes(modelo)) { const cortados = new Set(); for (const f of frames) for (const x of f.textos) if (x.s.includes('…')) cortados.add(x.s.slice(0, 40)); cortados.forEach((c) => e.push(`texto cortado con «…»: «${c}»`)); }
   // 5: pie
   const ult = frames[frames.length - 1], pies = ult.pieLineas;
   if (!pies.length) e.push('falta el pie «Fuente: … · fecha · RTL»');
@@ -130,6 +136,83 @@ ok(CURVA.entrada(0.5) > 0.7 && CURVA.salida(0.5) < 0.4 && Math.abs(CURVA.estanda
 const fuenteMotor = fs.readFileSync(path.join(RAIZ, 'motor', 'capas.js'), 'utf8').split('\n').filter((l) => !/^\s*\/\//.test(l)).join('\n');
 const lineales = (fuenteMotor.match(/ease\.lin\b/g) ?? []).length;
 ok(lineales <= 2, `easing lineal en el motor: ${lineales} uso(s) (solo se permite el avance del tiempo de los datos en la carrera y el zoom lento de las imágenes)`);
+
+// ── // escalas de color (mapas de calor, treemap): contraste contra el fondo y distinguibilidad bajo daltonismo
+console.log('\n0b) Escalas de color: contraste con el fondo y daltonismo');
+{
+  const fondos = [PALETA.fondo, PALETA.tarjeta], muestras = (f, n = 21) => Array.from({length: n}, (_, i) => f(i / (n - 1)));
+  const escalas = {'divergente (calendario y correlación)': muestras((t) => colorDivergente(t * 2 - 1)), 'secuencial (treemap)': muestras(colorSecuencial)};
+  for (const [nombre, cols] of Object.entries(escalas)) {
+    const peor = Math.min(...cols.flatMap((c) => fondos.map((f) => contraste(c, f))));
+    ok(peor >= 3, `${nombre}: toda celda contrasta ≥ 3:1 con el fondo (peor ${peor.toFixed(1).replace('.', ',')}:1; el mínimo de objetos gráficos de WCAG)`);
+  }
+  // control negativo: la escala vieja (centro = color de la tarjeta, rojo/verde) NO habría pasado esta misma prueba
+  const vieja = (k) => (k >= 0 ? mezcla(PALETA.tarjeta, COLOR.verde, k * 0.95) : mezcla(PALETA.tarjeta, COLOR.rojo, -k * 0.95));
+  ok(contraste(vieja(0), PALETA.fondo) < 1.3, `control: el centro de la escala anterior contrastaba solo ${contraste(vieja(0), PALETA.fondo).toFixed(2).replace('.', ',')}:1 con el fondo (la prueba lo habría marcado)`);
+  let culori = null; try { culori = await import('culori'); } catch { console.log('  (culori no está instalado: npm install; se omite la simulación de daltonismo)'); }
+  if (culori) {
+    const dE = culori.differenceCiede2000(), tipos = {deuteranopía: culori.filterDeficiencyDeuter, protanopía: culori.filterDeficiencyProt, tritanopía: culori.filterDeficiencyTrit};
+    const par = (a, b, filtro) => dE(filtro(1)(a), filtro(1)(b));
+    for (const [nom, filtro] of Object.entries(tipos)) {
+      const d = par(DIV.neg, DIV.pos, filtro), dv = par('#D9534F', '#4FB477', filtro);   // polos nuevos vs. rojo/verde anteriores
+      ok(d >= 20, `${nom}: polo negativo y positivo se distinguen (ΔE2000 = ${d.toFixed(0)}; mínimo 20)${nom === 'deuteranopía' ? `; el rojo/verde anterior daba ${dv.toFixed(0)}` : ''}`);
+    }
+    const seq = muestras((t) => colorDivergente(t * 2 - 1), 11), pasos = seq.slice(1).map((c, i) => par(seq[i], c, culori.filterDeficiencyDeuter));
+    ok(Math.min(...pasos) >= 2.5, `deuteranopía: 11 pasos de la escala divergente, el más parecido a su vecino tiene ΔE2000 = ${Math.min(...pasos).toFixed(1).replace('.', ',')} (mínimo 2,5; ~2 es la diferencia apenas visible)`);
+    const vs = muestras(colorSecuencial, 11), pv = vs.slice(1).map((c, i) => par(vs[i], c, culori.filterDeficiencyDeuter));
+    ok(Math.min(...pv) >= 2.5, `deuteranopía: 11 pasos de la escala secuencial, el más parecido a su vecino tiene ΔE2000 = ${Math.min(...pv).toFixed(1).replace('.', ',')} (mínimo 2,5)`);
+  }
+  // treemap: las áreas son exactas y, con `anterior`, el diseño se mueve mucho menos entre dos trimestres (resquarify)
+  {
+    const R = {x: 0, y: 0, w: 1200, h: 600}; let semilla = 7; const az = () => (semilla = (semilla * 16807) % 2147483647) / 2147483647;
+    const mov = (a, b) => a.reduce((s, c, i) => s + Math.hypot(c[0] + c[2] / 2 - b[i][0] - b[i][2] / 2, c[1] + c[3] / 2 - b[i][1] - b[i][3] / 2), 0) / a.length;
+    let sumL = 0, sumF = 0, areaMal = 0, N = 200;
+    for (let k = 0; k < N; k++) {
+      const m = 6 + Math.floor(az() * 6), q1 = Array.from({length: m}, () => 1 + az() * 40), q2 = q1.map((v) => v * (0.8 + az() * 0.4)), hoy = q2.map((valor, i) => ({valor, anterior: q1[i]}));
+      const antes = celdas(q1.map((valor) => ({valor})), R), fijo = celdas(hoy, R, {estable: true}), tot = q2.reduce((a, b) => a + b, 0);
+      sumL += mov(antes, celdas(hoy, R)); sumF += mov(antes, fijo);
+      if (!fijo.every((c, i) => Math.abs((c[2] * c[3]) / (R.w * R.h) - q2[i] / tot) < 1e-9)) areaMal++;
+    }
+    ok(areaMal === 0, `treemap: en ${N} pares de trimestres el área de cada celda es exactamente proporcional a su valor`);
+    ok(sumF < sumL * 0.4, `treemap estable: una celda se mueve en promedio ${(sumF / N).toFixed(0)} px entre trimestres contra ${(sumL / N).toFixed(0)} px con diseño independiente`);
+  }
+  // d3-sankey (vertical) y relajación de etiquetas: el grosor de cada cinta es exactamente valor × una escala común; las etiquetas relajadas no se pisan ni se salen
+  {
+    const {default: sk} = await import('../motor/vendor/d3-sankey/sankey.js');
+    const g = sk().nodeId((d) => d.id).nodeWidth(20).nodePadding(10).extent([[0, 0], [800, 500]])({nodes: ['a', 'b', 'c', 'd', 'e'].map((id) => ({id})), links: [{source: 'a', target: 'c', value: 60}, {source: 'b', target: 'c', value: 25}, {source: 'c', target: 'd', value: 70}, {source: 'c', target: 'e', value: 15}]});
+    const ky = g.links.map((l) => l.width / l.value);
+    ok(Math.max(...ky) - Math.min(...ky) < 1e-9, `sankey: el grosor de cada cinta es valor × la misma escala (${ky[0].toFixed(4)} px por unidad en las 4 cintas)`);
+    let mal = 0; for (let k = 1; k <= 300; k++) {
+      const n = 2 + (k % 6), it = Array.from({length: n}, (_, i) => ({x: ((k * 31 + i * 97) % 700) + 50, w: 40 + ((k * 13 + i * 29) % 120)})), r = relajar1D(it, {min: 0, max: 800, gap: 10}), o = it.map((_, i) => i).sort((a, b) => r[a] - r[b]);
+      if (r.cabe) { for (let i = 0; i < n; i++) { if (r[o[i]] - it[o[i]].w / 2 < -1e-6 || r[o[i]] + it[o[i]].w / 2 > 800 + 1e-6) mal++; if (i && r[o[i]] - it[o[i]].w / 2 < r[o[i - 1]] + it[o[i - 1]].w / 2 + 10 - 1e-6) mal++; } }
+    }
+    ok(mal === 0, `etiquetas relajadas: 300 casos al azar fijo sin solapes ni salidas del límite (${mal} fallos)`);
+  }
+  // curvas de la línea (d3-shape): el escalón solo usa valores que existen y la curva monótona no se pasa del máximo ni del mínimo entre dos datos
+  {
+    const {stepAfter} = await import('../motor/vendor/d3-shape/curve/step.js'), {monotoneX} = await import('../motor/vendor/d3-shape/curve/monotone.js');
+    const datos = [[0, 5], [1, 5], [2, 7.5], [4, 7.5], [5, 2], [7, 2.5], [8, 9], [9, 9]], ys = new Set(datos.map((d) => d[1]));
+    const ctxFalso = () => { const o = {pts: [], bez: [], moveTo(x, y) { o.pts.push([x, y]); }, lineTo(x, y) { o.pts.push([x, y]); }, bezierCurveTo(a, b, c, d, x, y) { o.bez.push([o.pts[o.pts.length - 1] ?? [0, 0], [a, b], [c, d], [x, y]]); o.pts.push([x, y]); }, closePath() {}}; return o; };
+    const c1 = ctxFalso(), e = stepAfter(c1); e.lineStart(); datos.forEach(([x, y]) => e.point(x, y)); e.lineEnd();
+    ok(c1.pts.every(([, y]) => ys.has(y)), `curva escalón: los ${c1.pts.length} vértices del trazo usan solo valores que existen en los datos`);
+    const c2 = ctxFalso(), m = monotoneX(c2); m.lineStart(); datos.forEach(([x, y]) => m.point(x, y)); m.lineEnd();
+    let sobrepaso = 0; for (const [p0, p1, p2, p3] of c2.bez) { const lo = Math.min(p0[1], p3[1]) - 1e-9, hi = Math.max(p0[1], p3[1]) + 1e-9; for (let t = 0; t <= 1; t += 0.02) { const y = (1 - t) ** 3 * p0[1] + 3 * (1 - t) ** 2 * t * p1[1] + 3 * (1 - t) * t * t * p2[1] + t ** 3 * p3[1]; if (y < lo || y > hi) sobrepaso++; } }
+    ok(c2.bez.length > 0 && sobrepaso === 0, `curva monótona (Steffen): ${c2.bez.length} tramos sin sobrepasar el máximo ni el mínimo entre datos consecutivos`);
+  }
+  // código de terceros: todo archivo de motor/vendor/ lleva su cabecera de origen y su carpeta de paquete trae el LICENSE
+  {
+    const raiz = path.join(RAIZ, 'motor', 'vendor'), sinCabecera = [], sinLicencia = [], paquetes = new Set();
+    const recorre = (d) => fs.readdirSync(d, {withFileTypes: true}).forEach((e) => { const f = path.join(d, e.name); if (e.isDirectory()) recorre(f); else if (/\.js$/.test(e.name) && !/^(\/\/ Vendored from|\/\/ Minimal entry point)/.test(fs.readFileSync(f, 'utf8'))) sinCabecera.push(path.relative(raiz, f)); });
+    recorre(raiz);
+    for (const d of fs.readdirSync(raiz, {withFileTypes: true})) if (d.isDirectory()) { paquetes.add(d.name); if (!fs.existsSync(path.join(raiz, d.name, 'LICENSE'))) sinLicencia.push(d.name); }
+    const avisos = fs.readFileSync(path.join(RAIZ, 'docs', 'THIRD_PARTY_NOTICES.md'), 'utf8'), sinAviso = [...paquetes].filter((p) => !avisos.includes('`' + p + '`'));
+    ok(!sinCabecera.length && !sinLicencia.length && !sinAviso.length, `motor/vendor: ${paquetes.size} paquetes, todos con cabecera de origen (${sinCabecera.length} sin ella), LICENSE (${sinLicencia.length} sin él) y aviso en docs/THIRD_PARTY_NOTICES.md (${sinAviso.length} sin él)`);
+  }
+  // ticks de eje: exactos (sin ruido de coma flotante) y como máximo `max` intervalos
+  let sucios = 0, demasiados = 0;
+  for (let i = 1; i <= 400; i++) { const a = (i * 7919 % 1000) / 37 - 12, b = a + (i * 104729 % 997) / (i % 7 === 0 ? 1e4 : i % 5 === 0 ? 3 : 41) + 0.01, t = ticksNum(a, b, 5); if (t.some((v) => v !== Number(v.toPrecision(12)))) sucios++; if (t.length - 1 > 5) demasiados++; }
+  ok(sucios === 0 && demasiados === 0, `ticksNum: 400 rangos sin ruido de coma flotante (${sucios}) y sin pasar el máximo de intervalos (${demasiados})`);
+}
 
 // ── barrido de los 16 modelos
 const srv = await iniciarServidor(0), nav = await lanzarNavegador();

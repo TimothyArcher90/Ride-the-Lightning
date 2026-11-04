@@ -6,6 +6,12 @@ import {
   PALETA, clamp, lerp, ease, prog, colorDe, mezcla, rgba, fmtNum, fmtFecha, ticksNum, ticksFecha, etiquetaTick,
   lowerBound, valorEn, mezclaRango, fmtSigno, COLOR, TEMA, utc,
 } from './nucleo.js';
+import {colorDivergente, colorSecuencial} from './escalas.js';
+import {celdas} from './arbol.js';
+import sankeyD3 from './vendor/d3-sankey/sankey.js';
+import {stepAfter as curvaEscalon} from './vendor/d3-shape/curve/step.js';
+import {monotoneX as curvaMonotona} from './vendor/d3-shape/curve/monotone.js';
+import {relajar1D, envolverEntero} from './etiquetas.js';
 
 import {escalarFuente, fuenteCss, tipo, ZONA, margenes, envolver, textoPie, MOV, CURVA, entrada as entradaEsc, retardo, contraste, legible} from './diseno.js';
 // TODA fuente pasa por el sistema de diseño (motor/diseno.js): nunca baja del piso de legibilidad de su banda y formato.
@@ -113,6 +119,12 @@ function etiquetaCabeza(env, h, nombre, y, px, peso, color, B) {
   ctx.font = fnt(peso, px); const w = ctx.measureText(nombre).width, der = h.x + 16 * u + w <= lim;
   texto(ctx, nombre, der ? h.x + 16 * u : h.x - 16 * u, y, fnt(peso, px), color, der ? 'left' : 'right');
 }
+/** Valor de la serie en xv manteniendo el último dato conocido (escalón): nunca interpola. null si xv es anterior al primer dato. */
+function valorEscalon(x, y, xv) {
+  let i = lowerBound(x, xv); if (i >= x.length || x[i] > xv) i--;
+  for (; i >= 0; i--) if (y[i] != null) return y[i];
+  return null;
+}
 // ── LÍNEA (multi-serie, doble eje, escala log, área, brillo, cabeza con pulso) ──────────────────────────────
 function linea(env, capa) {
   const {ctx, u, t} = env;
@@ -168,6 +180,11 @@ function linea(env, capa) {
     texto(ctx, log ? fmtLog(v) : fmtNum(v, {decimales: dec}), B.x - 14 * u, y + mid(20 * u), fnt(500, 20 * u, true), PALETA.piedraOscura, 'right');
   }
   if (capa.ejeUnidad && fmtL?.unidad) texto(ctx, fmtL.unidad.toUpperCase(), B.x, B.y - 22 * u, fnt(500, 17 * u, true), PALETA.piedraOscura, 'left');
+  if (capa.curva === 'escalon' || capa.curva === 'monotono') {   // la curva siempre se declara en pantalla: no se dibuja nada que parezca un dato que no existe
+    const dec = capa.curva === 'escalon' ? 'ESCALONES: EL VALOR SE MANTIENE HASTA EL SIGUIENTE DATO' : 'CURVA SUAVIZADA: SOLO UNE LOS DATOS', fD = fnt(500, 17 * u, true), sD = escalarFuente(17 * u) * 1.2; ctx.font = fD;
+    const lnD = envolverEntero(ctx, dec, B.w, 3) ?? [dec], yD = B.y + B.h + 100 * u;   // debajo de las marcas del eje X, a la izquierda
+    lnD.forEach((l, q) => texto(ctx, l, B.x, yD + q * sD, fD, PALETA.piedraOscura, 'left')); reg(env, 'etiqueta', [B.x, yD - escalarFuente(17 * u), B.x + Math.max(...lnD.map((l) => ctx.measureText(l).width)), yD + (lnD.length - 1) * sD + 8 * u], `${capa.id ?? 'linea'}:curva`);
+  }
   if (yR) {
     const tr = ticksNum(yR[0], yR[1], 4), pr = tr.length > 1 ? tr[1] - tr[0] : 1;
     const c = colorDe(tab.series[[...der][0]].color, [...der][0]);
@@ -206,23 +223,30 @@ function linea(env, capa) {
   ctx.beginPath(); ctx.rect(B.x - 2, B.y - 12 * u, B.w + 4, B.h + 24 * u); ctx.clip();
   const cabezas = [];
   // «foco»: una serie protagonista y las demás atenuadas (la técnica de Johnny Harris: una sola línea manda y el resto da contexto)
+  // curva declarada (nunca por defecto): 'escalon' = el valor se mantiene hasta el siguiente dato (tasas de política); 'monotono' = Steffen, no inventa máximos ni mínimos entre datos
+  const curva = capa.curva === 'escalon' ? curvaEscalon : capa.curva === 'monotono' ? curvaMonotona : null;
   const foco = capa.foco ?? null, orden = foco != null ? [...idxs.filter((i) => i !== foco), foco] : idxs;
   orden.forEach((si, k) => {
     const s = tab.series[si], color = colorDe(s.color, si), py = der.has(si) ? pyR : pyL, mudo = foco != null && si !== foco;
     const a = Math.max(0, lowerBound(tab.x, cam.x[0]) - 1), b = Math.min(n - 1, lowerBound(tab.x, Math.min(cam.x[1], xh)));
     const P = new Path2D();
-    let abierto = false, x0p = null, ult = null;
+    let abierto = false, x0p = null, ult = null, seg = null; const segs = [];   // seg/segs: solo con curva declarada (escalón o monótona)
     const bucket = Math.max(1, Math.floor((b - a) / (B.w * 2)));
     for (let i = a; i <= b; i += bucket) {
       let y = s.y[i], xi = tab.x[i];
       if (xi > xh) break;
-      if (y == null) { abierto = false; continue; }
-      if (!abierto) { P.moveTo(px(xi), py(y)); abierto = true; if (x0p === null) x0p = px(xi); } else P.lineTo(px(xi), py(y));
+      if (y == null) { abierto = false; seg = null; continue; }
+      if (curva) { if (!seg) segs.push(seg = []); seg.push([px(xi), py(y)]); if (x0p === null) x0p = px(xi); }
+      else if (!abierto) { P.moveTo(px(xi), py(y)); abierto = true; if (x0p === null) x0p = px(xi); } else P.lineTo(px(xi), py(y));
       ult = [xi, y];
     }
-    const yo = valorEn(orig.x, orig.series[si].y, xh);          // el valor mostrado siempre sale de los datos originales
+    // el valor mostrado siempre sale de los datos originales. Con escalones, entre dos datos el valor es el del último dato (nunca uno interpolado)
+    const yo = capa.curva === 'escalon' ? valorEscalon(orig.x, orig.series[si].y, xh) : valorEn(orig.x, orig.series[si].y, xh);
     const yh = log ? (yo > 0 ? Math.log10(yo) : null) : yo;
-    if (yh != null && ult && xh > ult[0]) { P.lineTo(px(xh), py(yh)); }
+    if (curva) {
+      if (yh != null && seg && ult && xh > ult[0]) seg.push([px(xh), py(yh)]);
+      for (const sg of segs) { const cv = curva(P); cv.lineStart(); sg.forEach(([qx, qy]) => cv.point(qx, qy)); cv.lineEnd(); }
+    } else if (yh != null && ult && xh > ult[0]) { P.lineTo(px(xh), py(yh)); }
     if (yh == null || x0p === null) return;
     if (capa.area && !mudo) {
       const A = new Path2D(P);
@@ -436,6 +460,7 @@ function dispersion(env, capa) {
 }
 
 // ── MAPA DE CALOR / MATRIZ DE CORRELACIÓN (la matriz se calcula en la compilación) ────────────────────────────
+const TINTA_OSCURA = '#0A0A0A';   // cifra oscura sobre una celda clara: con ella blanco y oscuro cubren todos los tonos medios a ≥ 4,5:1
 function calor(env, capa) {
   const {ctx, u, t} = env;
   const M = capa.matriz; if (!M) return;
@@ -446,20 +471,21 @@ function calor(env, capa) {
   ctx.font = fnt(700, 22 * u); const LW = Math.min(B.w * 0.36, Math.max(...M.etiquetas.map((e) => ctx.measureText(e).width)) + 24 * u);
   const cabeza = (vert ? 200 : 120) * u, side = Math.min(B.w - LW, B.h - cabeza) * 0.98, c = side / m;
   const ox = B.x + LW, oy = B.y + cabeza;
-  const col = (v) => (v >= 0 ? mezcla(PALETA.tarjeta, PALETA.teal, v) : mezcla(PALETA.tarjeta, '#A24FB0', -v));
+  const col = (v) => colorDivergente(clamp(v, -1, 1));   // BrBG vendorizado (motor/escalas.js): el cero ya no se confunde con el fondo y distingue negativo/positivo un daltónico
   ctx.save(); ctx.globalAlpha = ap;
   for (let i = 0; i < m; i++) {
-    ctx.font = fnt(700, 22 * u); const nomC = cortar(ctx, M.etiquetas[i], LW - 20 * u);
-    texto(ctx, nomC, ox - 14 * u, oy + i * c + c / 2 + mid(22 * u), fnt(700, 22 * u), PALETA.piedraClara, 'right');
-    reg(env, 'etiqueta', [ox - 14 * u - ctx.measureText(nomC).width, oy + i * c + c / 2 - 26 * u, ox - 14 * u, oy + i * c + c / 2 + 12 * u], `${capa.id ?? 'calor'}:f:${i}`);
+    // nombres completos en hasta 2 líneas (antes «Bono del Tesoro 10 años (di…»); solo si ni así caben, el último recurso es cortar
+    ctx.font = fnt(700, 22 * u); const lhN = escalarFuente(22 * u) * 1.1, lnC = envolverEntero(ctx, M.etiquetas[i], LW - 20 * u, 2) ?? [cortar(ctx, M.etiquetas[i], LW - 20 * u)], yC = oy + i * c + c / 2 + mid(22 * u) - ((lnC.length - 1) * lhN) / 2;
+    lnC.forEach((l, q) => texto(ctx, l, ox - 14 * u, yC + q * lhN, fnt(700, 22 * u), PALETA.piedraClara, 'right'));
+    reg(env, 'etiqueta', [ox - 14 * u - Math.max(...lnC.map((l) => ctx.measureText(l).width)), yC - escalarFuente(22 * u), ox - 14 * u, yC + (lnC.length - 1) * lhN + 12 * u], `${capa.id ?? 'calor'}:f:${i}`);
     ctx.save(); ctx.translate(ox + i * c + c / 2, oy - 14 * u); ctx.rotate(-Math.PI / 4);
-    ctx.font = fnt(700, 22 * u); const nomR = cortar(ctx, M.etiquetas[i], cabeza * 1.5); texto(ctx, nomR, 0, 0, fnt(700, 22 * u), PALETA.piedraClara, 'left'); ctx.restore();
+    ctx.font = fnt(700, 22 * u); const lnR = envolverEntero(ctx, M.etiquetas[i], cabeza * 1.5, 2) ?? [cortar(ctx, M.etiquetas[i], cabeza * 1.5)]; lnR.forEach((l, q) => texto(ctx, l, 0, -(lnR.length - 1 - q) * lhN, fnt(700, 22 * u), PALETA.piedraClara, 'left')); ctx.restore();
     for (let j = 0; j < m; j++) {
       const ini = t0 + ((Math.abs(i - j) + (i + j) * 0.15) / (m * 1.3)) * (t1 - t0), g = prog(t, ini, ini + 0.45, ease.outBack);
       if (g <= 0) continue;
       const v = M.valores[i][j];
       ctx.save(); ctx.translate(ox + j * c + c / 2, oy + i * c + c / 2); ctx.scale(g, g);
-      const fondoC = col(v == null ? 0 : v), tinta = contraste(fondoC, PALETA.blanco) >= contraste(fondoC, PALETA.fondo) ? PALETA.blanco : PALETA.fondo;   // la cifra elige la tinta que más contrasta con su celda
+      const fondoC = col(v == null ? 0 : v), tinta = contraste(fondoC, PALETA.blanco) >= contraste(fondoC, TINTA_OSCURA) ? PALETA.blanco : TINTA_OSCURA;   // la cifra elige la tinta que más contrasta con su celda
       ctx.fillStyle = fondoC; ctx.fillRect(-c / 2 + 2 * u, -c / 2 + 2 * u, c - 4 * u, c - 4 * u);
       const txtV = v == null ? '—' : fmtNum(v, {decimales: 2}); let fz = escalarFuente(26 * u); ctx.font = fuenteCss(700, fz, true); const wV = ctx.measureText(txtV).width;
       if (wV > c - 10 * u) fz *= (c - 10 * u) / wV;   // la cifra se achica para caber en su casilla (con celdas pequeñas la tipografía mínima se montaba sobre la vecina)
@@ -869,12 +895,100 @@ function disenarSankey(env, capa, tab, B) {
   return {nodos, enl, nw, ncol, cols, base, k, lhs};
 }
 
+/**
+ * SANKEY VERTICAL (reels): el flujo corre de ARRIBA hacia ABAJO. Las posiciones salen de d3-sankey (BSD-3, vendorizado en motor/vendor/d3-sankey), calculado
+ * con los ejes cambiados: lo que d3 llama «x» (avance del flujo) es nuestro eje vertical y lo que llama «y» es el horizontal. El grosor de cada cinta es
+ * EXACTAMENTE valor × escala (el mismo ky para todas): el layout no toca ningún dato. Las etiquetas se colocan por filas con relajación 1-D (motor/etiquetas.js)
+ * y nunca se cortan con «…»: el nombre se envuelve en 2-3 líneas; si ni así cabe, el nodo del medio va sin rótulo antes que pisar a otro.
+ */
+function disenarSankeyV(env, capa, tab, B) {
+  const {ctx, u} = env, byName = new Map(tab.nodos.map((n) => [n.nombre, {...n}])), nodos = [...byName.values()];
+  const ncol = Math.max(...nodos.map((n) => n.nivel)) + 1, base = byName.get(tab.baseNodo).valor;
+  const f1 = fnt(700, 23 * u), f2 = fnt(500, 19 * u, true), s1 = escalarFuente(23 * u) * 1.18, s2 = escalarFuente(19 * u) * 1.25;
+  const fmtV = {...tab.fmt, prefijo: '', sufijo: ''}, nw = 24 * u, gap = 26 * u;
+  const medir = (s, f) => { ctx.font = f; return ctx.measureText(s).width; };
+  // reserva arriba (rótulos de la primera fila) y abajo (rótulos de la última): se calcula con el alto real de los rótulos
+  nodos.forEach((n) => {
+    const borde = n.nivel === 0 || n.nivel === ncol - 1;
+    ctx.font = f1; n.lineas = envolverEntero(ctx, n.nombre, B.w * 0.62, 2) ?? envolverEntero(ctx, n.nombre, B.w * 0.62, 3) ?? envolverEntero(ctx, n.nombre, B.w * 0.9, 4) ?? [n.nombre];
+    n.det = borde ? `${fmtNum(n.valor, fmtV)}${n === byName.get(tab.baseNodo) ? '' : ` · ${pctTxt((n.valor / base) * 100)}`}` : null;
+    n.lw = Math.max(...n.lineas.map((s) => medir(s, f1)), n.det ? medir(n.det, f2) : 0);
+    n.lh = n.lineas.length * s1 + (n.det ? s2 : 0) + 4 * u;
+  });
+  const altoEdge = (c) => Math.max(...nodos.filter((n) => n.nivel === c).map((n) => n.lh)), Lh = B.w;
+  const construir = (mT, mB) => {
+  nodos.forEach((n) => { n.lab = null; n.fila = 0; });
+  const Lv = B.h - mT - mB;
+  const gen = sankeyD3().nodeId((d) => d.nombre).nodeAlign((n) => n.nivel).nodeWidth(nw).nodePadding(26 * u).extent([[0, 0], [Lv, Lh]]).iterations(48).nodeSort(null);
+  const grafo = gen({nodes: nodos.map((n) => ({nombre: n.nombre, nivel: n.nivel})), links: tab.enlaces.map((e) => ({source: e.origen, target: e.destino, value: e.valor}))});
+  const pos = new Map(grafo.nodes.map((g) => [g.nombre, g]));
+  nodos.forEach((n) => { const g = pos.get(n.nombre); n.x = B.x + g.y0; n.w = g.y1 - g.y0; n.y = B.y + mT + g.x0; n.h = g.x1 - g.x0; });   // x/w: horizontal en pantalla; y/h: vertical
+  const enl = grafo.links.map((l) => { const a = byName.get(l.source.nombre), b = byName.get(l.target.nombre); return {a, b, valor: l.value, th: l.width, xa: B.x + l.y0, xb: B.x + l.y1, ya: B.y + mT + l.source.x1, yb: B.y + mT + l.target.x0}; });
+  // rótulos por filas: primera fila de nodos arriba del nodo, el resto debajo; en cada fila, relajación 1-D y hueco acotado por el nivel siguiente
+  const niveles = Array.from({length: ncol}, (_, c) => nodos.filter((n) => n.nivel === c).sort((p, q) => (p.x + p.w / 2) - (q.x + q.w / 2)));
+  niveles.forEach((fila, c) => {
+    const arriba = c === 0, techo = arriba ? Math.min(...fila.map((n) => n.y)) - 8 * u : Math.max(...fila.map((n) => n.y + n.h)) + 8 * u;
+    const limite = arriba ? B.y + 2 * u : (c === ncol - 1 ? env.H * 0.93 : Math.min(...niveles[c + 1].map((n) => n.y)) - 8 * u);   // hasta dónde pueden crecer las filas de rótulos
+    const filas = [], caben = (lista) => relajar1D(lista.map((q) => ({x: q.x + q.w / 2, w: q.lw})), {min: B.x, max: B.x + B.w, gap}).cabe;
+    for (const n of fila) for (let r = 0; r <= 5; r++) { if (caben([...(filas[r] ?? []), n])) { (filas[r] ??= []).push(n); break; } }   // primera fila donde cabe
+    let desp = 0;
+    filas.forEach((m, r) => {
+      const alto = Math.max(...m.map((q) => q.lh)), y = arriba ? techo - desp - alto : techo + desp;
+      desp += alto + 4 * u;
+      if (arriba ? y < limite : y + alto > limite) return;   // sin sitio: el nodo queda sin rótulo antes que pisar a otro
+      const xs = relajar1D(m.map((q) => ({x: q.x + q.w / 2, w: q.lw})), {min: B.x, max: B.x + B.w, gap});
+      m.forEach((q, k) => { q.fila = r; q.lab = {x: xs[k], w: q.lw, yTop: y, caja: [xs[k] - q.lw / 2, y, xs[k] + q.lw / 2, y + q.lh]}; });
+    });
+  });
+  return {enl};
+  };
+  // si algún rótulo de la primera o la última fila se queda sin sitio, se reserva otra fila arriba o abajo y se vuelve a diseñar (el flujo se aprieta un poco, nada se omite)
+  let mT = altoEdge(0) + 26 * u, mB = altoEdge(ncol - 1) + 26 * u, R = construir(mT, mB);
+  for (let k = 0; k < 3; k++) {
+    const sinT = nodos.some((n) => n.nivel === 0 && !n.lab), sinB = nodos.some((n) => n.nivel === ncol - 1 && !n.lab);
+    if (!sinT && !sinB) break;
+    const mT2 = mT + (sinT ? altoEdge(0) + 4 * u : 0), mB2 = mB + (sinB ? altoEdge(ncol - 1) + 4 * u : 0);
+    if (B.h - mT2 - mB2 < B.h * 0.5) break;
+    mT = mT2; mB = mB2; R = construir(mT, mB);
+  }
+  const enl = R.enl;
+  return {nodos, enl, nw, ncol, base, mT, mB, f1, f2, s1, s2, vertical: true};
+}
+
+function dibujarSankeyV(env, capa, tab, B, L, p) {
+  const {ctx, u} = env, ry = lerp(B.y, env.H * 0.95, p), id = capa.id ?? 'sankey';   // el borde recorre también la zona de rótulos de abajo
+  const un = `${tab.fmt.prefijo ?? ''}${tab.fmt.sufijo ?? ''}`.trim() || tab.fmt.unidad || '', cap = `CIFRAS EN ${un}`.toUpperCase();   // la unidad de todas las cifras, una sola vez y siempre visible
+  if (un) { texto(ctx, cap, B.x, B.y - 10 * u, fnt(500, 18 * u, true), PALETA.piedraClara, 'left'); ctx.font = fnt(500, 18 * u, true); reg(env, 'etiqueta', [B.x, B.y - 10 * u - escalarFuente(18 * u), B.x + ctx.measureText(cap).width, B.y + 6 * u], `${id}:unidad`); }
+  ctx.save(); ctx.beginPath(); ctx.rect(B.x - 4, B.y - 80 * u, B.w + 8, ry - B.y + 80 * u); ctx.clip();   // el borde avanza de arriba hacia abajo
+  for (const e of L.enl) {
+    const x0 = e.xa, x1 = e.xb, y0 = e.ya - 1, y1 = e.yb + 1, w = e.th, m = (y0 + y1) / 2, col = colorTipo(e.b.tipo === 'neutral' ? e.a.tipo : e.b.tipo);
+    ctx.beginPath(); ctx.moveTo(x0 - w / 2, y0); ctx.bezierCurveTo(x0 - w / 2, m, x1 - w / 2, m, x1 - w / 2, y1); ctx.lineTo(x1 + w / 2, y1); ctx.bezierCurveTo(x1 + w / 2, m, x0 + w / 2, m, x0 + w / 2, y0); ctx.closePath();
+    const g = ctx.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, rgba(colorTipo(e.a.tipo === 'neutral' ? e.b.tipo : e.a.tipo), 0.42)); g.addColorStop(1, rgba(col, 0.5));
+    ctx.fillStyle = g; ctx.fill();
+  }
+  for (const n of L.nodos) {
+    const a = clamp((ry - n.y) / (34 * u)); if (a <= 0) continue;
+    ctx.globalAlpha = a; ctx.fillStyle = colorTipo(n.tipo); ctx.fillRect(n.x, n.y, Math.max(n.w, 1.5 * u), n.h); ctx.globalAlpha = 1;
+    const la = clamp((ry - n.y - 10 * u) / (70 * u)); if (la <= 0 || !n.lab) continue;
+    ctx.save(); ctx.globalAlpha = la;
+    const {x, yTop, caja} = n.lab, arriba = n.nivel === 0, ncx = clamp(n.x + n.w / 2, n.x, n.x + n.w);
+    if (n.fila > 0 || Math.abs(x - ncx) > n.w / 2 + 6 * u) { ctx.strokeStyle = rgba(PALETA.piedraClara, 0.6); ctx.lineWidth = 1.5 * u; ctx.beginPath(); ctx.moveTo(ncx, arriba ? n.y : n.y + n.h); ctx.lineTo(clamp(ncx, caja[0] + 4 * u, caja[2] - 4 * u), arriba ? caja[3] : caja[1]); ctx.stroke(); }   // hilo del nodo a su rótulo
+    n.lineas.forEach((s, k) => rotulo(ctx, s, x, yTop + L.s1 * (k + 1) - 4 * u, L.f1, PALETA.blanco, 'center', u));
+    if (n.det) rotulo(ctx, n.det, x, yTop + L.s1 * n.lineas.length + L.s2 - 4 * u, L.f2, PALETA.piedraClara, 'center', u);
+    reg(env, 'etiqueta', caja, `${id}:${n.nombre}`);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
 function sankey(env, capa) {
   const {ctx, u, t, W, H} = env, tab = env.tablas[capa.datos], vert = H > W;
-  const B = caja(env, capa, vert ? [0.02, 0.26, 0.7, 0.6] : [0.035, 0.235, 0.93, 0.66]);
+  const B = caja(env, capa, vert ? [0.02, 0.2, 0.7, 0.67] : [0.035, 0.235, 0.93, 0.66]);
   const [t0, t1] = capa.t ?? [0.5, 6], ap = aparece(env, capa, t0); if (ap <= 0) return;
-  const L = (capa._lay ??= disenarSankey(env, capa, tab, B));
-  const p = prog(t, t0, t1, ease.io2), rx = lerp(B.x, B.x + B.w, p), k = L.k;
+  const L = (capa._lay ??= vert ? disenarSankeyV(env, capa, tab, B) : disenarSankey(env, capa, tab, B));
+  const p = prog(t, t0, t1, ease.io2);
+  if (L.vertical) { ctx.save(); ctx.globalAlpha *= ap; dibujarSankeyV(env, capa, tab, B, L, p); ctx.restore(); return; }
+  const rx = lerp(B.x, B.x + B.w, p), k = L.k;
   ctx.save(); ctx.globalAlpha *= ap;
   if (vert) {   // la unidad de todas las cifras, una sola vez y siempre visible
     const un = `${tab.fmt.prefijo ?? ''}${tab.fmt.sufijo ?? ''}`.trim() || tab.fmt.unidad || '', cap = `CIFRAS EN ${un}`.toUpperCase();
@@ -1121,7 +1235,9 @@ function bump(env, capa) {
   const S = L.idxs.length; if (S < 2) return;
   const sN = escalarFuente(26 * u), fN = fnt(700, 26 * u);
   ctx.font = fN;
-  const LW = vert ? B.w * 0.4 : Math.min(B.w * 0.26, Math.max(...L.idxs.map((si) => ctx.measureText(cortar(ctx, tab.series[si].nombre, B.w * 0.26)).width)) + 28 * u);
+  // el nombre se envuelve en hasta 2 líneas con su texto COMPLETO (antes «Bono del Tesoro 10 años (diari…»): LW sale del ancho de esas líneas
+  const nombreEnv = (nm, ancho) => envolverEntero(ctx, nm, ancho, 2) ?? envolver(ctx, nm, ancho, 2);
+  const LW = vert ? B.w * 0.4 : Math.min(B.w * 0.26, Math.max(...L.idxs.map((si) => Math.max(...nombreEnv(tab.series[si].nombre, B.w * 0.26 - 28 * u).map((l) => ctx.measureText(l).width)))) + 28 * u);
   const x0 = B.x + LW + 30 * u, x1 = vert ? B.x + B.w - 24 * u : B.x + B.w - LW - 10 * u, paso = (x1 - x0) / (L.pts.length - 1);
   const top = B.y + 80 * u, fila = Math.min(vert ? 112 * u : 86 * u, (B.h - 120 * u) / S), cyR = (r) => top + r * fila + fila / 2, cx = (q) => x0 + q * paso;
   const rx = lerp(x0 - 20 * u, x1 + 20 * u, prog(t, t0, t1, ease.io2)), rad = escalarFuente(20 * u) * 0.68;
@@ -1142,17 +1258,17 @@ function bump(env, capa) {
     L.pts.forEach((_, q) => { const px = cx(q), py = cyR(L.rank[j][q]); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(px, py, rad, 0, 7); ctx.fill(); texto(ctx, String(L.rank[j][q] + 1), px, py + mid(20 * u), fnt(800, 20 * u, true), contraste(color, PALETA.fondo) >= contraste(color, PALETA.blanco) ? PALETA.fondo : PALETA.blanco, 'center'); });
     ctx.restore();
     // nombre: en vertical, a la izquierda, hasta en 2 líneas; en horizontal, a ambos lados
-    const lineas = envolver((ctx.font = fN, ctx), s.nombre, LW - 28 * u, vert ? 2 : 1), y0n = cyR(L.rank[j][0]) - ((lineas.length - 1) * sN * 1.1) / 2 + mid(26 * u);
+    const lineas = nombreEnv(s.nombre, LW - 28 * u), y0n = cyR(L.rank[j][0]) - ((lineas.length - 1) * sN * 1.1) / 2 + mid(26 * u);
     ctx.save(); ctx.globalAlpha *= a * clamp((rx - x0 + 40 * u) / (60 * u));
     lineas.forEach((l, q) => rotulo(ctx, l, B.x + LW - 6 * u, y0n + q * sN * 1.1, fN, PALETA.blanco, 'right', u));
     const wI = Math.max(...lineas.map((l) => ctx.measureText(l).width));
     reg(env, 'etiqueta', [B.x + LW - 6 * u - wI, y0n - sN, B.x + LW - 6 * u, y0n + (lineas.length - 1) * sN * 1.1 + 8 * u], `${capa.id ?? 'bump'}:i:${si}`);
     ctx.restore();
     if (!vert) {
-      const nm = cortar(ctx, s.nombre, LW - 28 * u), yf = cyR(L.rank[j][L.pts.length - 1]);
+      const ln = nombreEnv(s.nombre, LW - 28 * u), yf = cyR(L.rank[j][L.pts.length - 1]), y0f = yf - ((ln.length - 1) * sN * 1.1) / 2 + mid(26 * u);
       ctx.save(); ctx.globalAlpha *= a * clamp((rx - x1) / (50 * u));
-      rotulo(ctx, nm, x1 + 30 * u, yf + mid(26 * u), fN, PALETA.blanco, 'left', u);
-      reg(env, 'etiqueta', [x1 + 30 * u, yf - sN, x1 + 30 * u + ctx.measureText(nm).width, yf + 8 * u], `${capa.id ?? 'bump'}:f:${si}`);
+      ln.forEach((l, q) => rotulo(ctx, l, x1 + 30 * u, y0f + q * sN * 1.1, fN, PALETA.blanco, 'left', u));
+      reg(env, 'etiqueta', [x1 + 30 * u, y0f - sN, x1 + 30 * u + Math.max(...ln.map((l) => ctx.measureText(l).width)), y0f + (ln.length - 1) * sN * 1.1 + 8 * u], `${capa.id ?? 'bump'}:f:${si}`);
       ctx.restore();
     }
   });
@@ -1164,48 +1280,71 @@ function treemap(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = caja(env, capa, vert ? [0.0667, 0.26, 0.64, 0.6] : [0.05, 0.24, 0.9, 0.62]);
   const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
-  const sT = escalarFuente(26 * u), sV = escalarFuente(20 * u);
+  const sT = escalarFuente(26 * u), sV = escalarFuente(20 * u), sC = escalarFuente(18 * u), G = 4 * u;
   const L = (capa._tm ??= (() => {
-    const items = [...tab.items].filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor), total = items.reduce((a, x) => a + x.valor, 0), pie = (vert ? 200 : 96) * u, R = {x: B.x, y: B.y, w: B.w, h: B.h - pie};
-    const esc = (R.w * R.h) / total, nodos = items.map((it) => ({it, a: it.valor * esc, rect: null}));
-    const peor = (fila, lado) => { const s = fila.reduce((a, n) => a + n.a, 0), mx = Math.max(...fila.map((n) => n.a)), mn = Math.min(...fila.map((n) => n.a)); return Math.max((lado * lado * mx) / (s * s), (s * s) / (lado * lado * mn)); };
-    let r = {...R}, fila = [], i = 0;
-    const colocar = () => {
-      const s = fila.reduce((a, n) => a + n.a, 0), horiz = r.w >= r.h, lado = horiz ? r.h : r.w, grosor = s / lado; let off = 0;
-      fila.forEach((n) => { const l = n.a / grosor; n.rect = horiz ? [r.x, r.y + off, grosor, l] : [r.x + off, r.y, l, grosor]; off += l; });
-      if (horiz) r = {x: r.x + grosor, y: r.y, w: r.w - grosor, h: r.h}; else r = {x: r.x, y: r.y + grosor, w: r.w, h: r.h - grosor};
-      fila = [];
+    const items = [...tab.items].filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor), total = items.reduce((a, x) => a + x.valor, 0);
+    const mx = items[0]?.valor || 1, med = (s, f) => { ctx.font = f; return ctx.measureText(s).width; };
+    const fN = fnt(800, 26 * u), fV = fnt(600, 20 * u, true), fC = fnt(600, 18 * u);
+    // 1) diseño d3 (squarify áureo; si todas las filas traen `anterior` y no se pide capa.estable:false, resquarify). Etiquetas dentro de la celda: nombre COMPLETO envuelto (nunca «…»),
+    //    luego «valor · %», luego valor y % en dos líneas, luego solo %; lo que no cabe sale con un hilo debajo (callout), no se corta.
+    const armar = (pie) => {
+      const R = {x: B.x, y: B.y, w: B.w, h: B.h - pie}, rects = celdas(items, R, {estable: capa.estable !== false});
+      const nodos = items.map((it, i) => ({it, rect: rects[i], pct: (it.valor / total) * 100, color: colorSecuencial(1 - Math.sqrt(it.valor / mx))}));   // color = participación (viridis), sin significado inventado
+      nodos.forEach((nd) => {
+        const [, , w, h] = nd.rect, wU = w - G - 20 * u, hU = h - G;
+        ctx.font = fN; const lin = wU > 40 * u ? envolverEntero(ctx, nd.it.nombre, wU, 3) : null;
+        if (!lin) return;
+        const altoN = 4 * u + sT + (lin.length - 1) * sT * 1.12 + 10 * u;
+        if (altoN > hU) return;
+        const val = fmtNum(nd.it.valor, tab.fmt), pc = pctTxt(nd.pct);
+        const opciones = [[`${val} · ${pc}`], [val, pc], [pc], []];
+        for (const op of opciones) {
+          const ok = op.every((s) => med(s, fV) <= wU), alto = altoN + (op.length ? 4 * u + sV * 1.35 + (op.length - 1) * sV * 1.25 : 0);
+          if (ok && alto <= hU) { nd.lin = lin; nd.vlin = op; nd.alto = op.length ? alto : altoN; break; }
+        }
+      });
+      return {R, nodos};
     };
-    while (i < nodos.length) { const lado = Math.min(r.w, r.h), cand = [...fila, nodos[i]]; if (!fila.length || peor(cand, lado) <= peor(fila, lado)) { fila = cand; i++; } else colocar(); }
-    if (fila.length) colocar();
-    // ¿cabe el nombre? Solo se rotula el rectángulo donde el nombre (cortado como mucho a ~60 %) cabe y hay alto para dos líneas.
-    ctx.font = fnt(800, 26 * u);
-    nodos.forEach((nd) => { const [, , w, h] = nd.rect, nom = cortar(ctx, nd.it.nombre, w - 20 * u); nd.rotulo = h >= sT * 1.5 + 14 * u && w >= 120 * u && nom.length >= Math.min(nd.it.nombre.length, 8) && nom.length >= nd.it.nombre.length * 0.6; });
-    return {nodos, total, pie};
+    let pie = (vert ? 200 : 96) * u, A = armar(pie), q = 0;
+    const calc = (nodos) => {   // callouts: una sola línea «Nombre 5,8 %», en filas debajo del mapa (primera fila donde caben), con un hilo hasta su celda
+      const peq = nodos.filter((nd) => !nd.lin).map((nd) => { const s = `${nd.it.nombre} ${pctTxt(nd.pct)}`, w = Math.min(B.w, med(s, fC) + sC * 0.9 + 8 * u); return {nd, s, w, ax: nd.rect[0] + nd.rect[2] / 2}; });
+      peq.sort((a, b) => a.ax - b.ax);
+      const filas = [];
+      peq.forEach((p) => { let f = filas.find((r) => r.reduce((s, x) => s + x.w + 14 * u, 0) + p.w <= B.w); if (!f) filas.push(f = []); f.push(p); });
+      return {peq, filas};
+    };
+    let C = calc(A.nodos);
+    const filaH = sC * 1.55, falta = () => 16 * u + C.filas.length * filaH;
+    while (C.peq.length && falta() > pie && q++ < 3) { pie = falta() + 4 * u; A = armar(pie); C = calc(A.nodos); }
+    C.filas.forEach((fila, r) => { const xs = relajar1D(fila.map((p) => ({x: p.ax, w: p.w})), {min: B.x, max: B.x + B.w, gap: 14 * u}); fila.forEach((p, i) => { p.cx = xs[i]; p.fila = r; }); });
+    return {nodos: A.nodos, total, pie, R: A.R, C, filaH, fC};
   })());
-  const n = L.nodos.length, p = prog(t, t0, t1, ease.io2) * n, pal = paletaCat(), G = 4 * u, sinRotulo = [];
+  const n = L.nodos.length, p = prog(t, t0, t1, ease.io2) * n, sinRotulo = [];
   ctx.save(); ctx.globalAlpha *= ap;
   L.nodos.forEach((nd, i) => {
     const a = ease.out3(clamp(p - i)); if (a <= 0) return;
-    const [rx, ry, rw, rh] = nd.rect, col = pal[i % pal.length], x = rx + G / 2, y = ry + G / 2, w = rw - G, h = rh - G, cxm = x + w / 2, cym = y + h / 2;
+    const [rx, ry, rw, rh] = nd.rect, col = nd.color, x = rx + G / 2, y = ry + G / 2, w = rw - G, h = rh - G, cxm = x + w / 2, cym = y + h / 2;
     ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = col;
     const sw = w * (0.6 + 0.4 * a), sh = h * (0.6 + 0.4 * a); ctx.fillRect(cxm - sw / 2, cym - sh / 2, sw, sh); ctx.restore();
     const la = clamp((a - 0.6) / 0.4); if (la <= 0) return;
-    if (!nd.rotulo) { sinRotulo.push(nd); return; }
-    const pct = (nd.it.valor / L.total) * 100, tinta = contraste(col, PALETA.fondo) >= contraste(col, PALETA.blanco) ? PALETA.fondo : PALETA.blanco;
-    ctx.font = fnt(800, 26 * u); const nom = cortar(ctx, nd.it.nombre, w - 20 * u);
+    if (!nd.lin) { sinRotulo.push(nd); return; }
+    const tinta = contraste(col, PALETA.fondo) >= contraste(col, PALETA.blanco) ? PALETA.fondo : PALETA.blanco;
     ctx.save(); ctx.globalAlpha *= la;
-    texto(ctx, nom, x + 10 * u, y + sT * 1.0 + 4 * u, fnt(800, 26 * u), tinta, 'left');
-    let alto = sT * 1.0 + 14 * u;
-    if (h > sT * 1.0 + sV * 1.25 + 22 * u) { const vt = `${fmtNum(nd.it.valor, tab.fmt)} · ${pctTxt(pct)}`; ctx.font = fnt(600, 20 * u, true); texto(ctx, cortar(ctx, vt, w - 20 * u), x + 10 * u, y + sT + sV * 1.3 + 8 * u, fnt(600, 20 * u, true), tinta, 'left'); alto = sT + sV * 1.3 + 18 * u; }
+    const fN = fnt(800, 26 * u), fV = fnt(600, 20 * u, true); let yb = y + 4 * u + sT, anchoMax = 0;
+    ctx.font = fN; nd.lin.forEach((s, k) => { texto(ctx, s, x + 10 * u, yb + k * sT * 1.12, fN, tinta, 'left'); anchoMax = Math.max(anchoMax, ctx.measureText(s).width); });
+    yb += (nd.lin.length - 1) * sT * 1.12;
+    ctx.font = fV; nd.vlin.forEach((s, k) => { const yy = yb + sV * 1.35 + 4 * u + k * sV * 1.25; texto(ctx, s, x + 10 * u, yy, fV, tinta, 'left'); anchoMax = Math.max(anchoMax, ctx.measureText(s).width); });
     ctx.restore();
-    ctx.font = fnt(800, 26 * u); reg(env, 'etiqueta', [x + 8 * u, y + 4 * u, x + 12 * u + Math.min(w - 8 * u, ctx.measureText(nom).width), y + alto], `${capa.id ?? 'treemap'}:${nd.it.nombre}`);
+    reg(env, 'etiqueta', [x + 8 * u, y + 4 * u, x + 12 * u + Math.min(w - 8 * u, anchoMax), y + nd.alto], `${capa.id ?? 'treemap'}:${nd.it.nombre}`);
   });
   if (sinRotulo.length && p >= n - 0.2) {
-    const piezas = ['Partes pequeñas:', ...sinRotulo.map((nd) => `${nd.it.nombre} ${pctTxt((nd.it.valor / L.total) * 100)}`)], f = fnt(500, 18 * u); ctx.font = f;
-    const lineas = ['']; piezas.forEach((pz) => { const l = lineas[lineas.length - 1], cand = l ? `${l} · ${pz}` : pz; if (ctx.measureText(cand).width <= B.w || !l) lineas[lineas.length - 1] = cand; else lineas.push(pz); });   // salto de línea, nunca «…»: no se pierde ninguna cifra
-    const s = escalarFuente(18 * u), y0 = B.y + B.h - L.pie + 18 * u + s;
-    lineas.forEach((l, q) => { rotulo(ctx, l, B.x, y0 + q * s * 1.3, f, PALETA.piedraClara, 'left', u); reg(env, 'etiqueta', [B.x, y0 + q * s * 1.3 - s, B.x + Math.min(B.w, ctx.measureText(l).width), y0 + q * s * 1.3 + 8 * u], `${capa.id ?? 'treemap'}:pequenos${q}`); });
+    const f = L.fC, y0 = L.R.y + L.R.h + 14 * u;
+    L.C.filas.forEach((fila) => fila.forEach((pz) => {
+      if (!sinRotulo.includes(pz.nd)) return;
+      const yT = y0 + pz.fila * L.filaH, yB = yT + sC, x0 = pz.cx - pz.w / 2;
+      ctx.save(); ctx.fillStyle = pz.nd.color; ctx.fillRect(x0, yB - sC * 0.85, sC * 0.9, sC * 0.9); ctx.restore();   // muestra del color de su celda: une cada etiqueta con su rectángulo
+      rotulo(ctx, pz.s, x0 + sC * 0.9 + 8 * u, yB, f, PALETA.piedraClara, 'left', u); reg(env, 'etiqueta', [x0, yT - sC * 0.1, x0 + pz.w, yB + 8 * u], `${capa.id ?? 'treemap'}:pequeno:${pz.nd.it.nombre}`);
+    }));
   }
   ctx.restore();
 }

@@ -3,8 +3,9 @@
 // Mismas reglas que capas.js: cada capa es una función pura (env, capa) del instante env.t; NINGUNA cifra se teclea: todo sale de
 // las filas de los datos o es una cuenta exacta sobre ellas, y la escala de cada gráfica se DECLARA en pantalla (nota arriba).
 // Tipografía: tamaños base de 1080 px de lado corto que pasan por el piso del sistema de diseño (motor/diseno.js).
+import {colorDivergente} from './escalas.js';
 import {PALETA, COLOR, TEMA, clamp, lerp, ease, prog, colorDe, mezcla, rgba, fmtNum, fmtSigno, fmtFecha, ticksNum, ticksFecha, etiquetaTick} from './nucleo.js';
-import {escalarFuente, fuenteCss, margenes, envolver, entrada as entradaDiseno} from './diseno.js';
+import {escalarFuente, fuenteCss, margenes, envolver, contraste, entrada as entradaDiseno} from './diseno.js';
 
 export const TIPOS_EXTRA = ['radar', 'apilada', 'velas', 'histograma', 'dumbbell', 'calendario', 'agrupadas', 'bullet', 'bandas', 'pictograma', 'ranking'];
 /** Qué clase de dato consume cada capa: serie de tiempo, tabla de categorías, o ambas. */
@@ -359,7 +360,9 @@ function armarCalendario(capa, tab, vert) {
   const todos = capa.modo === 'diario' ? dias.map((d) => Math.abs(d.r)) : [...rets.values()].map((q) => Math.abs(q.r)), s = todos.sort((a, b) => a - b), lim0 = pctl(s, 0.95), lim = ticksNum(0, lim0 * 1.0001, 4).pop() ?? lim0;
   return {mes, rets, dias, anios, lim: lim >= lim0 * 0.7 ? lim : lim0, ult};
 }
-function colorRet(r, lim) { const k = clamp(Math.abs(r) / lim) * 0.95; return r >= 0 ? mezcla(PALETA.tarjeta, COLOR.verde, k) : mezcla(PALETA.tarjeta, COLOR.rojo, k); }
+// Escala divergente de motor/escalas.js (BrBG vendorizado): centro gris claro, polos ocre / verde azulado. Antes el centro era casi el color del fondo y el rojo/verde no lo distinguía un daltónico.
+function colorRet(r, lim) { return colorDivergente(clamp(r / lim, -1, 1)); }
+const TINTA_OSCURA = '#0A0A0A', tintaSobre = (bg) => (contraste(bg, TINTA_OSCURA) >= contraste(bg, PALETA.blanco) ? TINTA_OSCURA : PALETA.blanco);   // la cifra usa la tinta que más contrasta con su casilla
 function calendario(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
@@ -380,7 +383,7 @@ function calendario(env, capa) {
         ctx.globalAlpha = ap * g2; ctx.fillStyle = q ? colorRet(q.r, lim) : rgba(PALETA.tarjeta, 0.5); ctx.fillRect(x0 + m * cw + 1.5 * u, y + 1.5 * u, cw - 3 * u, filaH - 3 * u);
         if (q && q.parcial) { ctx.strokeStyle = PALETA.blanco; ctx.setLineDash([5 * u, 4 * u]); ctx.lineWidth = 2 * u; ctx.strokeRect(x0 + m * cw + 2 * u, y + 2 * u, cw - 4 * u, filaH - 4 * u); ctx.setLineDash([]); }
         ctx.globalAlpha = ap;
-        if (q && mostrarNum) rot(env, fN(q.r, {decimales: 1}).replace('-', '−'), x0 + (m + 0.5) * cw, y + filaH * 0.66, 18, 700, PALETA.blanco, 'center', `${capa.id ?? 'calendario'}:c${an}-${m}`, {mono: true, alpha: g2, halo: false});
+        if (q && mostrarNum) rot(env, fN(q.r, {decimales: 1}).replace('-', '−'), x0 + (m + 0.5) * cw, y + filaH * 0.66, 18, 700, tintaSobre(colorRet(q.r, lim)), 'center', `${capa.id ?? 'calendario'}:c${an}-${m}`, {mono: true, alpha: g2, halo: false});
       }
     });
     leyenda(env, B, capa, lim, B.y + B.h - leyH * 0.6, ap);
