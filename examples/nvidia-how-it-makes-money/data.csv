@@ -1,0 +1,15 @@
+origen,destino,valor,tipo
+United States,Ingresos,60074000000,ingreso
+Taiwan,Ingresos,26985000000,ingreso
+China (including Hong Kong),Ingresos,7880000000,ingreso
+Otros,Ingresos,1282000000,ingreso
+Ingresos,Utilidad bruta,72142000000,beneficio
+Ingresos,Costo de ventas,24079000000,costo
+Utilidad bruta,Utilidad operativa,63734000000,beneficio
+Utilidad bruta,Gastos operativos,8408000000,costo
+Gastos operativos,Investigación y desarrollo,7054000000,costo
+Gastos operativos,"Sales, general and administrative",1354000000,costo
+Utilidad operativa,Utilidad antes de impuestos,63734000000,neutral
+Otros ingresos,Utilidad antes de impuestos,7773000000,neutral
+Utilidad antes de impuestos,Utilidad neta,59688000000,beneficio
+Utilidad antes de impuestos,Impuestos,11819000000,costo

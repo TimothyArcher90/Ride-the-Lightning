@@ -29,6 +29,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {RAIZ} from './compilar.mjs';
+import {rutaBiblioteca, metaSerie} from './datos.mjs';
 
 /** Último dato de cada periodo (mes, trimestre o año), fechado el primer día del periodo. Método declarado; no interpola ni inventa. */
 function alPeriodo(mapa, tipo) {
@@ -44,11 +45,11 @@ function alPeriodo(mapa, tipo) {
 export function combinar({ids, nombre, id, remuestreo = null, desde = null}) {
   const dir = path.join(RAIZ, 'datos', 'biblioteca');
   const comp = ids.map((i) => {
-    const f = path.join(dir, `${i}.csv`);
+    const f = rutaBiblioteca(i);   // descargada (datos/biblioteca) o, si no, la instantánea abierta de data/
     if (!fs.existsSync(f)) throw new Error(`"${i}" no está descargada. Usa descargar_serie primero.`);
     const filas = fs.readFileSync(f, 'utf8').trim().split('\n').slice(1).map((l) => l.split(','));
     const mapa0 = new Map(filas.map((r) => [r[0], r[1]]));
-    return {id: i, mapa: remuestreo ? alPeriodo(mapa0, remuestreo) : mapa0, meta: JSON.parse(fs.readFileSync(f + '.meta.json', 'utf8')), n: filas.length};
+    return {id: i, mapa: remuestreo ? alPeriodo(mapa0, remuestreo) : mapa0, meta: metaSerie(f), n: filas.length};
   });
   const fechas = [...new Set(comp.flatMap((c) => [...c.mapa.keys()]))].sort((a, b) => (a.startsWith('-') !== b.startsWith('-') ? (a.startsWith('-') ? -1 : 1) : a.localeCompare(b)));
   const filas = fechas.filter((d) => (desde ? comp.every((c) => c.mapa.has(d)) && d >= desde : comp.some((c) => c.mapa.has(d))));

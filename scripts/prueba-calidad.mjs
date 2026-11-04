@@ -1,4 +1,4 @@
-// PRUEBA DE CALIDAD «amateur vs. pro» (checklist de docs/INVESTIGACION_ANIMACION.md §2, hecho automático).
+// PRUEBA DE CALIDAD «amateur vs. pro» (checklist de docs/research/ANIMATION_RESEARCH.md §2, hecho automático).
 // Recorre los 16 modelos × 2 formatos (horizontal 1920×1080 y vertical 1080×1920) con datos reales de la biblioteca y comprueba:
 //   1 tamaño mínimo de letra por formato y por tipo de texto      5 pie «Fuente: … · fecha · RTL» presente, legible y dentro de la zona segura
 //   2 contraste ≥ 4,5:1 medido sobre los píxeles dibujados         6 tiempo de lectura ≥ 3 s por texto

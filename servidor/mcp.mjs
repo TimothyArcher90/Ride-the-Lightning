@@ -9,7 +9,7 @@ import {compilar, RAIZ, rutaSegura} from './compilar.mjs';
 import {vistaPrevia, renderizar} from './render.mjs';
 import {buscar, descargar, leerCatalogo} from './catalogo.mjs';
 import {descargarAdHoc, combinar} from './biblioteca.mjs';
-import {inspeccionar} from './datos.mjs';
+import {inspeccionar, hayEnBiblioteca} from './datos.mjs';
 import {PLANTILLAS, CAMARAS, analizar, generar} from './plantillas.mjs';
 import {proponer as proponerViz} from './visualizador.mjs';
 import {buscarEmpresas, asegurarEmpresa, itemTrimestre, vigilar as vigilarSec} from './trimestres.mjs';
@@ -43,12 +43,12 @@ server.tool('combinar_series', 'Une series ya descargadas en una tabla ancha por
 server.tool('listar_plantillas', 'Plantillas de animación (historia, comparar, panel, carrera, correlación) y presets de cámara disponibles.', {}, async () => texto({plantillas: PLANTILLAS, camaras: Object.entries(CAMARAS).map(([id, c]) => ({id, nombre: c.nombre, descripcion: c.descripcion}))}));
 
 server.tool('analizar_serie', 'Resumen de una serie de la biblioteca y MOMENTOS CLAVE detectados en los datos (máximo, mayor subida/caída, primero, último), con su explicación. Úsalo antes de generar una historia.',
-  {id: z.string()}, async ({id}) => { const e = leerCatalogo().find((x) => x.id === id); if (e && !fs.existsSync(path.join(RAIZ, 'datos', 'biblioteca', id + '.csv'))) await descargar(e); return texto(analizar([{origen: 'biblioteca', id}])); });
+  {id: z.string()}, async ({id}) => { const e = leerCatalogo().find((x) => x.id === id); if (e && !hayEnBiblioteca(id)) await descargar(e); return texto(analizar([{origen: 'biblioteca', id}])); });
 
 server.tool('proponer_visualizaciones', 'EL VISUALIZADOR: dado un dato de la biblioteca (1 o varias series), elige las gráficas que mejor lo cuentan, construye hasta 4 opciones realmente distintas (línea, pendiente, bump, carrera, panel…), las verifica (exactitud y textos pisados) y guarda cada una que pase en specs/opcion-<nombre>-<plantilla>.json. Entrega al usuario SOLO las que salen ok:true, con su porqué.',
   {nombre: z.string(), series: z.array(z.string()), formato: z.enum(['horizontal', 'vertical']).default('vertical'), titulo: z.string().optional(), max: z.number().min(1).max(6).default(4)},
   async (a) => {
-    const cat = leerCatalogo(); for (const id of a.series) { const e = cat.find((x) => x.id === id); if (e && !fs.existsSync(path.join(RAIZ, 'datos', 'biblioteca', id + '.csv'))) await descargar(e); }
+    const cat = leerCatalogo(); for (const id of a.series) { const e = cat.find((x) => x.id === id); if (e && !hayEnBiblioteca(id)) await descargar(e); }
     const ops = await proponerViz({series: a.series.map((id) => ({origen: 'biblioteca', id})), formato: a.formato, titulo: a.titulo}, {max: a.max});
     return texto(ops.map((o) => { let ruta = null; if (o.ok) { ruta = path.join('specs', `opcion-${a.nombre.replace(/[^\w-]+/g, '_')}-${o.plantilla}.json`); fs.writeFileSync(path.join(RAIZ, ruta), JSON.stringify(o.spec, null, 2)); } return {plantilla: o.plantilla, nombre: o.nombre, porque: o.porque, tema: o.tema, ok: o.ok, ruta, problemas: o.problemas, notas: o.notas}; }));
   });
@@ -57,7 +57,7 @@ server.tool('generar_pieza', 'Genera la spec COMPLETA de una pieza a partir de u
   {nombre: z.string(), plantilla: z.enum(['historia', 'comparar', 'panel', 'carrera', 'correlacion', 'pendiente', 'bump', 'divergente']), series: z.array(z.string()), momentos: z.array(z.object({tipo: z.enum(['primero', 'subida', 'caida', 'max', 'min', 'ultimo']), etiqueta: z.string().max(30).optional()})).optional(),
     camara: z.enum(['cinematico', 'documental', 'dinamico', 'seguir', 'estatico']).default('documental'), formato: z.enum(['horizontal', 'vertical']).default('horizontal'), titulo: z.string().optional(), foco: z.number().optional(), estiloMomento: z.enum(['tarjeta', 'barra', 'pildora', 'circulo']).default('tarjeta'), tema: z.enum(['oscuro', 'harris', 'carbon']).default('oscuro'), vivo: z.boolean().default(false)},
   async (a) => {
-    const cat = leerCatalogo(); for (const id of a.series) { const e = cat.find((x) => x.id === id); if (e && !fs.existsSync(path.join(RAIZ, 'datos', 'biblioteca', id + '.csv'))) await descargar(e); }
+    const cat = leerCatalogo(); for (const id of a.series) { const e = cat.find((x) => x.id === id); if (e && !hayEnBiblioteca(id)) await descargar(e); }
     const items = a.series.map((id) => ({origen: 'biblioteca', id})), an = a.plantilla === 'historia' && items.length === 1 ? analizar(items) : null;
     const momentos = (a.momentos ?? an?.momentos?.filter((x) => x.seleccionado) ?? []).map((m) => { const c = an?.momentos?.find((x) => x.tipo === m.tipo); return {tipo: m.tipo, ancla: c?.ancla ?? {max: true}, etiqueta: m.etiqueta ?? c?.etiqueta}; });
     const r = generar({plantilla: a.plantilla, series: items, momentos, camara: a.camara, formato: a.formato, titulo: a.titulo, foco: a.foco, estiloMomento: a.estiloMomento, tema: a.tema, vivo: a.vivo ? {render: 'final', alfa: true, minEntreRendersMin: 360} : null});

@@ -1,85 +1,244 @@
-# Ride the Lightning
+# ⚡ Ride the Lightning
 
-Estudio **local** para animar gráficas financieras y de datos con el lenguaje visual de Johnny Harris / Caspian Report (trazo narrado, cámara en el espacio de los datos, llamadas con golpe seco), pero con una regla que ellos no cumplen: **cada cifra en pantalla sale de una fila de datos verificable**.
+**A universal, local studio that turns real, sourced data into broadcast-quality animated charts — for YouTube, Reels, Shorts and Premiere.**
+Every number on screen comes from a verifiable row of data. 27 chart models · 72 countries · SEC filings for US-listed companies · 4,400+ ready-to-use series.
 
-Nace de [Electric Eye](https://github.com/TimothyArcher90/Electric_Eye) (mapas animados): reutiliza su arquitectura probada —render determinista en un navegador sin ventana, control por MCP, revisión por fotogramas— y cambia el motor de dibujo por uno de gráficas.
+<p align="center"><img src="examples/video/README.gif" alt="Ride the Lightning sample animation" width="720"></p>
 
-## Instalar y abrir (Windows)
-Después de la primera vez: **doble clic en «Ride the Lightning» en el escritorio** (junto a Electric Eye). Mismo proceso: se actualiza solo desde GitHub, abre el estudio en el navegador y deja el actualizador de datos en marcha.
+> **The rule nobody else follows:** no number is ever typed by hand. Text uses markers (`{valor}`, `{cambio:N}`…) that the compiler computes from the data; a stray digit is a compile error. Each piece ships with a verification report that maps every figure to series, column, date and row.
 
-1. Instala [Node.js](https://nodejs.org) 22+ y [FFmpeg](https://ffmpeg.org) (debe estar en el PATH). Necesitas Edge o Chrome.
-2. Doble clic en `Instalar Ride the Lightning.bat` (una sola vez).
-3. Doble clic en `Iniciar Ride the Lightning.bat` → se abre el estudio en `http://127.0.0.1:5180`.
+---
 
-Todo corre en tu equipo; el servidor solo escucha en `127.0.0.1`.
+## Contents
+[Gallery](#gallery) · [Quick start](#quick-start) · [How it works](#how-it-works) · [Chart models](#chart-models) · [Data](#data) · [Examples](#examples) · [Accuracy rules](#accuracy-rules) · [Professional output](#professional-output) · [CLI / MCP / Chat](#front-doors) · [Documentation](#documentation) · [Licenses](#licenses-and-data-terms) · [Language note](#language-note)
 
-## Para quien no sabe de código ni de finanzas
-Abre el estudio y sigue los **4 pasos**: tus datos → cómo verlo → cámara y ritmo → revisar y exportar. Guía: [`docs/GUIA_USUARIO.md`](docs/GUIA_USUARIO.md). Qué se pidió y qué está hecho (con límites): [`docs/CUMPLIMIENTO.md`](docs/CUMPLIMIENTO.md). Cómo trabajan Johnny Harris y Caspian Report: [`docs/REFERENCIAS_ESTILO.md`](docs/REFERENCIAS_ESTILO.md).
+---
 
-## Qué hace
-| Necesidad | Cómo |
+## Gallery
+
+Real data, real frames (final frame of each animation). Vertical versions follow the reel safe zone. Full catalog with usage rules: [docs/MODELS.md](docs/MODELS.md).
+
+| | | |
+|:--:|:--:|:--:|
+| <img src="docs/gallery/historia-h.png" width="300"><br>**Story of one figure** | <img src="docs/gallery/comparar-h.png" width="300"><br>**One against the rest** | <img src="docs/gallery/velas-h.png" width="300"><br>**Candlesticks** |
+| <img src="docs/gallery/sankey-h.png" width="300"><br>**How a company makes money** (SEC) | <img src="docs/gallery/radar-pais-h.png" width="300"><br>**Country profile (radar)** | <img src="docs/gallery/calendario-h.png" width="300"><br>**Calendar heat map** |
+| <img src="docs/gallery/ranking-h.png" width="300"><br>**Country ranking** | <img src="docs/gallery/cascada-h.png" width="300"><br>**Waterfall** | <img src="docs/gallery/treemap-h.png" width="300"><br>**Treemap** |
+| <img src="docs/gallery/apilada-h.png" width="300"><br>**Stacked area** | <img src="docs/gallery/histograma-h.png" width="300"><br>**Histogram** | <img src="docs/gallery/bump-h.png" width="300"><br>**Bump chart** |
+
+**Vertical (9:16, reel-safe)**
+
+| <img src="docs/gallery/radar-pais-v.png" width="180"> | <img src="docs/gallery/comparar-v.png" width="180"> | <img src="docs/gallery/ranking-v.png" width="180"> | <img src="docs/gallery/waffle-v.png" width="180"> | <img src="docs/gallery/lollipop-v.png" width="180"> |
+|:--:|:--:|:--:|:--:|:--:|
+
+All 62 images (31 cases × horizontal/vertical): [`docs/gallery/`](docs/gallery/). Regenerate with `npm run gallery`.
+
+---
+
+## Quick start
+
+**Requirements:** [Node.js](https://nodejs.org) 22+, [FFmpeg](https://ffmpeg.org) on the PATH, Microsoft Edge or Google Chrome. Works on Windows, macOS and Linux (the one-click installers are Windows `.bat` files).
+
+```bash
+git clone https://github.com/TimothyArcher90/Ride-the-Lightning.git
+cd Ride-the-Lightning
+npm install
+node servidor/estudio.mjs          # opens the studio at http://127.0.0.1:5180
+```
+
+No account, no API key, no cloud: everything runs on your machine and the server only listens on `127.0.0.1`.
+
+**Try it without downloading anything** — the repo ships a curated, open-license data snapshot in [`data/`](data/) and ready-to-run [examples](examples/):
+
+```bash
+node servidor/cli.mjs compilar examples/gold-copper-oil/spec.json     # compile + verification report
+node servidor/cli.mjs vista    examples/gold-copper-oil/spec.json 4,12,18   # PNG of seconds 4, 12 and 18
+node servidor/cli.mjs render   examples/gold-copper-oil/spec.json --borrador # fast draft MP4
+```
+
+### The studio in 4 steps
+1. **What to show** — a data series over time · a country (key figures, or compare countries) · how a company makes money (SEC) · what added and what subtracted · parts of a whole · your own file (Excel/CSV/JSON).
+2. **How to view it** — a *live gallery*: every chart style that fits your data is drawn with **your** data before you choose; the best fit is marked ★ with the reason.
+3. **Camera and pace** — one recommended setting; advanced options folded away.
+4. **Review and download** — draft (~30 s) or final (MP4 + ProRes 4444 with alpha + verification report).
+
+Guide: [docs/USER_GUIDE.md](docs/USER_GUIDE.md).
+
+---
+
+## How it works
+
+```
+data catalog + connectors  →  templates & visualizer  →  compiler  →  deterministic engine  →  headless render + ffmpeg
+ (FRED, World Bank, IMF,       (data shape → spec;        (spec → plan +   (canvas-2D, pure        (MP4, ProRes 4444
+  Eurostat, SEC, OWID, …)       "which chart fits?")        verification)    layers, no randomness)    with alpha)
+```
+Deep dive: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Spec & layer reference: [docs/SPEC_REFERENCE.md](docs/SPEC_REFERENCE.md).
+
+Highlights
+- **Autonomous visualizer** — give it data, it picks the chart models that tell it well (rules from *From Data to Viz*, the FT Visual Vocabulary and Cleveland–McGill), builds several genuinely different options, compiles each, runs the collision audit, and keeps only those that pass.
+- **Deterministic frames** — a frame is a pure function of `(plan, time)`; the same spec renders the same pixels, so output can be reviewed frame by frame.
+- **Nothing overlaps** — every text box is registered; the renderer refuses to export a piece with overlapping text.
+- **Camera in data space** — zoom and pan on the data, so text stays crisp.
+- **Live data** — an updater refreshes each series on its own cadence and can re-render pieces marked `"vivo"`.
+
+---
+
+## Chart models
+
+27 models (29 ids counting variants such as stacked 100 % and returns histogram) in four groups — see [docs/MODELS.md](docs/MODELS.md) for inputs, selection rules, honesty notes and images of each.
+
+| Group | Models (id) |
 |---|---|
-| **Historia completa**, desde el primer dato | Biblioteca de ~170 series (commodities, mercados, macro, cripto, Polonia, historia larga). Se descargan completas y se mide el inicio real. |
-| **Tus datos** | Suelta en el estudio Excel (`xlsx xls xlsb ods`), `csv tsv txt`, `json`, e imágenes. |
-| **Datos vivos 24/7** | El actualizador refresca cada serie según su frecuencia y re-renderiza las piezas marcadas `"vivo"`. |
-| **Plantillas** | 5 estilos (historia de una cifra, una contra las demás, panel, carrera, correlación) × 4 cámaras × 2 estilos de momento × horizontal/vertical. Los momentos clave se detectan **en los datos**. |
-| **Tipos de gráfica** | `linea` (multi-serie, doble eje, escala log, área) · `barras` · `carrera` · `dispersion` (OLS y R²) · `calor` (matriz de correlación). |
-| **Pantalla múltiple** | Cada capa gráfica tiene su `caja`: paneles 2×2, ranking + línea, etc. |
-| **Entregables** | MP4 de referencia (h264, crf 17, yuv420p) **y** `.mov` ProRes 4444 con alfa para Premiere. Sin subtítulos quemados. |
-| **Dirigir con Claude** | Servidor MCP (`.mcp.json`): buscar series, compilar, previsualizar fotogramas, exportar. |
+| **Time series** | story of one figure (`historia`), one against the rest (`comparar`), small multiples (`panel`), bars (`barras`), bar-chart race (`carrera`), stacked area absolute / 100 % (`apilada`, `apilada100`), grouped bars (`agrupadas`), bump / rank over time (`bump`), candlesticks (`velas`), histogram of values / of returns (`histograma`, `retornos`), calendar heat map (`calendario`), this year vs. historical range (`bandas`), bullet / gauge vs. history (`bullet`) |
+| **Several series, different units** | slope chart (`pendiente`), diverging bars of % change (`divergente`), correlation heat map (`correlacion`), scatter with OLS + R² (`dispersion`), radar profile of a country or entity (`radar`) |
+| **Parts of a total** | donut (`donut`), treemap (`treemap`), waffle — "each square = 1 %" (`waffle`), lollipop (`lollipop`), pictogram (`pictograma`), ranking with country codes (`ranking`) |
+| **Flows and bridges** | Sankey for company income statements (`sankey`), waterfall (`cascada`), dumbbell before/after (`dumbbell`) |
 
-## Exactitud (reglas duras, las aplica el compilador)
-1. **Ninguna cifra se teclea.** Los textos usan marcadores —`{valor}` `{fecha}` `{cambio:N}` `{pct:N}` `{max}` `{min}` `{desde}` `{hasta}` `{n}`— que se calculan de los datos. Un dígito suelto es un error (salvo `"verificada":{"fuente","url"}`).
-2. **Toda serie lleva fuente** (url, fecha de descarga, sha256, primer y último dato reales). Sin fuente no compila.
-3. **Serie completa por defecto.** Recortar con `desde`/`hasta` queda avisado.
-4. **No se adivina:** fecha ambigua (`03/04/2020`), decimal con coma sin declarar, texto en una columna numérica, o un ancla sin dato cercano → error con fila y valor.
-5. **Informe de verificación** en cada compilación y junto a cada render (`salidas/<pieza>/<pieza>_vN.json`): cada cifra → serie, columna, fecha, fila, valor crudo.
-6. **Licencias:** si la fuente restringe el uso comercial (p. ej. CC BY-NC, Yahoo) el compilador lo avisa.
+Scales are always honest: log axes, base-100 indices, rank-by-growth and "other N parts" groupings are **declared on screen**. When all series share a unit (e.g. several countries in "% of GDP"), real values are shown on a common axis; an index is only used when units differ.
 
-## Diseño: limpio, un héroe por fecha
-- **Menos texto.** Título corto, sin subtítulos. La tarjeta de una llamada son tres cosas: **año · qué pasó (3-4 palabras) · el dato**. Nada de párrafos ni dos cifras por tarjeta.
-- **El año nunca se pierde:** año grande arriba a la derecha que sigue a la cabeza de la línea, marca dorada con el año bajo la cabeza, y la tarjeta lleva su propio año.
-- **Una idea a la vez:** el contador se aparta mientras hay una tarjeta; el compilador avisa si dos llamadas de una gráfica coinciden.
-- **Sin choques (aprendizaje de Electric Eye):** cada texto reserva su caja; las tarjetas se colocan en el primer hueco libre —sin pisar título, contador, ejes, fuente ni la línea— y `auditar` recorre toda la pieza. El render se **niega** a salir con textos que se pisen.
+---
 
-## Capas (cómo se monta una animación)
-Una pieza es una spec JSON: `datos` (de dónde) + `capas` (qué se ve y cuándo). Orden de apilado por `z`: fondo → imágenes → zonas → **gráficas** → **llamadas** → contador → título → cortina → sello de fuente.
-Las gráficas publican su proyección datos→píxel; las anotaciones (`llamada`, `zona`, `contador`) se **anclan a datos** (`{"fecha":"2020-06-03"}`, `{"max":true}`, `{"ultimo":true}`), nunca a píxeles. La cámara es de keyframes en el espacio de los datos (`camara:[{t,x:[a,b],y:"ajustar"}]`), así que el texto siempre queda nítido. Referencia completa: [`docs/CAPAS.md`](docs/CAPAS.md). Guía de dirección: [`servidor/guia-de-direccion.md`](servidor/guia-de-direccion.md).
+## Data
 
-## Línea de comandos
+- **Catalog:** 4,400+ series with source, URL, license, frequency and unit (`catalogo/series.json`); downloaded on demand with provenance (URL, date, sha256, first/last real data point). **No interpolation, ever.**
+- **Countries:** 72 countries (all of the G20 and all of continental Latin America) × up to 59 indicators — GDP, GDP per capita, real growth, public debt (% of GDP), fiscal balance, inflation, unemployment, population, life expectancy, Gini, current account, reserves, exports, FDI, energy, emissions, health, education, trade… What a source does not publish is not created and never interpolated. A country "card" shows the latest real value of each indicator with its year and source. See [docs/COUNTRIES.md](docs/COUNTRIES.md).
+- **Companies:** quarterly income statements from **SEC EDGAR (XBRL)** for US-listed companies — Sankey, waterfall and donut inputs. See [docs/QUARTERLY_REPORTS.md](docs/QUARTERLY_REPORTS.md).
+- **Your own data:** drop Excel (`xlsx xls xlsb ods`), `csv tsv`, `json`. RTL only asks what it cannot infer (date order, decimal separator, **source**). No source → it will not compile.
+- **Offline snapshot:** [`data/`](data/) holds 2,400+ open-license series (CC BY 4.0 and public domain; exact copies, nothing trimmed or altered) so most examples run without any download. Restricted sources (Yahoo, IMF, Coin Metrics, CC BY-SA/NC) are never included.
+
+| Source | License / terms (summary) | Notes |
+|---|---|---|
+| World Bank | CC BY 4.0 | Indicators, commodities (Pink Sheet) |
+| SEC EDGAR | Public domain | Company filings (XBRL) |
+| Our World in Data | CC BY | Energy, emissions, long history |
+| Eurostat | CC BY | EU statistics |
+| US Treasury FiscalData | Public domain | Debt, rates |
+| FRED | Per series (check each) | Macro and markets |
+| IMF DataMapper | Free to view; **bulk/commercial reuse needs written permission** | Flagged *restricted* in the studio |
+| Yahoo Finance | Personal use only | Flagged *restricted*; never redistributed in this repo |
+| Coin Metrics | CC BY-NC | Flagged *restricted* |
+
+Full details, endpoints, limits and verification records: [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) · [docs/DATA_FORMAT.md](docs/DATA_FORMAT.md) · [docs/data-verification.md](docs/data-verification.md).
+
+**Cross-checked, not assumed:** 80 spot checks against the official sources found 0 discrepancies in the new series, and GDP, debt/GDP, inflation and population were compared between World Bank, IMF and Eurostat for every country; real discrepancies between sources (e.g. Ireland's GDP, Sweden's 2025 inflation, Ethiopia's population) are shown to the user as a visible note on the country card.
+
+---
+
+## Examples
+
+15 ready-to-run examples in [`examples/`](examples/) — each has a `spec.json`, a README (what it shows, source, data license), a preview image and, where relevant, a vertical spec. Index: [docs/EXAMPLES.md](docs/EXAMPLES.md).
+
+| Example | Shows |
+|---|---|
+| `gold-copper-oil` | Three commodities on a comparable scale |
+| `fed-balance-sheet` | The Fed's balance sheet with key moments detected from the data |
+| `colombia-radar-45-countries` | Where Colombia stands among 45 countries on six indicators |
+| `gdp-per-capita-ranking` | Country ranking with a highlighted protagonist |
+| `nvidia-how-it-makes-money` | Revenue → profit Sankey from SEC filings |
+| `apple-revenue-to-profit` | Waterfall from revenue to net income |
+| `amazon-dollar-treemap` | Where each dollar of revenue goes |
+| `nvidia-per-100-dollars` | "Per 100 dollars" waffle |
+| `global-energy-mix` | Energy mix over time (stacked area) |
+| `energy-race` | Ranking race of energy sources |
+| `oil-monthly-returns-calendar` | Calendar heat map of monthly returns |
+| `eurusd-daily-returns` | Distribution of daily returns |
+| `wti-candlesticks` | Candlesticks (closes-only mode, declared) |
+| `latam-debt-to-gdp` | Public debt of six Latin American countries (spec only — IMF data terms) |
+| `bitcoin-full-history` | Complete history, log scale (spec only — CC BY-NC data) |
+
+---
+
+## Accuracy rules
+
+Enforced by the compiler, not by good intentions.
+
+1. **No typed numbers.** Text uses markers computed from data; a stray digit is an error unless the layer declares `"verificada": {"fuente","url"}`.
+2. **Every series has a source** (URL, download date, sha256, first/last real data point). No source → no compile.
+3. **Complete series by default.** Trimming with `desde`/`hasta` is flagged.
+4. **No guessing:** ambiguous dates (`03/04/2020`), undeclared decimal commas, text in a numeric column, an anchor with no nearby data → error with row and value.
+5. **Verification report** with every compile and next to every render: each figure → series, column, date, row, raw value.
+6. **License warnings** when a source restricts commercial use.
+7. **Estimates are labelled** (e.g. IMF WEO values for the current year "may be estimates").
+
+---
+
+## Professional output
+
+A single design system ([`motor/diseno.js`](motor/diseno.js)) drives all 27 models in both formats:
+
+- **Type scale with enforced minimums** (vertical 1080 px wide: labels ≥ 40 px, axes/units ≥ 32, footer ≥ 28), WCAG contrast ≥ 4.5:1.
+- **Mandatory source footer** on every piece: *"Source: <name> · <date of last data point> · RTL"*.
+- **Reel safe zone** (nothing at `x ≥ 72.2 %` and `y ≥ 43.75 %` in 9:16).
+- **Motion:** Material easing curves (never linear UI motion), 40 ms stagger, annotation cards stay ≥ 3 s, one protagonist per shot.
+- **Deliverables:** reference MP4 (`libx264 -crf 17 -preset slow -yuv420p`) **and** ProRes 4444 with alpha for Premiere. No burned-in subtitles.
+
+An automated checklist (`node scripts/prueba-calidad.mjs`) measures the real canvas text and verifies all of this for 27 models × 2 formats.
+
+---
+
+## Front doors
+
+```bash
+# Studio (web UI)
+node servidor/estudio.mjs
+
+# CLI
+node servidor/cli.mjs buscar gold                 # search the catalog
+node servidor/cli.mjs bajar bm_gold               # full history + provenance
+node servidor/cli.mjs compilar  <spec.json>       # compile + verification report
+node servidor/cli.mjs vista     <spec.json> 4,12  # PNG frames at those seconds
+node servidor/cli.mjs auditar   <spec.json>       # no text may overlap (checked every 0.2 s)
+node servidor/cli.mjs render    <spec.json>       # MP4 + ProRes alpha (--borrador, --sin-alfa)
+node servidor/cli.mjs vivo                        # permanent data updater
+
+# Regenerate gallery + examples (~4 min)
+npm run gallery
 ```
-node servidor/cli.mjs buscar oro            # buscar en la biblioteca
-node servidor/cli.mjs bajar bm_gold         # historia completa + procedencia
-node servidor/cli.mjs compilar specs/fed-balance.json
-node servidor/cli.mjs vista specs/fed-balance.json 4,12,18   # PNG de esos segundos
-node servidor/cli.mjs auditar specs/fed-balance.json          # ningún texto debe pisar a otro (se comprueba cada 0,2 s)
-node servidor/cli.mjs render specs/fed-balance.json           # MP4 + ProRes alfa (--borrador, --sin-alfa)
-node servidor/cli.mjs vivo                  # actualizador permanente
-node scripts/prueba.mjs                     # formatos, reglas de exactitud, 5 tipos de gráfica
+
+- **MCP server** (`servidor/mcp.mjs`, config in `.mcp.json`): lets Claude search series, generate pieces, preview frames, export, and run `proponer_visualizaciones`.
+- **Chat panel** in the studio: edit the open piece by talking ("make it vertical", "show the previous quarter", "now as a waterfall"); uses your local Claude Code.
+
+---
+
+## Documentation
+
+| Doc | What's inside |
+|---|---|
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Using the studio, step by step |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layers, directory map, tests |
+| [docs/SPEC_REFERENCE.md](docs/SPEC_REFERENCE.md) | The spec format and every layer |
+| [docs/MODELS.md](docs/MODELS.md) | The 27 chart models with images and rules |
+| [docs/EXAMPLES.md](docs/EXAMPLES.md) | The 15 examples and how to regenerate them |
+| [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) · [DATA_FORMAT.md](docs/DATA_FORMAT.md) · [COUNTRIES.md](docs/COUNTRIES.md) · [data-verification.md](docs/data-verification.md) | Sources, formats, country coverage, verification |
+| [docs/QUARTERLY_REPORTS.md](docs/QUARTERLY_REPORTS.md) | SEC company library and the filing watcher |
+| [docs/STYLE_REFERENCES.md](docs/STYLE_REFERENCES.md) · [DIRECTION_GUIDE.md](docs/DIRECTION_GUIDE.md) | Visual language and direction guide |
+| [docs/research/](docs/research/) | Visualization and animation research behind the design |
+| [docs/PROFESSIONAL_PLAN.md](docs/PROFESSIONAL_PLAN.md) · [ROADMAP.md](docs/ROADMAP.md) · [COMPLIANCE.md](docs/COMPLIANCE.md) | Plan, status, what's done and what's limited |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Add a model, add a data source, run the tests |
+
+## Tests
+
+```bash
+node scripts/prueba.mjs               # formats, accuracy rules, base chart types
+node scripts/prueba-tablas.mjs        # table recognition (flows / categories / series)
+node scripts/prueba-plantillas.mjs    # templates against the catalog
+node scripts/prueba-visualizador.mjs  # visualizer options are distinct and pass the audit
+node scripts/prueba-universal.mjs     # the 11 newer models
+node scripts/prueba-calidad.mjs       # professional-quality checklist, 27 models × 2 formats
+node scripts/prueba-conectores.mjs    # connectors vs. live APIs (network)
+node scripts/prueba-paises.mjs        # country cards and comparisons (network)
 ```
 
-## Datos vivos
-`vivo` refresca cada serie descargada: mercados y cripto cada **15 min**, NBP 2 h, FRED 6 h, Banco Mundial 12 h, el resto a diario; si una fuente falla, espera el doble (máx. 6 h). Cuando un dato cambia: evento al estudio (se recompila solo), reconstrucción de las tablas combinadas y, si la spec lleva `"vivo":{"render":"final","alfa":true,"minEntreRendersMin":360}`, render nuevo versionado (v1, v2…). *Tiempo real* = sondeo frecuente de fuentes públicas: ninguna ofrece streaming gratuito. Para que corra 24/7 el proceso debe estar encendido (`Iniciar actualizador 24-7.bat`).
+## Licenses and data terms
 
-## Fuentes y límites honestos
-- Integradas: FRED, Banco Mundial (Pink Sheet), Yahoo Finance (no oficial), Coin Metrics (BTC desde 2010-07-18), Shiller/Yale (desde 1871; el archivo público termina en 2023-09), Our World in Data (desde el 10.000 a. C.), **NBP** (API oficial; tipos de cambio desde 2002, oro desde 2013) y **GUS/BDL** (API oficial).
-- **Stooq** devuelve «Access denied» a toda descarga automática: no se elude. Exporta el CSV desde el navegador y suéltalo en el estudio. **GPW** solo publica estadísticas en HTML/XLS sin API estable. Los archivos del NBP anteriores a 2002 no están en su API.
-- Oro desde 1257, series de siglos de precios: las fuentes abiertas descargables sin fricción no existen; súbelas como archivo con su fuente.
-- Las unidades de las series FRED en el catálogo son de catálogo: confírmalas en la página de la serie antes de rotular.
-- Datos de Coin Metrics: CC BY-NC (no comercial). Yahoo: uso personal. Revisa antes de monetizar.
+- **Code:** MIT ([LICENSE](LICENSE)). **Fonts:** Geist, SIL OFL ([`fuentes/OFL-Geist.txt`](fuentes/OFL-Geist.txt)).
+- **Data:** each series keeps its own license; the studio shows a warning for restricted sources (Yahoo Finance: personal use; Coin Metrics: CC BY-NC; IMF: written permission for bulk/commercial reuse). If you monetize videos, check the source terms first. Only open-license data is redistributed in `data/`.
+- **No non-commercial-only models or libraries** are used (the project is intended for commercial content).
 
-Licencia del código: MIT. Fuentes Geist: SIL OFL (`fuentes/OFL-Geist.txt`).
+## Language note
 
-## Estilo Harris / Caspian (novedades)
-- **Cámara «seguir»**, **píldora** y **círculo** para marcar momentos, **bandas** de periodo y **temas** de color (`oscuro`, `harris`, `carbon`). Se eligen en el paso 3 del estudio o en la spec (`camara`, `estilo`, `tema`). Detalle y límites: `docs/REFERENCIAS_ESTILO.md` §7.6.
+The studio UI and the text drawn *inside* the charts are in **Spanish** (the primary user's language and audience); the documentation, code-level docs and commit messages are in English. Original Spanish notes are kept in [`docs/es/`](docs/es/). Contributions that add UI/chart localization are welcome.
 
-## Diagramas de flujo por trimestre (Sankey) y más
-- **Paso 1 del estudio = «¿qué quieres contar?»**: algo que cambia en el tiempo · cómo gana y gasta dinero una empresa · cuánto pesa cada parte · qué sumó y qué restó. El estilo se deduce solo.
-- **Biblioteca de trimestres** (16 empresas, todos los Q desde 2009, datos oficiales de la SEC) + **agente** que cada 4 h busca reportes nuevos y deja un borrador listo. Todo en `docs/TRIMESTRES.md`.
-- Capas nuevas: `sankey`, `donut`, `cascada` (`docs/CAPAS.md`). MCP: 16 herramientas (`listar_trimestres`, `generar_trimestre`, `vigilar_reportes`).
-- Pruebas: `npm run prueba:trimestres` · `npm run prueba:tablas`.
+---
 
-## Toda la bolsa de EE. UU., chat y trabajo de noche
-- **Empresas:** busca entre ~6.300 empresas de Nasdaq/NYSE/CBOE (nombre o ticker); las 16 destacadas con toda su historia desde 2009, las demás con los últimos 3 años al elegirlas. Último año con **detalle fino** (líneas propias de gasto e ingresos por producto/segmento). `docs/TRIMESTRES.md`.
-- **Chat** (botón «Chat» abajo a la derecha): edita la pieza abierta en vivo («pásalo a vertical», «pon el trimestre anterior», «ahora en cascada»). Usa tu Claude Code; `servidor/chat.mjs`.
-- **Mapa de datos** (`docs/MAPA_DE_DATOS.md`), **prioridades** (`docs/PRIORIDADES.md`) y **trabajo de noche** (`docs/TRABAJO_NOCTURNO.md`).
+*Born from [Electric Eye](https://github.com/TimothyArcher90/Electric_Eye) (animated maps): same proven architecture — deterministic headless rendering, MCP control, frame-by-frame review — with a chart engine instead of a map engine.*

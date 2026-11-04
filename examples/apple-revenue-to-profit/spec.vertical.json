@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "titulo": "Apple · Q4 FY2026",
+  "formato": "vertical",
+  "fps": 30,
+  "duracion": 9.5,
+  "datos": {
+    "d": {
+      "archivo": "examples/apple-revenue-to-profit/data.csv",
+      "tipo": "categorias",
+      "uso": "cascada",
+      "fuente": {
+        "nombre": "SEC EDGAR · reporte 10-K de Apple (Q4 FY2026)",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json",
+        "obtenido": "2026-11-04",
+        "licencia": "Dominio público (Gobierno de EE. UU.)"
+      },
+      "prefijo": "US$ ",
+      "sufijo": " mil M",
+      "decimales": 1,
+      "unidad": "miles de millones de US$",
+      "divisor": 1000000000
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Apple · Q4 FY2026",
+      "color": "oro",
+      "t": [
+        0.2,
+        9.4
+      ],
+      "verificada": {
+        "fuente": "Período del reporte Q4 FY2026 (SEC EDGAR, fecha de cierre 2026-09-26)",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json"
+      }
+    },
+    {
+      "tipo": "cascada",
+      "id": "g1",
+      "datos": "d",
+      "t": [
+        0.9,
+        6.4
+      ]
+    },
+    {
+      "tipo": "sello",
+      "texto": "SEC EDGAR · reporte 10-K de Apple (Q4 FY2026)",
+      "fecha": "26 sep 2026"
+    }
+  ],
+  "sello": false
+}

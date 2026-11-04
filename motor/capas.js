@@ -352,7 +352,7 @@ function barras(env, capa) {
 // Diseño legible: en horizontal, nombre | barra | valor en una fila; en vertical (celular) el nombre y la cifra van arriba de cada barra.
 function carrera(env, capa) {
   const {ctx, u, t, W, H} = env, vert = H > W;
-  const tab = env.tablas[capa.datos], n = tab.x.length;
+  const tab = env.tablas[capa.datos], n = tab.x.length, NN = (capa._nn ??= acortarNombres(tab.series.map((q) => q.nombre)));   // nombres sin lo que repiten todos
   const B = caja(env, capa, CAJA_DEF(env));
   const [t0, t1] = capa.t ?? [0.5, 10];
   const ap = aparece(env, capa, t0); if (ap <= 0) return;
@@ -370,7 +370,7 @@ function carrera(env, capa) {
   const fecha = tab.tipoX === 'fecha' ? fmtFecha(lerp(tab.x[i0], tab.x[i0 + 1], k), capa.formatoX ?? 'mes') : String(tab.x[Math.round(f)]);
   texto(ctx, fecha, vert ? B.x : B.x + B.w, vert ? B.y + 34 * u : B.y - 14 * u, fnt(800, 56 * u, true), PALETA.oro, vert ? 'left' : 'right');
   reg(env, 'etiqueta', vert ? [B.x, B.y - 30 * u, B.x + 360 * u, B.y + 50 * u] : [B.x + B.w - 360 * u, B.y - 70 * u, B.x + B.w, B.y + 4 * u], `${capa.id ?? 'carrera'}:fecha`);
-  ctx.font = fnt(700, 26 * u); const LW = vert ? 0 : Math.min(B.w * 0.26, Math.max(...tab.series.map((s) => ctx.measureText(s.nombre).width)) + 24 * u);
+  ctx.font = fnt(700, 26 * u); const LW = vert ? 0 : Math.min(B.w * 0.26, Math.max(...NN.map((nm) => ctx.measureText(nm).width)) + 24 * u);
   ctx.font = fnt(600, 24 * u, true); const VW = vert ? 0 : Math.max(...vals.filter((v) => v != null).map((v) => ctx.measureText(fmtNum(v, tab.series[0].fmt)).width)) + 24 * u;
   const orden = tab.series.map((_, q) => q).filter((q) => vals[q] != null).sort((a, b) => lerp(r0[b], r1[b], ke) - lerp(r0[a], r1[a], ke));
   for (const q of orden) {
@@ -381,7 +381,7 @@ function carrera(env, capa) {
     const g = ctx.createLinearGradient(bx, 0, bx + bw, 0); g.addColorStop(0, rgba(color, 0.55)); g.addColorStop(1, color);
     ctx.fillStyle = g; ctx.fillRect(bx, by, bw, bh); ctx.restore();
     const vtxt = fmtNum(vals[q], tab.series[q].fmt); ctx.font = fnt(600, 26 * u, true); const wV = (capa._wv ??= Math.max(...tab.series.flatMap((sr) => sr.y.filter((v) => v != null).map((v) => ctx.measureText(fmtNum(v, sr.fmt)).width)))); ctx.font = fnt(700, 26 * u);
-    const nom = vert ? cortar(ctx, tab.series[q].nombre, B.w - wV - 24 * u) : tab.series[q].nombre;
+    const nom = vert ? cortar(ctx, NN[q], B.w - wV - 24 * u) : cortar(ctx, NN[q], LW - 24 * u);
     if (vert) {
       texto(ctx, nom, B.x, y + 40 * u, fnt(700, 26 * u), PALETA.blanco, 'left', 'alphabetic', alfa);
       texto(ctx, vtxt, B.x + B.w, y + 40 * u, fnt(600, 26 * u, true), PALETA.piedraClara, 'right', 'alphabetic', alfa);
@@ -461,7 +461,9 @@ function calor(env, capa) {
       ctx.save(); ctx.translate(ox + j * c + c / 2, oy + i * c + c / 2); ctx.scale(g, g);
       const fondoC = col(v == null ? 0 : v), tinta = contraste(fondoC, PALETA.blanco) >= contraste(fondoC, PALETA.fondo) ? PALETA.blanco : PALETA.fondo;   // la cifra elige la tinta que más contrasta con su celda
       ctx.fillStyle = fondoC; ctx.fillRect(-c / 2 + 2 * u, -c / 2 + 2 * u, c - 4 * u, c - 4 * u);
-      texto(ctx, v == null ? '—' : fmtNum(v, {decimales: 2}), 0, mid(26 * u), fnt(700, 26 * u, true), tinta, 'center');
+      const txtV = v == null ? '—' : fmtNum(v, {decimales: 2}); let fz = escalarFuente(26 * u); ctx.font = fuenteCss(700, fz, true); const wV = ctx.measureText(txtV).width;
+      if (wV > c - 10 * u) fz *= (c - 10 * u) / wV;   // la cifra se achica para caber en su casilla (con celdas pequeñas la tipografía mínima se montaba sobre la vecina)
+      texto(ctx, txtV, 0, mid(26 * u), fuenteCss(700, fz, true), tinta, 'center');
       ctx.restore();
     }
   }
@@ -744,7 +746,9 @@ function titulo(env, capa) {
   const r = prog(t, t0 + 0.2, t0 + 0.9, ease.out3);
   ctx.fillStyle = color; ctx.fillRect(x, T.ult + 16 * u, Math.min(w, 200 * u) * r, 4 * u);
   if (capa.sub) {
-    ctx.font = fuenteCss(500, T.subT); let sb = String(capa.sub); while (sb.length > 6 && ctx.measureText(sb).width > T.w + 400 * u && ctx.measureText(sb).width > (env.H > env.W ? ZONA.x * env.W - x : env.W * 0.5)) sb = sb.slice(0, -2);
+    ctx.font = fuenteCss(500, T.subT); let sb = String(capa.sub), cortado = false; const tope = env.W - 2 * x;   // nunca más allá del lienzo con el mismo margen a la derecha
+    while (sb.length > 6 && (ctx.measureText(sb).width > tope || (ctx.measureText(sb).width > T.w + 400 * u && ctx.measureText(sb).width > (env.H > env.W ? ZONA.x * env.W - x : env.W * 0.5)))) { sb = sb.slice(0, -2); cortado = true; }
+    if (cortado) sb = sb.trimEnd().replace(/[,:;.\s]+$/, '') + '…';
     texto(ctx, sb, x, T.ult + 24 * u + T.subT, fuenteCss(500, T.subT), PALETA.piedraClara, 'left', 'alphabetic', prog(t, t0 + 0.5, t0 + 1.0, ease.out3));
   }
   ctx.restore();
@@ -1304,5 +1308,5 @@ function divergente(env, capa) {
   ctx.restore();
 }
 
-import {CAPAS_EXTRA} from './capas_extra.js';   // visualizador universal (capas nuevas)
+import {CAPAS_EXTRA, acortarNombres} from './capas_extra.js';   // visualizador universal (capas nuevas)
 export const DIBUJO = {...CAPAS_EXTRA, linea, barras, carrera, dispersion, calor, zona, llamada, contador, titulo, cortina, imagen, sello, sankey, donut, cascada, pendiente, bump, treemap, waffle, lollipop, divergente};

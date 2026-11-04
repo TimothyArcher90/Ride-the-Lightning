@@ -189,8 +189,9 @@ async function paso1Paises() {
   const poner = (lista) => aplicarSeries(lista.slice(0, 8).map((iso) => ({origen: 'biblioteca', id: `pais_${iso}_${clave()}`, nombre: nombreDe(iso)})), lista.length ? (cat.indicadores.find((i) => i.clave === clave())?.nombre ?? '').split(' (')[0] : '');
   const pintar = () => {
     const temas = cat.indicadores.reduce((m, i) => ((m[i.tema ?? 'Otros'] ??= []).push(i), m), {});
-    $('#indP').innerHTML = Object.entries(temas).map(([t, l]) => `<p class="tag" style="margin:8px 0 6px">${esc(t)}</p><div class="chips" style="margin:0" role="radiogroup" aria-label="${esc(t)}">${l.map((i) => `<button type="button" class="chip" role="radio" data-k="${esc(i.clave)}" aria-checked="${clave() === i.clave}" aria-pressed="${clave() === i.clave}" title="${esc(i.fuente ?? '')}">${esc(i.nombre)}</button>`).join('')}</div>`).join('');
-    $('#indP').querySelectorAll('.chip').forEach((b) => (b.onclick = () => { const act = isos(); S.indPais = b.dataset.k; guardar(); pintar(); if (act.length) poner(act); }));
+    const actual = cat.indicadores.find((i) => i.clave === clave());
+    $('#indP').innerHTML = `<select id="selInd" aria-label="Indicador">${Object.entries(temas).map(([t, l]) => `<optgroup label="${esc(t)}">${l.map((i) => `<option value="${esc(i.clave)}" ${clave() === i.clave ? 'selected' : ''}>${esc(i.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>${actual ? `<p class="ayuda" style="margin:6px 0 0">Fuente: ${esc(actual.fuente ?? '')} · ${esc(actual.unidad ?? '')}</p>` : ''}`;
+    $('#selInd').onchange = (e) => { const act = isos(); S.indPais = e.target.value; guardar(); pintar(); if (act.length) poner(act); };
     $('#grupos').innerHTML = Object.keys(GRUPOS_PAISES).map((g) => `<button type="button" class="chip" data-g="${esc(g)}">${esc(g)}</button>`).join('') + (S.series.length ? '<button type="button" class="chip" data-g="">Quitar todos</button>' : '');
     $('#grupos').querySelectorAll('.chip').forEach((b) => (b.onclick = () => { if (!b.dataset.g) aplicarSeries([]); else poner(GRUPOS_PAISES[b.dataset.g]); pintar(); }));
     const reg = porRegion(cat.paises), sel = isos();

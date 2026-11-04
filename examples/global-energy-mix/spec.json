@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "titulo": "Qué peso tiene cada fuente",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 12.2,
+  "datos": {
+    "d": {
+      "archivo": "datos/derivados/pieza_e054bcdd4a.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "ow_global_energy_substitution_coal_twh",
+          "nombre": "Consumo mundial de carbón (sustitución energética)",
+          "color": "oro",
+          "unidad": "TWh",
+          "decimales": "auto"
+        },
+        {
+          "col": "ow_global_energy_substitution_oil_twh",
+          "nombre": "Consumo mundial de petróleo (sustitución energética)",
+          "color": "teal",
+          "unidad": "TWh",
+          "decimales": "auto"
+        },
+        {
+          "col": "ow_global_energy_substitution_gas_twh",
+          "nombre": "Consumo mundial de gas (sustitución energética)",
+          "color": "purpura",
+          "unidad": "TWh",
+          "decimales": "auto"
+        },
+        {
+          "col": "ow_global_energy_substitution_hydro_twh",
+          "nombre": "Consumo mundial de hidroeléctrica",
+          "color": "piedra",
+          "unidad": "TWh",
+          "decimales": "auto"
+        },
+        {
+          "col": "ow_global_energy_substitution_nuclear_twh",
+          "nombre": "Consumo mundial de nuclear",
+          "color": "oro",
+          "unidad": "TWh",
+          "decimales": "auto"
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Qué peso tiene cada fuente",
+      "color": "oro",
+      "t": [
+        0.2,
+        12.1
+      ]
+    },
+    {
+      "tipo": "apilada",
+      "datos": "d",
+      "id": "g1",
+      "t": [
+        0.9,
+        8.9
+      ],
+      "modo": "pct"
+    }
+  ]
+}

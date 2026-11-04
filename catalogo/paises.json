@@ -1,16 +1,379 @@
 {
   "generado": "2026-11-04",
-  "paises": 45,
-  "indicadores": 14,
+  "paises": 72,
+  "indicadores": 59,
   "sinDatos": {
+    "USA": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Estados Unidos.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Estados Unidos.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Estados Unidos.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Estados Unidos.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Estados Unidos."
+    },
+    "CAN": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Canadá.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Canadá.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Canadá.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Canadá."
+    },
+    "JPN": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Japón.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Japón.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Japón.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Japón."
+    },
+    "IND": {
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para India.",
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para India."
+    },
+    "KOR": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Corea del Sur.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Corea del Sur.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Corea del Sur."
+    },
+    "IDN": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Indonesia."
+    },
     "SGP": {
-      "gini": "El Banco Mundial no publica ningún valor de «Índice de Gini (desigualdad del ingreso)» para Singapur."
+      "gini": "El Banco Mundial no publica ningún valor de «Índice de Gini (desigualdad del ingreso)» para Singapur.",
+      "remesas": "El Banco Mundial no publica ningún valor de «Remesas recibidas» para Singapur.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Singapur.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Singapur.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Singapur."
+    },
+    "VNM": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Vietnam.",
+      "ingresos_gobierno": "El Banco Mundial no publica ningún valor de «Ingresos del gobierno central (sin donaciones)» para Vietnam."
+    },
+    "THA": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Tailandia."
+    },
+    "DEU": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Alemania.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Alemania.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Alemania.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Alemania.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Alemania.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Alemania.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Alemania."
+    },
+    "GBR": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Reino Unido.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Reino Unido.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Reino Unido.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Reino Unido."
+    },
+    "FRA": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Francia.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Francia.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Francia.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Francia.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Francia.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Francia."
+    },
+    "ITA": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Italia.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Italia.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Italia.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Italia."
+    },
+    "ESP": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para España.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para España.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para España.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para España.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para España.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para España."
+    },
+    "POL": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Polonia.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Polonia.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Polonia.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Polonia.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Polonia.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Polonia."
+    },
+    "NLD": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Países Bajos.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Países Bajos.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Países Bajos.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Países Bajos."
+    },
+    "CHE": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Suiza.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Suiza.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Suiza.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Suiza."
+    },
+    "IRL": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Irlanda.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Irlanda.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Irlanda.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Irlanda.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Irlanda.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Irlanda.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Irlanda."
+    },
+    "SWE": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Suecia.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Suecia.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Suecia.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Suecia."
+    },
+    "TUR": {
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Turquía.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Turquía.",
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Turquía."
+    },
+    "AUS": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Australia.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Australia.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Australia.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Australia."
     },
     "SAU": {
-      "gini": "El Banco Mundial no publica ningún valor de «Índice de Gini (desigualdad del ingreso)» para Arabia Saudita."
+      "gini": "El Banco Mundial no publica ningún valor de «Índice de Gini (desigualdad del ingreso)» para Arabia Saudita.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Arabia Saudita.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Arabia Saudita.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Arabia Saudita.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Arabia Saudita.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Arabia Saudita.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Arabia Saudita."
+    },
+    "ISR": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Israel.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Israel.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Israel."
+    },
+    "ARE": {
+      "remesas": "El Banco Mundial no publica ningún valor de «Remesas recibidas» para Emiratos Árabes Unidos.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Emiratos Árabes Unidos.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Emiratos Árabes Unidos.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Emiratos Árabes Unidos.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Emiratos Árabes Unidos.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Emiratos Árabes Unidos.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Emiratos Árabes Unidos.",
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Emiratos Árabes Unidos."
+    },
+    "EGY": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Egipto."
+    },
+    "NGA": {
+      "inversion": "El Banco Mundial no publica ningún valor de «Formación bruta de capital fijo» para Nigeria.",
+      "ahorro": "El Banco Mundial no publica ningún valor de «Ahorro bruto» para Nigeria.",
+      "ingresos_gobierno": "El Banco Mundial no publica ningún valor de «Ingresos del gobierno central (sin donaciones)» para Nigeria."
+    },
+    "ARG": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Argentina."
+    },
+    "CHL": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Chile.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Chile.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Chile."
+    },
+    "PER": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Perú."
+    },
+    "ECU": {
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Ecuador.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Ecuador.",
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Ecuador."
+    },
+    "URY": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Uruguay.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Uruguay.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Uruguay."
+    },
+    "PAN": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Panamá.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Panamá.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Panamá.",
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Panamá."
+    },
+    "CRI": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Costa Rica.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Costa Rica.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Costa Rica."
     },
     "VEN": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Venezuela.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Venezuela.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Venezuela.",
+      "ingresos_gobierno": "El Banco Mundial no publica ningún valor de «Ingresos del gobierno central (sin donaciones)» para Venezuela.",
       "deuda_pib": "El FMI no publica ningún valor de «Deuda pública bruta» para Venezuela."
+    },
+    "BOL": {
+      "matricula_terciaria": "El Banco Mundial no publica ningún valor de «Matrícula en educación superior (tasa bruta)» para Bolivia.",
+      "capitalizacion_bolsa": "El Banco Mundial no publica ningún valor de «Capitalización de las empresas que cotizan en bolsa» para Bolivia."
+    },
+    "DOM": {
+      "capitalizacion_bolsa": "El Banco Mundial no publica ningún valor de «Capitalización de las empresas que cotizan en bolsa» para República Dominicana."
+    },
+    "GTM": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Guatemala.",
+      "capitalizacion_bolsa": "El Banco Mundial no publica ningún valor de «Capitalización de las empresas que cotizan en bolsa» para Guatemala."
+    },
+    "HND": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Honduras.",
+      "capitalizacion_bolsa": "El Banco Mundial no publica ningún valor de «Capitalización de las empresas que cotizan en bolsa» para Honduras."
+    },
+    "SLV": {
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para El Salvador.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para El Salvador.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para El Salvador.",
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para El Salvador.",
+      "capitalizacion_bolsa": "El Banco Mundial no publica ningún valor de «Capitalización de las empresas que cotizan en bolsa» para El Salvador."
+    },
+    "NIC": {
+      "capitalizacion_bolsa": "El Banco Mundial no publica ningún valor de «Capitalización de las empresas que cotizan en bolsa» para Nicaragua."
+    },
+    "CUB": {
+      "inflacion": "El Banco Mundial no publica ningún valor de «Inflación (IPC, variación anual)» para Cuba.",
+      "gini": "El Banco Mundial no publica ningún valor de «Índice de Gini (desigualdad del ingreso)» para Cuba.",
+      "cuenta_corriente": "El Banco Mundial no publica ningún valor de «Cuenta corriente (balanza de pagos)» para Cuba.",
+      "remesas": "El Banco Mundial no publica ningún valor de «Remesas recibidas» para Cuba.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Cuba.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Cuba.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Cuba.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Cuba.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Cuba.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Cuba.",
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Cuba.",
+      "ingresos_gobierno": "El Banco Mundial no publica ningún valor de «Ingresos del gobierno central (sin donaciones)» para Cuba.",
+      "credito_privado": "El Banco Mundial no publica ningún valor de «Crédito de los bancos al sector privado» para Cuba.",
+      "capitalizacion_bolsa": "El Banco Mundial no publica ningún valor de «Capitalización de las empresas que cotizan en bolsa» para Cuba.",
+      "deuda_pib": "El FMI no publica ningún valor de «Deuda pública bruta» para Cuba.",
+      "deficit_pib": "El FMI no publica ningún valor de «Balance fiscal (superávit + / déficit −)» para Cuba."
+    },
+    "JAM": {
+      "exportaciones": "El Banco Mundial no publica ningún valor de «Exportaciones de bienes y servicios» para Jamaica.",
+      "importaciones": "El Banco Mundial no publica ningún valor de «Importaciones de bienes y servicios» para Jamaica.",
+      "apertura_comercial": "El Banco Mundial no publica ningún valor de «Comercio total (exportaciones + importaciones)» para Jamaica.",
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Jamaica.",
+      "inversion": "El Banco Mundial no publica ningún valor de «Formación bruta de capital fijo» para Jamaica.",
+      "ahorro": "El Banco Mundial no publica ningún valor de «Ahorro bruto» para Jamaica."
+    },
+    "PRT": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Portugal.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Portugal.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Portugal.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Portugal.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Portugal.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Portugal."
+    },
+    "BEL": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Bélgica.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Bélgica.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Bélgica.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Bélgica.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Bélgica.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Bélgica.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Bélgica."
+    },
+    "AUT": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Austria.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Austria.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Austria.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Austria.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Austria.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Austria.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Austria."
+    },
+    "DNK": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Dinamarca.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Dinamarca.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Dinamarca.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Dinamarca.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Dinamarca.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Dinamarca.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Dinamarca."
+    },
+    "NOR": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Noruega.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Noruega.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Noruega.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Noruega."
+    },
+    "FIN": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Finlandia.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Finlandia.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Finlandia.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Finlandia.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Finlandia.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Finlandia.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Finlandia."
+    },
+    "GRC": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Grecia.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Grecia.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Grecia.",
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Grecia.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Grecia.",
+      "tasa_depositos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los depósitos» para Grecia."
+    },
+    "CZE": {
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Chequia.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Chequia.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Chequia.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Chequia."
+    },
+    "HUN": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Hungría.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Hungría.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Hungría."
+    },
+    "ROU": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Rumania.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Rumania.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Rumania."
+    },
+    "PAK": {
+      "ingresos_gobierno": "El Banco Mundial no publica ningún valor de «Ingresos del gobierno central (sin donaciones)» para Pakistán."
+    },
+    "BGD": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Bangladés."
+    },
+    "MYS": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Malasia.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Malasia.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Malasia."
+    },
+    "IRN": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Irán."
+    },
+    "IRQ": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Irak.",
+      "capitalizacion_bolsa": "El Banco Mundial no publica ningún valor de «Capitalización de las empresas que cotizan en bolsa» para Irak."
+    },
+    "QAT": {
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Catar.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Catar.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Catar.",
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Catar.",
+      "inversion": "El Banco Mundial no publica ningún valor de «Formación bruta de capital fijo» para Catar.",
+      "ingresos_gobierno": "El Banco Mundial no publica ningún valor de «Ingresos del gobierno central (sin donaciones)» para Catar."
+    },
+    "MAR": {
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Marruecos.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Marruecos."
+    },
+    "KEN": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Kenia."
+    },
+    "ETH": {
+      "tipo_cambio_real": "El Banco Mundial no publica ningún valor de «Tipo de cambio efectivo real (índice)» para Etiopía.",
+      "capitalizacion_bolsa": "El Banco Mundial no publica ningún valor de «Capitalización de las empresas que cotizan en bolsa» para Etiopía."
+    },
+    "GHA": {
+      "tasa_real": "El Banco Mundial no publica ningún valor de «Tasa de interés real» para Ghana.",
+      "tasa_prestamos": "El Banco Mundial no publica ningún valor de «Tasa de interés de los préstamos» para Ghana."
+    },
+    "NZL": {
+      "gini": "El Banco Mundial no publica ningún valor de «Índice de Gini (desigualdad del ingreso)» para Nueva Zelanda.",
+      "alfabetismo": "El Banco Mundial no publica ningún valor de «Alfabetismo de adultos (15+)» para Nueva Zelanda.",
+      "deuda_externa": "El Banco Mundial no publica ningún valor de «Deuda externa total (stock)» para Nueva Zelanda.",
+      "deuda_externa_ingreso": "El Banco Mundial no publica ningún valor de «Deuda externa (stock) / ingreso nacional bruto» para Nueva Zelanda.",
+      "servicio_deuda": "El Banco Mundial no publica ningún valor de «Servicio de la deuda externa» para Nueva Zelanda."
     }
   }
 }

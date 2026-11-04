@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "titulo": "NVIDIA · Q2 FY2027",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 12.5,
+  "datos": {
+    "d": {
+      "archivo": "examples/nvidia-how-it-makes-money/data.csv",
+      "tipo": "flujos",
+      "fuente": {
+        "nombre": "SEC EDGAR · reporte 10-Q de NVIDIA (Q2 FY2027)",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
+        "obtenido": "2026-11-03",
+        "licencia": "Dominio público (Gobierno de EE. UU.)"
+      },
+      "prefijo": "US$ ",
+      "sufijo": " mil M",
+      "decimales": 1,
+      "unidad": "miles de millones de US$",
+      "divisor": 1000000000
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "NVIDIA · Q2 FY2027",
+      "color": "oro",
+      "t": [
+        0.2,
+        12.4
+      ],
+      "verificada": {
+        "fuente": "Período del reporte Q2 FY2027 (SEC EDGAR, fecha de cierre 2026-07-26)",
+        "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json"
+      }
+    },
+    {
+      "tipo": "sankey",
+      "id": "g1",
+      "datos": "d",
+      "t": [
+        0.9,
+        8.9
+      ]
+    },
+    {
+      "tipo": "sello",
+      "texto": "SEC EDGAR · reporte 10-Q de NVIDIA (Q2 FY2027)",
+      "fecha": "26 jul 2026"
+    }
+  ],
+  "sello": false
+}

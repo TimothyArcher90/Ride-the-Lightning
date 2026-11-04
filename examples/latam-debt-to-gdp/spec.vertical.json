@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "titulo": "Argentina, Brasil y otros",
+  "formato": "vertical",
+  "fps": 30,
+  "duracion": 9.1,
+  "datos": {
+    "d": {
+      "archivo": "datos/derivados/pieza_f0eb44fb41.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "pais_ARG_deuda_pib",
+          "nombre": "Argentina",
+          "color": "teal",
+          "sufijo": " %",
+          "unidad": "% del PIB",
+          "decimales": 2
+        },
+        {
+          "col": "pais_BRA_deuda_pib",
+          "nombre": "Brasil",
+          "color": "purpura",
+          "sufijo": " %",
+          "unidad": "% del PIB",
+          "decimales": 2
+        },
+        {
+          "col": "pais_CHL_deuda_pib",
+          "nombre": "Chile",
+          "color": "piedra",
+          "sufijo": " %",
+          "unidad": "% del PIB",
+          "decimales": 2
+        },
+        {
+          "col": "pais_COL_deuda_pib",
+          "nombre": "Colombia",
+          "color": "oro",
+          "sufijo": " %",
+          "unidad": "% del PIB",
+          "decimales": 2
+        },
+        {
+          "col": "pais_MEX_deuda_pib",
+          "nombre": "México",
+          "color": "teal",
+          "sufijo": " %",
+          "unidad": "% del PIB",
+          "decimales": 2
+        },
+        {
+          "col": "pais_PER_deuda_pib",
+          "nombre": "Perú",
+          "color": "purpura",
+          "sufijo": " %",
+          "unidad": "% del PIB",
+          "decimales": 2
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Argentina, Brasil y otros",
+      "color": "oro",
+      "t": [
+        0.2,
+        9
+      ],
+      "sub": "Valores reales, % del PIB (un solo eje)"
+    },
+    {
+      "tipo": "linea",
+      "id": "g1",
+      "datos": "d",
+      "foco": 3,
+      "ejeUnidad": true,
+      "t": [
+        0.6,
+        6.1
+      ]
+    },
+    {
+      "tipo": "contador",
+      "capa": "g1",
+      "serie": 3,
+      "t": [
+        0,
+        9
+      ]
+    }
+  ]
+}

@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {fileURLToPath} from 'node:url';
 import XLSX from 'xlsx';
 import {utc} from '../motor/nucleo.js';
 
@@ -12,6 +13,41 @@ export const FORMATOS_TEXTO = ['.csv', '.tsv', '.txt', '.tab'];
 export const FORMATOS = [...FORMATOS_HOJA, ...FORMATOS_TEXTO, '.json'];
 
 export const hashArchivo = (ruta) => crypto.createHash('sha256').update(fs.readFileSync(ruta)).digest('hex');
+
+// ── Instantánea curada en git: data/<id>.csv + data/MANIFEST.json (licencias abiertas). Si una serie no está descargada en
+//    datos/biblioteca/<id>.csv (carpeta local, fuera de git), se lee la de data/. Así los ejemplos corren sin bajar nada. ──
+const RAIZ_PROYECTO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const DIR_BIBLIOTECA = path.join(RAIZ_PROYECTO, 'datos', 'biblioteca'), DIR_INSTANTANEA = path.join(RAIZ_PROYECTO, 'data');
+let _manifiesto = null;
+function manifiesto() {
+  if (_manifiesto === null) {
+    try { _manifiesto = new Map(JSON.parse(fs.readFileSync(path.join(DIR_INSTANTANEA, 'MANIFEST.json'), 'utf8')).files.map((f) => [f.id, f])); } catch { _manifiesto = new Map(); }
+  }
+  return _manifiesto;
+}
+/** Ruta de una serie de la biblioteca: la descargada (datos/biblioteca) si existe; si no, la de la instantánea (data/); si ninguna, la ruta de descarga. */
+export function rutaBiblioteca(id) {
+  const lib = path.join(DIR_BIBLIOTECA, id + '.csv'), snap = path.join(DIR_INSTANTANEA, id + '.csv');
+  return !fs.existsSync(lib) && fs.existsSync(snap) ? snap : lib;
+}
+/** ¿Está la serie disponible localmente (descargada o en la instantánea)? */
+export const hayEnBiblioteca = (id) => fs.existsSync(rutaBiblioteca(id));
+/** Equivalente en data/ de una ruta datos/biblioteca/<id>.csv que NO existe; null si no hay. */
+export function rutaInstantanea(ruta) {
+  const rel = path.relative(DIR_BIBLIOTECA, path.resolve(ruta));
+  if (!rel || rel.startsWith('..') || path.isAbsolute(rel) || rel.includes(path.sep) || !rel.endsWith('.csv')) return null;
+  const alt = path.join(DIR_INSTANTANEA, rel);
+  return fs.existsSync(alt) ? alt : null;
+}
+/** Procedencia de un CSV de la biblioteca: su .meta.json si existe; si no, la guardada en data/MANIFEST.json (misma forma). null si no hay. */
+export function metaSerie(ruta) {
+  const side = ruta + '.meta.json';
+  if (fs.existsSync(side)) return JSON.parse(fs.readFileSync(side, 'utf8'));
+  const dir = path.dirname(path.resolve(ruta));
+  if (dir !== DIR_BIBLIOTECA && dir !== DIR_INSTANTANEA) return null;   // un archivo del usuario que se llame igual NO hereda la procedencia de la instantánea
+  const e = manifiesto().get(path.basename(ruta).replace(/\.csv$/, ''));
+  return e?.provenance ? {...e.provenance, instantanea: true} : null;
+}
 
 const NULOS = new Set(['', '.', 'na', 'n/a', '#n/a', 'nan', 'null', 'none', '-', '--', '—', '..', '...', '…', 'n.a.', 'nd']);
 const esNulo = (v) => v === null || v === undefined || (typeof v === 'string' && NULOS.has(v.trim().toLowerCase()));
@@ -62,6 +98,7 @@ function filasDeHoja(ws) {
 
 /** Devuelve {columnas, filas, formato, hoja, hojas, hash, avisos}. filaEncabezado es 1-based sobre la hoja. */
 export function leerTabla(ruta, {hoja, filaEncabezado} = {}) {
+  if (!fs.existsSync(ruta)) { const alt = rutaInstantanea(ruta); if (alt) ruta = alt; }   // caída a data/ (instantánea abierta)
   if (!fs.existsSync(ruta)) throw new Error(`No existe el archivo: ${ruta}`);
   const ext = path.extname(ruta).toLowerCase();
   const avisos = [];

@@ -63,7 +63,7 @@ function lineasDe(env, s, ancho, base, peso, maxL) { const {ctx} = env; ctx.save
 /** Nota de método/escala que se DECLARA en pantalla: va en la franja libre justo encima de la gráfica (hasta 3 líneas). */
 function nota(env, B, texto, id, alpha = 1) {
   if (!texto) return;
-  const px = tam(env, 18), lh = px * 1.28, L = lineasDe(env, texto, B.w, 18, 500, 3);
+  const px = tam(env, 18), lh = px * 1.28, L = lineasDe(env, texto, B.w, 18, 500, env.H > env.W ? 6 : 3);   // en vertical la caja es más estrecha: más líneas, para no cortar la declaración de escala con «…»
   L.forEach((l, i) => rot(env, l, B.x, B.y - 16 * env.u - (L.length - 1 - i) * lh, 18, 500, rgba(PALETA.piedraClara, 0.9), 'left', `${id}:nota${i}`, {alpha, halo: false}));
 }
 /** Opacidad de entrada escalonada del elemento i de n que arranca en t0 (curva de desaceleración, nunca lineal). */
@@ -81,7 +81,7 @@ function marcasHasta(max, n = 5) {
   return {ticks: tk, top: tk[tk.length - 1]};
 }
 /** Quita lo que repiten TODOS los nombres de serie («Consumo mundial de … (sustitución energética)») para que los rótulos quepan sin perder lo que distingue a cada uno. */
-function acortarNombres(ns) {
+export function acortarNombres(ns) {
   let r = ns.map(String);
   if (r.length > 1) {
     const w = r.map((q) => q.split(' ')); let k = 0; while (k < w[0].length - 1 && w.every((q) => q.length > k + 1 && q[k] === w[0][k])) k++;

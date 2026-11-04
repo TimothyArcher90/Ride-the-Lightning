@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "titulo": "Oro, Cobre y Petróleo WTI",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 12,
+  "datos": {
+    "d": {
+      "archivo": "datos/derivados/pieza_be65020aef.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "bm_gold",
+          "nombre": "Oro",
+          "color": "oro",
+          "prefijo": "US$ ",
+          "unidad": "US$ ($/troy oz)",
+          "decimales": "auto"
+        },
+        {
+          "col": "bm_copper",
+          "nombre": "Cobre",
+          "color": "teal",
+          "prefijo": "US$ ",
+          "unidad": "US$ ($/mt)",
+          "decimales": "auto"
+        },
+        {
+          "col": "bm_crude_oil_wti",
+          "nombre": "Petróleo WTI",
+          "color": "purpura",
+          "prefijo": "US$ ",
+          "unidad": "US$ ($/bbl)",
+          "decimales": "auto"
+        }
+      ],
+      "base100": true
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Oro, Cobre y Petróleo WTI",
+      "color": "oro",
+      "t": [
+        0.2,
+        11.9
+      ],
+      "sub": "Índice base cien: todas parten del mismo punto"
+    },
+    {
+      "tipo": "linea",
+      "id": "g1",
+      "datos": "d",
+      "foco": 0,
+      "ejeUnidad": true,
+      "t": [
+        1,
+        9
+      ]
+    },
+    {
+      "tipo": "contador",
+      "capa": "g1",
+      "serie": 0,
+      "t": [
+        0,
+        11.9
+      ]
+    }
+  ]
+}

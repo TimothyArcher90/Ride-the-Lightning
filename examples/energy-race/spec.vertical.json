@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "titulo": "Quién va primero",
+  "formato": "vertical",
+  "fps": 30,
+  "duracion": 14,
+  "datos": {
+    "d": {
+      "archivo": "datos/derivados/pieza_29cc649562.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "ow_global_energy_substitution_coal_twh",
+          "nombre": "Consumo mundial de carbón (sustitución energética)",
+          "color": "oro",
+          "unidad": "TWh",
+          "decimales": "auto"
+        },
+        {
+          "col": "ow_global_energy_substitution_oil_twh",
+          "nombre": "Consumo mundial de petróleo (sustitución energética)",
+          "color": "teal",
+          "unidad": "TWh",
+          "decimales": "auto"
+        },
+        {
+          "col": "ow_global_energy_substitution_gas_twh",
+          "nombre": "Consumo mundial de gas (sustitución energética)",
+          "color": "purpura",
+          "unidad": "TWh",
+          "decimales": "auto"
+        },
+        {
+          "col": "ow_global_energy_substitution_hydro_twh",
+          "nombre": "Consumo mundial de hidroeléctrica",
+          "color": "piedra",
+          "unidad": "TWh",
+          "decimales": "auto"
+        },
+        {
+          "col": "ow_global_energy_substitution_nuclear_twh",
+          "nombre": "Consumo mundial de nuclear",
+          "color": "oro",
+          "unidad": "TWh",
+          "decimales": "auto"
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Quién va primero",
+      "color": "oro",
+      "t": [
+        0.2,
+        13.9
+      ],
+      "sub": "TWh · quién va primero en cada fecha"
+    },
+    {
+      "tipo": "carrera",
+      "datos": "d",
+      "top": 5,
+      "t": [
+        1,
+        13
+      ],
+      "formatoX": "anio"
+    }
+  ]
+}

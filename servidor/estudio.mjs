@@ -7,7 +7,7 @@ import {iniciarServidor} from './web.mjs';
 import {compilar, RAIZ, rutaSegura} from './compilar.mjs';
 import {renderizar} from './render.mjs';
 import {buscar, descargar, leerCatalogo} from './catalogo.mjs';
-import {inspeccionar, FORMATOS} from './datos.mjs';
+import {inspeccionar, FORMATOS, metaSerie} from './datos.mjs';
 import {iniciarVivo, eventos, estadoVivo} from './vivo.mjs';
 import {salud, licencia} from './analisis.mjs';
 import {PLANTILLAS, CAMARAS, analizar, generar} from './plantillas.mjs';
@@ -32,7 +32,7 @@ const cuerpo = (req, max = 200e6) => new Promise((ok, mal) => { const c = []; le
 const nombreSeguro = (n) => String(n).replace(/[^\w.\- ()áéíóúñÁÉÍÓÚÑ]+/g, '_').slice(0, 120);
 
 
-const metaDe = (id) => { const f = path.join(RAIZ, 'datos', 'biblioteca', `${id}.csv.meta.json`); return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null; };
+const metaDe = (id) => metaSerie(path.join(RAIZ, 'datos', 'biblioteca', `${id}.csv`));   // .meta.json o procedencia de la instantánea data/
 const ficha = (e) => { const m = metaDe(e.id); return {id: e.id, nombre: e.nombre, categoria: e.categoria, unidad: m?.fuente?.unidad ?? e.unidad ?? '', frecuencia: e.frecuencia, fuente: e.fuente_original, url: m?.fuente?.url ?? null, licencia: licencia(e), salud: salud(e, m),
   descargada: !!m, inicio: m?.inicio ?? null, fin: m?.fin ?? null, filas: m?.filas ?? null, etiquetas: e.etiquetas ?? [], nota: e.nota ?? null}; };
 /** Descarga (historia completa) lo que falte de la biblioteca antes de usarlo: la persona nunca baja un archivo. */

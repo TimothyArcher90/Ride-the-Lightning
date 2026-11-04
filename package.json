@@ -19,7 +19,8 @@
     "catalogo": "node scripts/construir-catalogo.mjs",
     "trimestres": "node scripts/trimestres.mjs",
     "prueba:trimestres": "node scripts/prueba-trimestres.mjs",
-    "prueba:tablas": "node scripts/prueba-tablas.mjs"
+    "prueba:tablas": "node scripts/prueba-tablas.mjs",
+    "gallery": "node scripts/generar-galeria.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",

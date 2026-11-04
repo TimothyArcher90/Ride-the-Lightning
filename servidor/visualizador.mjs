@@ -1,6 +1,6 @@
 // El «gran visualizador»: dado un dato, decide QUÉ gráficas lo cuentan bien, construye varias opciones realmente distintas
 // y descarta las que no pasan el control de exactitud ni el de textos pisados. Quien lo usa no tiene que saber de gráficas.
-// Reglas de elección: "From Data to Viz", FT Visual Vocabulary y Cleveland-McGill (ver docs/INVESTIGACION_VISUALIZACION.md).
+// Reglas de elección: "From Data to Viz", FT Visual Vocabulary y Cleveland-McGill (ver docs/research/VISUALIZATION_RESEARCH.md).
 import {generar, PLANTILLAS} from './plantillas.mjs';
 import {compilar} from './compilar.mjs';
 import {auditarColisiones} from './render.mjs';

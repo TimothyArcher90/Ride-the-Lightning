@@ -7,6 +7,7 @@ import crypto from 'node:crypto';
 import {RAIZ, compilar} from './compilar.mjs';
 import {leerCatalogo} from './catalogo.mjs';
 import {combinar} from './biblioteca.mjs';
+import {rutaBiblioteca} from './datos.mjs';
 import {momentos, resumenSerie} from './analisis.mjs';
 import {fmtFecha} from '../motor/nucleo.js';
 import {PLANTILLAS_EXTRA, IDS_EXTRA, USO_EXTRA, COMUN_EXTRA, generarExtra} from './plantillas_extra.mjs';   // visualizador universal
@@ -49,6 +50,9 @@ const sinPrefijoNombre = (n) => String(n).split(' — ')[0];
 function presentacion(unidad = '', maxAbs = 0) {
   if (/miles de millones de US\$/i.test(unidad) && maxAbs >= 1000) return {divisor: 1000, prefijo: 'US$ ', sufijo: ' bill.', unidad: 'billones de US$', decimales: 2};
   if (/millones de US\$/i.test(unidad) && maxAbs >= 1e6) return {divisor: 1e6, prefijo: 'US$ ', sufijo: ' bill.', unidad: 'billones de US$', decimales: 2};
+  // series de país (Banco Mundial): cifras gigantes en dólares corrientes y personas, con escala FIJA para que varios países sean comparables
+  if (/^US\$ corrientes$/i.test(unidad)) return {divisor: 1e9, prefijo: 'US$ ', sufijo: ' mil M', unidad: 'miles de millones de US$', decimales: 'auto'};
+  if (/^personas$/i.test(unidad)) return {divisor: 1e6, sufijo: ' M', unidad: 'millones de personas', decimales: 'auto'};
   if (/^US\$/i.test(unidad)) return {prefijo: 'US$ ', unidad, decimales: 'auto'};
   if (/^%|% /.test(unidad) || /^%/.test(unidad)) return {sufijo: ' %', unidad, decimales: 2};
   return {unidad, decimales: 'auto'};
@@ -73,7 +77,7 @@ function armarDatos(items, {comun = false} = {}) {
     const ents = lib.map((i) => { const e = cat.find((x) => x.id === i.id); if (!e) throw new Error(`No existe la serie «${i.id}» en la biblioteca.`); return e; });
     let archivo, cols;
     if (ents.length === 1) {
-      archivo = path.join(RAIZ, 'datos', 'biblioteca', `${ents[0].id}.csv`);
+      archivo = rutaBiblioteca(ents[0].id);   // datos/biblioteca o, si no está, la instantánea data/
       if (!fs.existsSync(archivo)) throw new Error(`«${ents[0].nombre}» aún no está descargada.`);
       cols = [{col: fs.readFileSync(archivo, 'utf8').split('\n')[0].split(',')[1], ent: ents[0], idx: 1}];
     } else {

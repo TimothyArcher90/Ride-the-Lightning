@@ -7,10 +7,11 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {RAIZ} from './compilar.mjs';
 import {leerTabla, columnaFechas, columnaNumeros} from './datos.mjs';
+import {instalar as instalarExtra} from './fuentes_extra.mjs';
 
 const UA = 'RideTheLightning/0.1 (investigacion local; contacto: david@macrowise.co)';
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
-async function pedir(url, {reintentos = 3, texto = true, cabeceras = {}} = {}) {
+export async function pedir(url, {reintentos = 3, texto = true, cabeceras = {}} = {}) {
   let ultimo;
   for (let k = 0; k < reintentos; k++) {
     try {
@@ -148,7 +149,7 @@ export const ADAPTADORES = {
     if (j[0].pages > 1) throw new Error(`Banco Mundial: ${indicador}/${pais} llegó paginado (${j[0].pages} páginas); el adaptador no lo soporta.`);
     const filas = j[1].filter((r) => r.value != null && r.date.length === 4).map((r) => [`${r.date}-01-01`, r.value]).sort((a, b) => a[0].localeCompare(b[0]));
     if (!filas.length) throw new Error(`Banco Mundial: ${indicador}/${pais} no tiene ningún valor (solo nulos).`);
-    const ind = JSON.parse(await pedir(`${base}/indicator/${indicador}?format=json`))[1]?.[0] ?? {};
+    const ind = await ((cache.wbInd ??= {})[indicador] ??= pedir(`${base}/indicator/${indicador}?format=json`).then((t) => JSON.parse(t)[1]?.[0] ?? {}).catch((e) => { delete cache.wbInd[indicador]; throw e; }));   // metadatos del indicador: 1 petición por indicador y proceso (un fallo no queda en caché)
     const nombrePais = j[1][0].country.value;
     return {columnas: ['fecha', `${indicador}_${pais}`], filas, url: `https://data.worldbank.org/indicator/${indicador}?locations=${j[1][0].country.id}`, urlDatos, unidad: ind.unit || undefined,
       notaFuente: `${ind.name ?? indicador} · ${nombrePais} (${pais}) · ${ind.source?.value ?? 'World Bank'} · actualización de la API: ${j[0].lastupdated} · años sin dato omitidos: ${j[1].length - filas.length}`};
@@ -241,6 +242,8 @@ export const ADAPTADORES = {
     } finally { fs.rmSync(tmp, {force: true}); }
   },
 };
+
+instalarExtra(ADAPTADORES, pedir);   // Tesoro (FiscalData genérico), NASA GISTEMP, NOAA, USGS, datos.gov.co (servidor/fuentes_extra.mjs)
 
 export const rutaCatalogo = path.join(RAIZ, 'catalogo', 'series.json');
 export const rutaVerificado = path.join(RAIZ, 'catalogo', 'verificado.json');

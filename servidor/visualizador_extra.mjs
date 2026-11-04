@@ -1,6 +1,6 @@
 // Reglas de elección de los modelos del visualizador universal (radar, apilada, velas, histograma, dumbbell, calendario,
 // agrupadas, bullet, bandas, pictograma, ranking). Se llaman desde candidatas() de visualizador.mjs. Heurísticas de
-// docs/INVESTIGACION_VISUALIZACION.md (tabla de reglas): se mide la frecuencia y la unidad en el catálogo, no se adivina.
+// docs/research/VISUALIZATION_RESEARCH.md (tabla de reglas): se mide la frecuencia y la unidad en el catálogo, no se adivina.
 import {leerCatalogo} from './catalogo.mjs';
 
 const frecDe = (f) => { const s = String(f ?? '').toLowerCase(); return ['diaria', 'semanal', 'mensual', 'trimestral', 'anual'].find((k) => s.includes(k.slice(0, 5))) ?? null; };

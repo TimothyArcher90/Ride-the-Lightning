@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "titulo": "Bitcoin desde su primer precio",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 18.5,
+  "datos": {
+    "btc": {
+      "archivo": "datos/biblioteca/cm_btc_precio.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "PriceUSD",
+          "nombre": "Bitcoin",
+          "color": "oro",
+          "prefijo": "US$ ",
+          "decimales": "auto",
+          "unidad": "US$ · escala logarítmica"
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Bitcoin, desde su primer precio",
+      "t": [
+        0.2,
+        18
+      ],
+      "color": "oro"
+    },
+    {
+      "tipo": "linea",
+      "id": "g1",
+      "datos": "btc",
+      "escala": "log",
+      "area": true,
+      "t": [
+        1,
+        11
+      ],
+      "camara": [
+        {
+          "t": 0,
+          "x": "auto",
+          "y": "auto"
+        },
+        {
+          "t": 13.4,
+          "x": [
+            "2020-06",
+            "2026-12"
+          ],
+          "y": "ajustar",
+          "mov": 1.8
+        },
+        {
+          "t": 17.4,
+          "x": "auto",
+          "y": "auto",
+          "mov": 1.6
+        }
+      ]
+    },
+    {
+      "tipo": "contador",
+      "capa": "g1",
+      "serie": 0,
+      "t": [
+        0,
+        18.4
+      ]
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g1",
+      "serie": 0,
+      "ancla": {
+        "primero": true
+      },
+      "t": [
+        1.6,
+        4.6
+      ],
+      "texto": "Primer precio",
+      "color": "teal"
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g1",
+      "serie": 0,
+      "ancla": {
+        "max": true
+      },
+      "t": [
+        13.9,
+        15.8
+      ],
+      "texto": "Máximo",
+      "color": "oro"
+    }
+  ],
+  "vivo": {
+    "render": "borrador",
+    "alfa": false,
+    "minEntreRendersMin": 360
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "titulo": "Los meses del petróleo",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 12.2,
+  "datos": {
+    "d": {
+      "archivo": "datos/biblioteca/fred_dcoilwtico.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "DCOILWTICO",
+          "nombre": "Petróleo WTI spot",
+          "color": "oro",
+          "prefijo": "US$ ",
+          "unidad": "US$ por barril",
+          "decimales": "auto"
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Los meses del petróleo",
+      "color": "oro",
+      "t": [
+        0.2,
+        12.1
+      ]
+    },
+    {
+      "tipo": "calendario",
+      "datos": "d",
+      "id": "g1",
+      "t": [
+        0.9,
+        8.9
+      ]
+    }
+  ]
+}

@@ -92,7 +92,8 @@ export async function detalleFiling(cik, accn) {
   return out;
 }
 
-const limpiarEtiqueta = (s) => String(s).replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&apos;/g, "'").replace(/\s*\(["“].*$/, '').trim();
+const decodificar = (s) => String(s).replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+const limpiarEtiqueta = (s) => decodificar(decodificar(s)).replace(/\s*\(["“].*$/, '').trim();   // dos pasadas: algunos filings llegan con doble escape (&amp;amp;)
 const nombreDe = (det, id) => { const n = traducir(limpiarEtiqueta(det.etiquetas[id] ?? partir(id.split(':')[1]))); return n.length > 38 ? n.slice(0, 36).trimEnd() + '…' : n; };
 /** Valor de un hecho en un periodo exacto; si no existe y es el trimestre final de un año: año − acumulado de 9 meses. */
 function valor(pools, id, eje, miembro, ini, fin, anual = null) {

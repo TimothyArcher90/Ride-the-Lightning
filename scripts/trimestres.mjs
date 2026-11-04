@@ -14,7 +14,7 @@ if (cmd === 'construir') {
 }
 if (cmd === 'vigilar') { const r = await vigilar(); console.log(JSON.stringify(r, null, 2)); }
 if (cmd === 'construir' || cmd === 'indice') {
-  const L = ['# Biblioteca de trimestres', '', `Generado: ${new Date().toISOString().slice(0, 10)} · Fuente: SEC EDGAR (XBRL «company facts», dominio público). Cómo funciona: docs/TRIMESTRES.md`, '', '| Empresa | Trimestres | Desde | Último | Sankey | Solo cascada (pérdida) |', '|---|---|---|---|---|---|'];
+  const L = ['# Biblioteca de trimestres', '', `Generado: ${new Date().toISOString().slice(0, 10)} · Fuente: SEC EDGAR (XBRL «company facts», dominio público). Cómo funciona: docs/QUARTERLY_REPORTS.md`, '', '| Empresa | Trimestres | Desde | Último | Sankey | Solo cascada (pérdida) |', '|---|---|---|---|---|---|'];
   for (const e of empresas()) { const i = leerIndice(e.ticker); if (!i) continue; const t = i.trimestres; L.push(`| ${e.nombre} (${e.ticker}) | ${t.length} | ${t.at(-1)?.etiqueta ?? ''} | ${t[0]?.etiqueta ?? ''} | ${t.filter((x) => x.archivo).length} | ${t.filter((x) => !x.archivo).length} |`); }
   fs.mkdirSync(DIR, {recursive: true}); fs.writeFileSync(path.join(DIR, 'INDICE.md'), L.join('\n') + '\n'); console.log('INDICE.md escrito');
 }

@@ -9,7 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {leerTabla, columnaNumeros, columnaFechas, indiceColumna} from './datos.mjs';
+import {leerTabla, columnaNumeros, columnaFechas, indiceColumna, metaSerie} from './datos.mjs';
 import {fmtNum, fmtSigno, fmtPct, fmtFecha, colorDe, utc, TEMAS_DISPONIBLES} from '../motor/nucleo.js';
 import {cargarFlujos, cargarCategorias} from './tablas.mjs';
 import {TIPOS_EXTRA, EXTRA_CLASE, validarExtra} from '../motor/capas_extra.js';
@@ -48,9 +48,8 @@ function cargarDataset(id, d, informe) {
 
   // procedencia: sidecar escrito por el descargador, o `fuente` declarada en la spec
   let fuente = d.fuente;
-  const sidecar = ruta + '.meta.json';
-  if (fs.existsSync(sidecar)) {
-    const meta = JSON.parse(fs.readFileSync(sidecar, 'utf8'));
+  const meta = metaSerie(ruta);   // .meta.json al lado del CSV o, si el CSV viene de la instantánea data/, su procedencia en MANIFEST.json
+  if (meta) {
     fuente = {...meta.fuente, ...(fuente ?? {})};
     if (meta.sha256 && meta.sha256 !== t.hash) aviso('el archivo cambió desde que se descargó (sha256 distinto al de su .meta.json). Re-descarga para restablecer la procedencia.');
   }

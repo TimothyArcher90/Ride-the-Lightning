@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "titulo": "PIB por habitante",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 11.2,
+  "datos": {
+    "d": {
+      "archivo": "examples/gdp-per-capita-ranking/data.csv",
+      "tipo": "categorias",
+      "uso": "ranking",
+      "fuente": {
+        "nombre": "Banco Mundial — World Development Indicators (último dato de cada país)",
+        "url": "https://data.worldbank.org/indicator/NY.GDP.PCAP.CD",
+        "obtenido": "2026-11-04",
+        "licencia": "CC BY 4.0 (Banco Mundial)"
+      },
+      "prefijo": "US$ ",
+      "decimales": 0,
+      "unidad": "US$ corrientes por habitante"
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "PIB por habitante",
+      "color": "oro",
+      "t": [
+        0.2,
+        11.1
+      ]
+    },
+    {
+      "tipo": "ranking",
+      "datos": "d",
+      "id": "g1",
+      "t": [
+        0.9,
+        7.9
+      ],
+      "resalta": "COL"
+    }
+  ]
+}

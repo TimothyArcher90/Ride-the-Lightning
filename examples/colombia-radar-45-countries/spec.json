@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "titulo": "Dónde está Colombia",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 11.2,
+  "datos": {
+    "d": {
+      "archivo": "examples/colombia-radar-45-countries/data.csv",
+      "tipo": "categorias",
+      "uso": "radar",
+      "fuente": {
+        "nombre": "Banco Mundial (WDI), último dato de cada país; percentil calculado entre los 45 países de la lista",
+        "url": "https://data.worldbank.org/",
+        "obtenido": "2026-11-04",
+        "licencia": "CC BY 4.0 (Banco Mundial)"
+      },
+      "decimales": 0,
+      "unidad": "percentil entre 45 países"
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Dónde está Colombia",
+      "color": "oro",
+      "t": [
+        0.2,
+        11.1
+      ]
+    },
+    {
+      "tipo": "radar",
+      "datos": "d",
+      "id": "g1",
+      "t": [
+        0.9,
+        7.9
+      ],
+      "nota": "CADA EJE: PUESTO DE COLOMBIA ENTRE LOS PAÍSES CON DATO; 0 = EL MENOR VALOR, 100 = EL MAYOR. NO DICE SI ES BUENO O MALO."
+    }
+  ]
+}

@@ -16,7 +16,9 @@ import {generar} from './plantillas.mjs';
 export const eventos = new EventEmitter();
 const ESTADO = path.join(RAIZ, 'catalogo', 'estado-vivo.json');
 const LOG = path.join(RAIZ, 'catalogo', 'actualizaciones.jsonl');
-export const INTERVALO_MIN = {yahoo: 15, coinmetrics: 15, nbp: 120, fred: 360, gus: 1440, bancomundial: 720, shiller: 1440, owid: 1440, archivo: 1440};
+export const INTERVALO_MIN = {yahoo: 15, coinmetrics: 15, nbp: 120, fred: 360, gus: 1440, bancomundial: 720, shiller: 1440, owid: 1440, archivo: 1440,
+  // fuentes de la ampliación (2026-11-04): series anuales/mensuales que no cambian cada día; usgs_sismos hace ~126 peticiones por descarga
+  usgs_sismos: 10080, worldbank: 4320, eurostat: 720, tesoro: 720, fiscaldata: 720, nasa_giss: 1440, noaa_gml: 1440, noaa_oni: 1440, socrata_suma: 1440};
 const leer = () => (fs.existsSync(ESTADO) ? JSON.parse(fs.readFileSync(ESTADO, 'utf8')) : {});
 const guardar = (e) => fs.writeFileSync(ESTADO, JSON.stringify(e, null, 2));
 const log = (o) => { const l = {t: new Date().toISOString(), ...o}; fs.appendFileSync(LOG, JSON.stringify(l) + '\n'); eventos.emit(o.tipo, l); return l; };

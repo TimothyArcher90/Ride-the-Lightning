@@ -9,10 +9,10 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) fallo
 
 console.log('\nCatálogo');
 const cat = leerCatalogo(), pa = cat.filter((e) => e.id.startsWith('pais_')), previas = cat.filter((e) => !e.id.startsWith('pais_'));
-ok(previas.length === 185, `las 185 series previas siguen (hay ${previas.length})`);
+ok(previas.filter((e) => !e.ampliacion).length === 185, `las 185 series previas no-país siguen (hay ${previas.filter((e) => !e.ampliacion).length}; más ${previas.filter((e) => e.ampliacion).length} de la ampliación)`);
 ok(new Set(cat.map((e) => e.id)).size === cat.length, `ids únicos (${cat.length} series)`);
-ok(pa.length >= 600 && pa.length <= PAISES.length * INDICADORES.length, `series de país: ${pa.length} de ${PAISES.length * INDICADORES.length} posibles`);
-ok(pa.every((e) => new RegExp(`^pais_${e.pais?.iso3}_[a-z_]+$`).test(e.id) && INDICADORES.some((i) => e.id === `pais_${e.pais.iso3}_${i.clave}`)), 'todas con id pais_<ISO3>_<indicador> y su indicador conocido');
+ok(pa.length >= 3800 && pa.length <= PAISES.length * INDICADORES.length, `series de país: ${pa.length} de ${PAISES.length * INDICADORES.length} posibles`);
+ok(pa.every((e) => new RegExp(`^pais_${e.pais?.iso3}_[a-z0-9_]+$`).test(e.id) && INDICADORES.some((i) => e.id === `pais_${e.pais.iso3}_${i.clave}`)), 'todas con id pais_<ISO3>_<indicador> y su indicador conocido');
 ok(pa.every((e) => e.pais?.iso3?.length === 3 && e.pais.nombre && e.pais.region && e.tema && e.licencia && e.fuente_original && e.args && ['worldbank', 'imf'].includes(e.adaptador)), 'todas con pais{iso3,nombre,region}, tema, licencia, fuente y adaptador abierto');
 ok(listarPaises().length === PAISES.length && listarPaises().every((p) => p.nIndicadores >= 12), `${PAISES.length} países, cada uno con ≥12 indicadores (min ${Math.min(...listarPaises().map((p) => p.nIndicadores))})`);
 ok(indicadoresPais().length === INDICADORES.length && indicadoresPais().every((i) => i.clave && i.nombre && i.unidad && i.tema && i.fuente), `${INDICADORES.length} indicadores con nombre, unidad, tema y fuente`);

@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "titulo": "El petróleo WTI",
+  "formato": "vertical",
+  "fps": 30,
+  "duracion": 9.7,
+  "datos": {
+    "d": {
+      "archivo": "datos/biblioteca/fred_dcoilwtico.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "DCOILWTICO",
+          "nombre": "Petróleo WTI spot",
+          "color": "oro",
+          "prefijo": "US$ ",
+          "unidad": "US$ por barril",
+          "decimales": "auto"
+        }
+      ],
+      "desde": "2023-01-01"
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "El petróleo WTI",
+      "color": "oro",
+      "t": [
+        0.2,
+        9.6
+      ]
+    },
+    {
+      "tipo": "velas",
+      "datos": "d",
+      "id": "g1",
+      "t": [
+        0.9,
+        6.4
+      ],
+      "series": [
+        0
+      ]
+    }
+  ]
+}

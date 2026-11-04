@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "titulo": "Cómo se mueve el euro",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 11.2,
+  "datos": {
+    "d": {
+      "archivo": "datos/biblioteca/fred_dexuseu.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "DEXUSEU",
+          "nombre": "Tipo de cambio US$ por euro",
+          "color": "oro",
+          "prefijo": "US$ ",
+          "unidad": "US$ por EUR",
+          "decimales": "auto"
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Cómo se mueve el euro",
+      "color": "oro",
+      "t": [
+        0.2,
+        11.1
+      ]
+    },
+    {
+      "tipo": "histograma",
+      "datos": "d",
+      "id": "g1",
+      "t": [
+        0.9,
+        7.9
+      ],
+      "sobre": "retornos"
+    }
+  ]
+}
