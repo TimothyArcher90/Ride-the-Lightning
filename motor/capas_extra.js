@@ -6,6 +6,7 @@
 import {colorDivergente} from './escalas.js';
 import {PALETA, COLOR, TEMA, clamp, lerp, ease, prog, colorDe, mezcla, rgba, fmtNum, fmtSigno, fmtFecha, ticksNum, ticksFecha, etiquetaTick} from './nucleo.js';
 import {escalarFuente, fuenteCss, margenes, envolver, contraste, entrada as entradaDiseno} from './diseno.js';
+import {envolverEntero} from './etiquetas.js';
 
 export const TIPOS_EXTRA = ['radar', 'apilada', 'velas', 'histograma', 'dumbbell', 'calendario', 'agrupadas', 'bullet', 'bandas', 'pictograma', 'ranking'];
 /** Qué clase de dato consume cada capa: serie de tiempo, tabla de categorías, o ambas. */
@@ -58,6 +59,12 @@ function cortarA(env, s, ancho, base, peso = 700, mono = false) {
   let r = String(s);
   if (ctx.measureText(r).width > ancho) { while (r.length > 3 && ctx.measureText(r + '…').width > ancho) r = r.slice(0, -1); r = r.trimEnd() + '…'; }
   ctx.restore(); return r;
+}
+/** Nombre en 1..maxL líneas que caben en `ancho` SIN «…» (por palabras); solo si ni así cabe, se corta como última salida. */
+function nombreEnLineas(env, s, ancho, base, peso = 700, maxL = 2) {
+  const {ctx} = env; ctx.save(); ctx.font = F(env, peso, base);
+  const r = ctx.measureText(String(s)).width <= ancho ? [String(s)] : envolverEntero(ctx, String(s), ancho, maxL);
+  ctx.restore(); return r ?? [cortarA(env, s, ancho, base, peso)];
 }
 function lineasDe(env, s, ancho, base, peso, maxL) { const {ctx} = env; ctx.save(); ctx.font = F(env, peso, base); const r = envolver(ctx, s, ancho, maxL); ctx.restore(); return r; }
 
@@ -331,7 +338,7 @@ function dumbbell(env, capa) {
   const eje = pos ? marcasHasta(mx * 1.02, 4) : (() => { const tk = ticksNum(mn - (mx - mn) * 0.05, mx + (mx - mn) * 0.05, 4); return {ticks: tk, top: tk[tk.length - 1]}; })(), lo = pos ? 0 : eje.ticks[0], hi = eje.top;
   const dTxt = (f) => { const d = f.v0 > 0 ? (f.v1 / f.v0 - 1) * 100 : null; return d == null ? '' : pSigno(d, decPct(d)); }, vTxt = (f) => `${fN(f.v0, f.fmt)} → ${fN(f.v1, f.fmt)}`;
   const wUna = Math.max(...L.filas.map((f) => med(env, `${vTxt(f)}  ${dTxt(f)}`, 26, 800, true))), wNom = Math.max(...L.filas.map((f) => med(env, f.nombre, 26, 700))), dos = wUna + Math.min(wNom, B.w * 0.4) + 24 * u > B.w;   // ¿caben nombre y valores en una línea?
-  const cab = S * 1.0, fila = Math.min((B.h - cab - S * 2.4) / n, dos ? N * 2.5 + S * 2.2 : N * 2.5), x0 = B.x + 8 * u, x1 = B.x + B.w - 8 * u, px = (v) => x0 + ((v - lo) / (hi - lo)) * (x1 - x0), p = prog(t, t0, t1, ease.io2) * n, yy = B.y + cab, fmt = L.filas[0].fmt;
+  const cab = S * 1.0, holg = n <= 6 ? (vert ? 2.3 : 1.55) : 1, fila = Math.min((B.h - cab - S * 2.4) / n, (dos ? N * 2.5 + S * 2.2 : N * 2.5) * holg), x0 = B.x + 8 * u, x1 = B.x + B.w - 8 * u, px = (v) => x0 + ((v - lo) / (hi - lo)) * (x1 - x0), p = prog(t, t0, t1, ease.io2) * n, yy = B.y + cab, fmt = L.filas[0].fmt;
   nota(env, B, capa.nota ?? `CADA FILA UNE EL VALOR «${L.l0}» (PUNTO GRIS) CON EL «${L.l1}» (PUNTO DE COLOR) EN LA MISMA ESCALA${pos ? ', QUE ARRANCA EN 0' : ''}. VERDE: SUBIÓ · ROJO: BAJÓ.${uni(L.filas[0].fmt)}`, capa.id ?? 'dumbbell', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   eje.ticks.forEach((v) => { const x = px(v); if (x < x0 - 1 || x > x1 + 1) return; ctx.strokeStyle = rgba(PALETA.piedra, v === lo ? 0.3 : 0.08); ctx.lineWidth = 1 * u; ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x, yy + fila * n); ctx.stroke(); rot(env, fN(v, {...fmt, decimales: decDe(eje.ticks[1] - eje.ticks[0])}), x, yy + fila * n + S * 1.3, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'center', `${capa.id ?? 'dumbbell'}:x${v}`, {mono: true, tipo: 'eje-x', lim: [x0, x1]}); });
@@ -458,14 +465,14 @@ function bullet(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const L = (capa._bl ??= armarBullet(capa, tab)), n = L.length, S = tam(env, 18), N = tam(env, 26), p = prog(t, t0, t1, ease.io2);
-  const fila = Math.min((B.h - S * 0.5) / n, N * 7), bh = Math.max(26 * u, N * 1.0);
+  const lhB = tam(env, 26) * 1.12, LNB = (capa._bn ??= L.map((r) => nombreEnLineas(env, r.nombre, B.w - med(env, fN(r.v, r.fmt), 28, 800, true) - 20 * u, 26, 700, 2))), extB = Math.max(...LNB.map((l) => l.length)) - 1, fila = Math.min((B.h - S * 0.5) / n, N * 7 + extB * lhB), bh = Math.max(26 * u, N * 1.0);
   nota(env, B, capa.nota ?? 'BARRA: ÚLTIMO DATO. FONDO: HISTORIA DE LA SERIE EN TRES TRAMOS (MÍNIMO–P25, P25–P75, P75–MÁXIMO). RAYA BLANCA: LA META. LA ESCALA ARRANCA EN 0.', capa.id ?? 'bullet', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   L.forEach((r, i) => {
     const y = B.y + i * fila, g = clamp(p * (n + 1) - i * 0.7), e = ease.out3(g); if (g <= 0) return;
-    const lo = Math.min(0, r.min), hi = Math.max(r.max, r.v, r.meta), px = (v) => B.x + ((v - lo) / (hi - lo)) * B.w, yb = y + N * 1.5, c = acento_(capa);
+    const lo = Math.min(0, r.min), hi = Math.max(r.max, r.v, r.meta), px = (v) => B.x + ((v - lo) / (hi - lo)) * B.w, yb = y + N * 1.5 + (LNB[i].length - 1) * lhB, c = acento_(capa);
     const vTxt = fN(r.v, r.fmt), wv = med(env, vTxt, 28, 800, true);
-    rot(env, cortarA(env, r.nombre, B.w - wv - 20 * u, 26, 700), B.x, y + N * 0.95, 26, 700, PALETA.blanco, 'left', `${capa.id ?? 'bullet'}:n${i}`, {alpha: g});
+    LNB[i].forEach((ln, k) => rot(env, ln, B.x, y + N * 0.95 + k * lhB, 26, 700, PALETA.blanco, 'left', `${capa.id ?? 'bullet'}:n${i}:${k}`, {alpha: g}));
     rot(env, vTxt, B.x + B.w, y + N * 0.95, 28, 800, c, 'right', `${capa.id ?? 'bullet'}:v${i}`, {mono: true, alpha: g});
     [[lo, r.p25, 0.34], [r.p25, r.p75, 0.2], [r.p75, hi, 0.1]].forEach(([a, b, k]) => { ctx.fillStyle = rgba(PALETA.piedra, k); ctx.fillRect(px(a), yb, Math.max(0, px(b) - px(a)), bh); });
     ctx.fillStyle = c; ctx.fillRect(Math.min(px(0), px(r.v)), yb + bh * 0.3, Math.abs(px(r.v) - px(0)) * e, bh * 0.4);
@@ -526,15 +533,15 @@ function armarPicto(capa, tab, B, env) {
 function pictograma(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
-  const L = (capa._pc ??= armarPicto(capa, tab, B, env)), n = L.items.length, S = tam(env, 18), N = tam(env, 26), pal = paleta(), p = prog(t, t0, t1, ease.io2) * n, fila = Math.min((B.h - S * 2) / n, N * 3.2 + L.sq * 1.4), cab = S * 1.9;
+  const L = (capa._pc ??= armarPicto(capa, tab, B, env)), n = L.items.length, S = tam(env, 18), N = tam(env, 26), pal = paleta(), p = prog(t, t0, t1, ease.io2) * n, lhP = tam(env, 26) * 1.12, LN = (capa._pn ??= L.items.map((it) => { const pct = (it.valor / L.total) * 100; return nombreEnLineas(env, it.nombre, B.w - med(env, `${fN(it.valor, tab.fmt)}  ·  ${pTxt(pct, decPct(pct))}`, 26, 800, true) - 24 * u, 26, 700, 3); })), ext = Math.max(...LN.map((l) => l.length)) - 1, fila = Math.min((B.h - S * 2) / n, (vert ? N * 4.1 : N * 3.2) + L.sq * (vert ? 1.9 : 1.4) + ext * lhP), cab = S * 1.9;
   nota(env, B, capa.nota ?? `CADA CUADRO = ${fN(L.unidad, tab.fmt)}. LOS CUADROS INCOMPLETOS SON FRACCIONES EXACTAS DEL VALOR. EL % ES EL VALOR ENTRE LA SUMA DE TODAS LAS PARTES.${L.omitidas ? ` SE MUESTRAN LAS ${n} MAYORES DE ${n + L.omitidas}.` : ''}`, capa.id ?? 'pictograma', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   L.items.forEach((it, i) => {
     const a = clamp(p - i), y = B.y + (i * fila), col = pal[i % pal.length]; if (a <= 0) return;
     const pct = (it.valor / L.total) * 100, tx = `${fN(it.valor, tab.fmt)}  ·  ${pTxt(pct, decPct(pct))}`, wT = med(env, tx, 26, 800, true);
-    rot(env, cortarA(env, it.nombre, B.w - wT - 24 * u, 26, 700), B.x, y + N * 0.95, 26, 700, PALETA.blanco, 'left', `${capa.id ?? 'pictograma'}:n${i}`, {alpha: ease.out3(a)});
+    LN[i].forEach((ln, k) => rot(env, ln, B.x, y + N * 0.95 + k * lhP, 26, 700, PALETA.blanco, 'left', `${capa.id ?? 'pictograma'}:n${i}:${k}`, {alpha: ease.out3(a)}));
     rot(env, tx, B.x + B.w, y + N * 0.95, 26, 800, col, 'right', `${capa.id ?? 'pictograma'}:v${i}`, {mono: true, alpha: clamp((a - 0.3) / 0.7)});
-    const cuadros = it.valor / L.unidad, completos = Math.floor(cuadros + 1e-9), paso = L.sq * 1.28, yq = y + N * 1.35;
+    const cuadros = it.valor / L.unidad, completos = Math.floor(cuadros + 1e-9), paso = L.sq * 1.28, yq = y + N * 1.35 + (LN[i].length - 1) * lhP;
     for (let q = 0; q <= completos; q++) {
       const fr = q < completos ? 1 : cuadros - completos; if (fr <= 1e-9) continue;
       const g = clamp(a * (cuadros + 1) - q); if (g <= 0) continue;
@@ -547,15 +554,15 @@ function pictograma(env, capa) {
 
 // ═══ 11. RANKING POR PAÍS (o entidad) con código ISO / ticker en vez de bandera ═══════════════════════════════════
 // El nombre puede venir como «COL · Colombia»: lo anterior a « · » es el código (ISO-3, ISO-2, ticker) y se dibuja en una ficha de texto.
-function armarRanking(capa, tab, vert) {
+function armarRanking(capa, tab, vert, maxDef) {
   const todos = tab.items.filter((i) => i.valor != null).sort((a, b) => b.valor - a.valor).map((it, r) => { const m = String(it.nombre).split(' · '); return {...it, rank: r + 1, codigo: m.length > 1 ? m[0].trim() : null, nombre: m.length > 1 ? m.slice(1).join(' · ').trim() : it.nombre}; });
-  const max = capa.max ?? (vert ? 7 : 9), top = todos.slice(0, max), res = capa.resalta ? todos.find((i) => i.nombre === capa.resalta || i.codigo === capa.resalta) : null;
+  const max = capa.max ?? maxDef ?? (vert ? 7 : 9), top = todos.slice(0, max), res = capa.resalta ? todos.find((i) => i.nombre === capa.resalta || i.codigo === capa.resalta) : null;
   return {todos, filas: res && !top.includes(res) ? [...top.slice(0, max - 1), {salto: true}, res] : top, res, omitidas: todos.length - top.length};
 }
 function ranking(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
-  const L = (capa._rk ??= armarRanking(capa, tab, vert)), n = L.filas.length, S = tam(env, 18), N = tam(env, 26), pal = paleta(), p = prog(t, t0, t1, ease.io2) * n, fila = Math.min(B.h / n, N * 3.1), acento = acento_(capa);
+  const N = tam(env, 26), L = (capa._rk ??= armarRanking(capa, tab, vert, Math.max(6, Math.min(14, Math.floor(B.h / (N * 2.45)))))), n = L.filas.length, S = tam(env, 18), pal = paleta(), p = prog(t, t0, t1, ease.io2) * n, fila = Math.min(B.h / n, N * 3.1), acento = acento_(capa);
   const vmax = L.todos[0].valor, anyNeg = L.todos.some((i) => i.valor < 0), wC = Math.max(...L.filas.filter((f) => f.codigo).map((f) => med(env, f.codigo, 18, 800, true) + 22 * u), 0), wR = med(env, '10', 18, 800, true) + 12 * u;
   const wV = Math.max(...L.filas.filter((f) => !f.salto).map((f) => med(env, fN(f.valor, tab.fmt), 26, 800, true))), x0 = B.x, xb = x0 + wR + wC + 8 * u, largo = B.x + B.w - xb - wV - 18 * u;
   nota(env, B, capa.nota ?? `ORDEN DE MAYOR A MENOR. LA LONGITUD DE LA BARRA ES PROPORCIONAL AL VALOR${anyNeg ? '' : ' Y ARRANCA EN 0'}.${L.omitidas > 0 ? ` SE MUESTRAN ${n - (L.filas.some((f) => f.salto) ? 1 : 0)} DE ${L.todos.length}.` : ''}`, capa.id ?? 'ranking', ap);
@@ -563,7 +570,7 @@ function ranking(env, capa) {
   L.filas.forEach((f, i) => {
     const a = clamp(p - i), e = ease.out3(a), y = B.y + i * fila; if (a <= 0) return;
     if (f.salto) { rot(env, '⋮', x0 + wR / 2, y + fila * 0.6, 26, 700, PALETA.piedraOscura, 'center', `${capa.id ?? 'ranking'}:salto`, {alpha: e}); return; }
-    const col = L.res && f === L.res ? acento : f.rank === 1 ? acento : PALETA.piedraClara, yb = y + N * 1.28, bh = Math.max(12 * u, N * 0.5);
+    const col = L.res && f === L.res ? acento : f.rank === 1 ? acento : PALETA.piedraClara, yb = y + N * 1.4, bh = Math.max(12 * u, N * 0.5);
     rot(env, String(f.rank), x0 + wR, y + N * 0.95, 18, 800, PALETA.piedraOscura, 'right', `${capa.id ?? 'ranking'}:r${i}`, {mono: true, alpha: e});
     let xn = xb;
     if (f.codigo) { const w = wC - 8 * u; ctx.fillStyle = rgba(col, 0.22); ctx.globalAlpha = ap * e; ctx.beginPath(); ctx.roundRect(x0 + wR + 6 * u, y + N * 0.1, w, N * 1.1, 8 * u); ctx.fill(); ctx.globalAlpha = ap; rot(env, f.codigo, x0 + wR + 6 * u + w / 2, y + N * 0.93, 18, 800, col, 'center', `${capa.id ?? 'ranking'}:c${i}`, {mono: true, alpha: e}); }

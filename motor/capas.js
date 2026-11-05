@@ -381,7 +381,7 @@ function carrera(env, capa) {
   const [t0, t1] = capa.t ?? [0.5, 10];
   const ap = aparece(env, capa, t0); if (ap <= 0) return;
   const f = prog(t, t0, t1, ease.lin) * (n - 1), i0 = Math.min(n - 2, Math.floor(f)), k = f - i0, ke = ease.io2(k);   // el tiempo de los datos avanza a ritmo constante (no es movimiento de interfaz)
-  const S = tab.series.length, fila = vert ? 112 * u : 84 * u, top = Math.max(2, Math.min(capa.top ?? 8, S, Math.floor((B.h - (vert ? 70 * u : 0)) / fila)));
+  const S = tab.series.length, nVis = Math.max(2, Math.min(capa.top ?? 8, S)), fila = Math.min(vert ? 190 * u : 140 * u, Math.max(vert ? 112 * u : 84 * u, (B.h - (vert ? 70 * u : 0)) / nVis)), top = Math.max(2, Math.min(capa.top ?? 8, S, Math.floor((B.h - (vert ? 70 * u : 0)) / fila)));
   const rango = (i) => {
     const o = tab.series.map((s, q) => ({q, v: s.y[i] ?? -Infinity})).sort((a, b) => b.v - a.v || a.q - b.q);
     const r = new Array(S); o.forEach((e, p) => (r[e.q] = p)); return r;
@@ -400,7 +400,7 @@ function carrera(env, capa) {
   for (const q of orden) {
     const pos = lerp(r0[q], r1[q], ke); if (pos > top - 0.5) continue;   // «top» filas visibles
     const y = y0 + pos * fila, color = colorDe(tab.series[q].color, q), alfa = clamp(top + 0.5 - pos, 0, 1);
-    const bx = B.x + LW, bw = Math.max(3 * u, (vals[q] / vmax) * (B.w - LW - VW)), bh = vert ? 26 * u : 44 * u, by = vert ? y + fila - bh - 14 * u : y + (fila - bh) / 2;
+    const bx = B.x + LW, bw = Math.max(3 * u, (vals[q] / vmax) * (B.w - LW - VW)), bh = vert ? Math.min(40 * u, fila * 0.24) : Math.min(64 * u, fila * 0.52), by = vert ? y + 58 * u : y + (fila - bh) / 2;
     ctx.save(); ctx.globalAlpha *= alfa; ctx.shadowColor = color; ctx.shadowBlur = 12 * u;
     const g = ctx.createLinearGradient(bx, 0, bx + bw, 0); g.addColorStop(0, rgba(color, 0.55)); g.addColorStop(1, color);
     ctx.fillStyle = g; ctx.fillRect(bx, by, bw, bh); ctx.restore();
@@ -1089,29 +1089,39 @@ function cascadaVertical(env, capa) {
   const [t0, t1] = capa.t ?? [0.5, 6], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const barras = (capa._b ??= (() => { let run = 0; return tab.items.map((it) => { let ini, fin; if (it.tipo === 'inicio' || it.tipo === 'total') { ini = 0; fin = it.valor; run = it.valor; } else { ini = run; fin = run + it.valor; run = fin; } return {...it, ini, fin}; }); })());
   const n = barras.length, vmin = Math.min(0, ...barras.flatMap((b) => [b.ini, b.fin])), vmax = Math.max(0, ...barras.flatMap((b) => [b.ini, b.fin]));
-  const fila = Math.min(110 * u, B.h / n), px = (v) => B.x + ((v - vmin) / ((vmax - vmin) || 1)) * B.w, p = prog(t, t0, t1, ease.io2) * n, y0 = B.y;
-  const fN = fnt(700, 26 * u), fV = fnt(800, 26 * u, true), bh = Math.min(26 * u, fila * 0.26);
+  const fN = fnt(700, 26 * u), fV = fnt(800, 26 * u, true), lhN = escalarFuente(26 * u) * 1.12;
+  // Disposición de cada fila: el nombre se parte en 2 líneas (nunca «…») cuando no cabe junto a la cifra; esa fila crece lo que mide la 2.ª línea.
+  const lay = (capa._lay ??= barras.map((b) => {
+    const esTotal = b.tipo === 'inicio' || b.tipo === 'total', txt = esTotal ? fmtNum(b.valor, tab.fmt) : fmtSigno(b.valor, tab.fmt);
+    ctx.font = fV; const wv = ctx.measureText(txt).width; ctx.font = fN;
+    const nm = String(b.nombre), ancho = B.w - wv - 24 * u;
+    const lineas = ctx.measureText(nm).width <= ancho ? [nm] : (envolverEntero(ctx, nm, ancho, 3) ?? [cortar(ctx, nm, ancho)]);
+    return {esTotal, txt, wv, lineas};
+  }));
+  const extra = lay.reduce((s, l) => s + (l.lineas.length - 1) * lhN, 0), h0 = Math.min(110 * u, (B.h - extra) / n), bh = Math.min(26 * u, h0 * 0.26);
+  const ys = []; { let a = B.y; lay.forEach((l) => { ys.push(a); a += h0 + (l.lineas.length - 1) * lhN; }); ys.push(a); }
+  const px = (v) => B.x + ((v - vmin) / ((vmax - vmin) || 1)) * B.w, p = prog(t, t0, t1, ease.io2) * n, y0 = B.y;
   ctx.save(); ctx.globalAlpha *= ap;
-  ctx.strokeStyle = rgba(PALETA.piedra, 0.35); ctx.lineWidth = 1.5 * u; ctx.beginPath(); ctx.moveTo(px(0), y0); ctx.lineTo(px(0), y0 + fila * n); ctx.stroke();
+  ctx.strokeStyle = rgba(PALETA.piedra, 0.35); ctx.lineWidth = 1.5 * u; ctx.beginPath(); ctx.moveTo(px(0), y0); ctx.lineTo(px(0), ys[n]); ctx.stroke();
   barras.forEach((b, i) => {
     const a = clamp(p - i), e = ease.out3(a); if (a <= 0) return;
-    const esTotal = b.tipo === 'inicio' || b.tipo === 'total', col = esTotal ? colorTipo('ingreso') : b.valor >= 0 ? COLOR.verde : COLOR.rojo, y = y0 + i * fila, yb = y + fila - bh - Math.max(0.06 * fila, 3 * u);
+    const {esTotal, txt, wv, lineas} = lay[i], fila = ys[i + 1] - ys[i], col = esTotal ? colorTipo('ingreso') : b.valor >= 0 ? COLOR.verde : COLOR.rojo, y = ys[i], yb = y + fila - bh - Math.max(0.06 * h0, 3 * u);
     const xa = px(b.ini), xb = lerp(xa, px(b.fin), e), xl = Math.min(xa, xb), ww = Math.max(Math.abs(xb - xa), 2 * u);
     ctx.fillStyle = col; ctx.fillRect(xl, yb, ww, bh);
     const la = clamp((a - 0.4) / 0.6); if (la <= 0) return;
-    ctx.save(); ctx.globalAlpha *= la;
-    const txt = esTotal ? fmtNum(b.valor, tab.fmt) : fmtSigno(b.valor, tab.fmt);
-    ctx.font = fV; const wv = ctx.measureText(txt).width; ctx.font = fN;
-    const nom = cortar(ctx, String(b.nombre), B.w - wv - 24 * u), wn = ctx.measureText(nom).width, yt = y + Math.max(fila * 0.4, escalarFuente(26 * u) + 2 * u);
-    rotulo(ctx, nom, B.x, yt, fN, esTotal ? PALETA.blanco : PALETA.piedraClara, 'left', u);
+    ctx.save(); ctx.globalAlpha *= la; ctx.font = fN;
+    const yt = y + Math.max(h0 * 0.4, escalarFuente(26 * u) + 2 * u) + (lineas.length - 1) * lhN;
+    lineas.forEach((ln, k) => {
+      const yl = yt - (lineas.length - 1 - k) * lhN, wn = ctx.measureText(ln).width;
+      rotulo(ctx, ln, B.x, yl, fN, esTotal ? PALETA.blanco : PALETA.piedraClara, 'left', u);
+      reg(env, 'etiqueta', [B.x, yl - 34 * u, B.x + wn, yl + 8 * u], `${capa.id ?? 'cascada'}:n:${i}:${k}`);
+    });
     rotulo(ctx, txt, B.x + B.w, yt, fV, esTotal ? PALETA.blanco : col, 'right', u);
-    reg(env, 'etiqueta', [B.x, yt - 34 * u, B.x + wn, yt + 8 * u], `${capa.id ?? 'cascada'}:n:${i}`);
     reg(env, 'etiqueta', [B.x + B.w - wv, yt - 34 * u, B.x + B.w, yt + 8 * u], `${capa.id ?? 'cascada'}:v:${i}`);
     ctx.restore();
   });
   ctx.restore();
 }
-
 function cascada(env, capa) {
   if (env.H > env.W || env.tablas[capa.datos].items.length > 8) return cascadaVertical(env, capa);   // muchos conceptos: filas con el nombre entero (también en horizontal)
   const {ctx, u, t, W, H} = env, tab = env.tablas[capa.datos], vert = H > W;
