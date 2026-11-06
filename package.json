@@ -20,7 +20,8 @@
     "trimestres": "node scripts/trimestres.mjs",
     "prueba:trimestres": "node scripts/prueba-trimestres.mjs",
     "prueba:tablas": "node scripts/prueba-tablas.mjs",
-    "gallery": "node scripts/generar-galeria.mjs"
+    "gallery": "node scripts/generar-galeria.mjs",
+    "instrucciones": "node scripts/sincronizar-instrucciones.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
