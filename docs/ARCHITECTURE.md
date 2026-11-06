@@ -69,6 +69,11 @@ Headless Edge/Chrome (via `playwright-core`) loads `web/render.html`, seeks fram
 | MCP server | `servidor/mcp.mjs` (`.mcp.json`) | Lets Claude search series, generate pieces, preview frames, export; includes `proponer_visualizaciones` |
 | Chat | `servidor/chat.mjs` | "Edit by talking" panel in the studio; uses your local Claude Code |
 
+## Text fitting rules (never «…» unless one word cannot fit)
+- Titles, subtitles and names are wrapped **by whole words** (`envolverEntero` in `motor/etiquetas.js`, `envolver` in `motor/diseno.js` as last resort). The title block grows (and moves up in vertical) when the subtitle takes 2–3 lines, so the year counter and the chart never collide.
+- Labels that must sit over ribbons or bars (Sankey central nodes, histogram ÚLTIMO) get a background plate of the canvas colour instead of being moved off the data.
+- `scripts/prueba-calidad.mjs` treats the lines drawn in the title block (top 27 % in vertical) as subtitle text (34 px), not as chart names (40 px).
+
 ## Directory map
 
 | Path | Purpose |

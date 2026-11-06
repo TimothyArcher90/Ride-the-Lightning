@@ -303,6 +303,10 @@ function barras(env, capa) {
   const horiz = capa.orientacion ? capa.orientacion === 'h' : (vert && n > 3);   // en vertical (celular) las barras van acostadas: los nombres se leen enteros
   let orden = [...Array(n).keys()];
   if (capa.orden === 'desc') orden.sort((a, b) => (tab.series[idxs[0]].y[b] ?? -Infinity) - (tab.series[idxs[0]].y[a] ?? -Infinity));
+  if (capa.cadaAnios && tab.tipoX === 'fecha') {   // una barra por década (o cada N años): solo filas REALES cuyo año es múltiplo de N, más la primera y el último dato (nada se interpola)
+    const an = (k) => +fmtFecha(tab.x[k], 'anio'), N = capa.cadaAnios;
+    orden = orden.filter((k) => an(k) % N === 0 || k === 0 || k === n - 1);
+  }
   if (capa.maxBarras) orden = orden.slice(0, capa.maxBarras);
   let lo = 0, hi = -Infinity;
   for (const i of idxs) for (const k of orden) { const v = tab.series[i].y[k]; if (v != null) { lo = Math.min(lo, v); hi = Math.max(hi, v); } }
@@ -469,7 +473,7 @@ function calor(env, capa) {
   const ap = aparece(env, capa, t0); if (ap <= 0) return;
   const m = M.etiquetas.length, vert = env.H > env.W;
   ctx.font = fnt(700, 22 * u); const LW = Math.min(B.w * (vert ? 0.44 : 0.36), Math.max(...M.etiquetas.map((e) => ctx.measureText(e).width)) + 24 * u);
-  const cabeza = (vert ? 250 : 120) * u, side = Math.min(B.w - LW, B.h - cabeza) * 0.98, c = side / m, ch = vert ? Math.min(c * 1.7, (B.h - cabeza) * 0.98 / m) : c;   // en vertical las casillas son más altas que anchas: llenan el lienzo
+  const cabeza = (vert ? 310 : 120) * u, side = Math.min(B.w - LW, B.h - cabeza) * 0.98, c = side / m, ch = vert ? Math.min(c * 1.7, (B.h - cabeza) * 0.98 / m) : c;   // en vertical las casillas son más altas que anchas: llenan el lienzo
   const ox = B.x + LW, oy = B.y + cabeza;
   const col = (v) => colorDivergente(clamp(v, -1, 1));   // BrBG vendorizado (motor/escalas.js): el cero ya no se confunde con el fondo y distingue negativo/positivo un daltónico
   ctx.save(); ctx.globalAlpha = ap;
@@ -1046,14 +1050,15 @@ function filaLeyenda(env, capa, f, x, y, rh, lw, la, idBase) {
   ctx.save(); ctx.globalAlpha *= la;
   ctx.fillStyle = f.col; ctx.beginPath(); ctx.arc(x + 12 * u, y + rh * 0.36, 9 * u, 0, 7); ctx.fill();
   ctx.font = fP; const wP = ctx.measureText(pctTxt(f.pct)).width;
-  ctx.font = fN; const nombre = cortar(ctx, f.nombre, lw - 44 * u - wP - 16 * u), wN = ctx.measureText(nombre).width;
+  ctx.font = fN; const bajoP = ctx.measureText(f.nombre).width > lw - 44 * u - wP - 16 * u && ctx.measureText(f.nombre).width <= lw - 44 * u, yP = bajoP ? 0.84 : 0.5;   // nombre largo: el % baja a la fila de la cifra y el nombre usa todo el ancho (nunca «…» si así cabe)
+  const nombre = cortar(ctx, f.nombre, bajoP ? lw - 44 * u : lw - 44 * u - wP - 16 * u), wN = ctx.measureText(nombre).width;
   rotulo(ctx, nombre, x + 36 * u, y + rh * 0.43, fN, PALETA.blanco, 'left', u);
   rotulo(ctx, fmtNum(f.valor, idBase.fmt), x + 36 * u, y + rh * 0.84, fV, PALETA.piedraClara, 'left', u);
-  rotulo(ctx, pctTxt(f.pct), x + lw, y + rh * 0.5, fP, f.col, 'right', u);
+  rotulo(ctx, pctTxt(f.pct), x + lw, y + rh * yP, fP, f.col, 'right', u);
   ctx.font = fV; const wV = ctx.measureText(fmtNum(f.valor, idBase.fmt)).width;
   reg(env, 'etiqueta', [x + 36 * u, y + rh * 0.43 - 34 * u, x + 36 * u + wN, y + rh * 0.43 + 8 * u], `${capa.id ?? idBase.id}:n:${f.nombre}`);
   reg(env, 'etiqueta', [x + 36 * u, y + rh * 0.84 - 26 * u, x + 36 * u + wV, y + rh * 0.84 + 6 * u], `${capa.id ?? idBase.id}:v:${f.nombre}`);
-  reg(env, 'etiqueta', [x + lw - wP, y + rh * 0.5 - 34 * u, x + lw, y + rh * 0.5 + 8 * u], `${capa.id ?? idBase.id}:p:${f.nombre}`);
+  reg(env, 'etiqueta', [x + lw - wP, y + rh * yP - 34 * u, x + lw, y + rh * yP + 8 * u], `${capa.id ?? idBase.id}:p:${f.nombre}`);
   ctx.restore();
 }
 

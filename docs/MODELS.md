@@ -71,6 +71,13 @@ When: values per period or category, from zero. Needs: 1 table/series (hand-writ
 |---|---|
 | ![](gallery/barras-h.png) | ![](gallery/barras-v.png) |
 
+#### Variant: `barras_decada` — one bar per decade
+When: an **annual** series with a sustained trend (urban population, life expectancy, …) that would otherwise be offered only a line. Needs: 1 annual series with at least 15 years. Declares: one bar per decade (year multiple of 10) plus the first and the latest data point, from zero; only real rows of the source are used, nothing is interpolated. The visualizer recommends it automatically for such series (`servidor/visualizador_extra.mjs`). In vertical the bars lie horizontally.
+
+| Horizontal | Vertical |
+|---|---|
+| ![](gallery/barras-decada-h.png) | ![](gallery/barras-decada-v.png) |
+
 ### `carrera` — bar chart race
 When: who leads at each date, same unit. Needs: 3–10 series of the same kind. Declares: the date advances at constant speed; labels lose what every name repeats.
 Limits: long names are shortened; works best with ≤ 8 bars.
@@ -126,7 +133,7 @@ When: “how common is a value / a move of this size”. Needs: 1 series with �
 Example: [eurusd-daily-returns](../examples/eurusd-daily-returns/).
 
 ### `calendario` — calendar heatmap
-When: seasonality, bad years at a glance. Needs: 1 daily price series. Declares: monthly return = last close of the month ÷ last close of the previous month − 1 (or daily); colour saturates at ±20 %, announced; shows the most recent years that fit.
+When: seasonality, bad years at a glance. Needs: 1 daily price series. Declares: monthly return = last close of the month ÷ last close of the previous month − 1 (or daily); colour saturates at ±20 %, announced; shows the most recent years that fit. In vertical the grid is transposed (months as rows, years as columns) so every cell carries its number; the number of years shown is whatever fits the width of «−12,3».
 
 | Horizontal | Vertical |
 |---|---|

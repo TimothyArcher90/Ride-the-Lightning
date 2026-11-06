@@ -106,6 +106,8 @@ export const CASOS = [
     entrada: () => ({plantilla: 'panel', series: bib(...COMMOD)})},
   {id: 'barras', modelo: 'barras', nombre: 'Bars', plantilla: '(hand-written spec)', fuente: 'World Bank Pink Sheet: gold, monthly', licencia: 'CC BY 4.0', faltan: () => (hay('bm_gold') ? [] : ['bm_gold']),
     manual: (formato) => barras(formato)},
+  {id: 'barras-decada', modelo: 'barras', variante: true, nombre: 'Bars by decade (annual series)', plantilla: 'barras_decada', fuente: 'World Bank: urban population, Colombia (annual)', licencia: 'CC BY 4.0', faltan: () => (hay('pais_COL_urbanizacion') ? [] : ['pais_COL_urbanizacion']),
+    entrada: () => ({plantilla: 'barras_decada', series: bib('pais_COL_urbanizacion'), titulo: 'Colombia, década a década'})},
   {id: 'carrera', modelo: 'carrera', nombre: 'Bar chart race', plantilla: 'carrera', fuente: 'Our World in Data: global energy by source (TWh)', licencia: 'CC BY 4.0 (check the primary source on the OWID page)', faltan: () => ENERGIA.filter((i) => !hay(i)),
     entrada: () => ({plantilla: 'carrera', series: bib(...ENERGIA)}), ejemplo: {slug: 'energy-race', que: 'Which energy source leads in each year since 1800: coal, oil, gas, hydro and nuclear racing in TWh.'}},
   {id: 'dispersion', modelo: 'dispersion', nombre: 'Scatter with regression', plantilla: '(hand-written spec)', fuente: 'World Bank Pink Sheet: gold vs. copper, monthly since 2000', licencia: 'CC BY 4.0', faltan: () => ['bm_gold', 'bm_copper'].filter((i) => !hay(i)),

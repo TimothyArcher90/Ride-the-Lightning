@@ -54,6 +54,7 @@ export function reglasExtra(series, {partes = null, haAnterior = false} = {}, ad
     if (['mensual', 'semanal', 'diaria'].includes(frec) && esTasa(unidad)) add('bandas', 'Para cada mes, el rango histórico (mínimo–máximo y percentiles) y encima este año: se ve si está dentro de lo normal, sin proyecciones.');
     // Una tendencia sostenida (población, urbanización…) o una serie anual corta no se resume con un medidor ni con un histograma de niveles.
     const tend = tendencia(series[0]), oscila = !(tend?.sostenida), muchas = !tend || tend.puntos >= 24;
+    if (frec === 'anual' && tend && tend.puntos >= 15) add('barras_decada', 'Serie anual con tendencia: una barra por década (más el último dato) desde cero. Se lee de un vistazo cuánto ha crecido o caído en cada década, sin ruido anual.');
     if (oscila && frec !== 'anual') add('bullet', 'El último dato frente a su rango histórico y a su mediana: un medidor que responde «¿está alto o bajo?».');
     if (oscila && muchas && frec !== 'anual') add('histograma', 'En qué valores ha pasado más tiempo la serie, con la mediana y el último dato marcados.');
     if (frec === 'diaria' && !precio) add('retornos', 'Cómo se distribuyen los cambios entre un dato y el siguiente.');

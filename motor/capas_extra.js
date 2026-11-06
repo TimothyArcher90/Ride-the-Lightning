@@ -122,7 +122,7 @@ function radar(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const L = (capa._rd ??= ejesRadar(capa, tab)), N = L.ejes.length;
-  const wLab = B.w * 0.21, lh = tam(env, 26) * 1.18, fila = tam(env, 26) * 1.5, hLista = vert ? N * fila + 18 * u : 0;   // vertical: los rótulos van en una lista numerada debajo (los laterales no caben en la zona segura)
+  const wLab = B.w * 0.21, lh = tam(env, 26) * 1.18, fila = tam(env, 26) * 1.5, rrL = tam(env, 18) * 0.62, LNr = vert ? (capa._rn ??= L.ejes.map((e) => nombreEnLineas(env, e.nombre, B.w - 2 * rrL - med(env, fN(e.v, e.fmt), 26, 800, true) - 40 * u, 26, 700, 2))) : [], offY = LNr.map((_, i) => LNr.slice(0, i).reduce((a, l) => a + (l.length - 1) * tam(env, 26) * 1.1, 0)), hLista = vert ? N * fila + (offY.length ? offY[N - 1] + (LNr[N - 1].length - 1) * tam(env, 26) * 1.1 : 0) + 18 * u : 0;   // vertical: los rótulos van en una lista numerada debajo (los laterales no caben en la zona segura)
   const R = vert ? Math.min(B.w / 2 - 44 * u, (B.h - hLista - 190 * u) / 2) : Math.min(B.w / 2 - wLab, B.h / 2 - lh * 3.3), cx = B.x + B.w / 2, cy = vert ? B.y + 54 * u + R : B.y + B.h / 2, p = prog(t, t0, t1, ease.io2);
   const ang = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / N;
   nota(env, B, capa.nota ?? (L.tabla ? `ESCALA COMÚN DE TODOS LOS EJES: DE 0 A ${fN(L.esc, L.fmt)}.${L.conAnt ? ' LÍNEA PUNTEADA: VALOR ANTERIOR.' : ''}` : 'CADA EJE VA DE 0 (MÍNIMO HISTÓRICO DE ESA SERIE) A 100 (SU MÁXIMO HISTÓRICO). EL PUNTO ES LA ÚLTIMA OBSERVACIÓN.'), capa.id ?? 'radar', ap);
@@ -150,13 +150,13 @@ function radar(env, capa) {
   L.ejes.forEach((e, i) => { const r = R * clamp(e.frac) * ease.out3(p); ctx.fillStyle = acento; ctx.beginPath(); ctx.arc(cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i)), 8 * u, 0, 7); ctx.fill(); });
   // rótulos: nombre (hasta 2 líneas) y valor, hacia afuera de cada eje (en vertical: número en la punta y lista debajo)
   if (vert) L.ejes.forEach((e, i) => {
-    const a = ang(i), g = ent(env, t0 + 0.4, i, N), qx = cx + (R + 34 * u) * Math.cos(a), qy = cy + (R + 34 * u) * Math.sin(a), rr = tam(env, 18) * 0.62, y = cy + R + 118 * u + i * fila;
+    const a = ang(i), g = ent(env, t0 + 0.4, i, N), qx = cx + (R + 34 * u) * Math.cos(a), qy = cy + (R + 34 * u) * Math.sin(a), rr = tam(env, 18) * 0.62, y = cy + R + 118 * u + i * fila + offY[i];
     ctx.save(); ctx.globalAlpha *= g; ctx.fillStyle = acento;
     [[qx, qy], [B.x + rr, y - tam(env, 26) * 0.3]].forEach(([x, yy]) => { ctx.beginPath(); ctx.arc(x, yy, rr, 0, 7); ctx.fill(); }); ctx.restore();
     rot(env, String(i + 1), qx, qy + tam(env, 18) * 0.32, 18, 800, PALETA.fondo, 'center', `${capa.id ?? 'radar'}:p${i}`, {mono: true, alpha: g, halo: false});
     rot(env, String(i + 1), B.x + rr, y - tam(env, 26) * 0.3 + tam(env, 18) * 0.32, 18, 800, PALETA.fondo, 'center', `${capa.id ?? 'radar'}:q${i}`, {mono: true, alpha: g, halo: false, reg: false});
     const vt = fN(e.v, e.fmt), wv = med(env, vt, 26, 800, true);
-    rot(env, cortarA(env, e.nombre, B.w - 2 * rr - wv - 40 * u, 26, 700), B.x + 2 * rr + 14 * u, y, 26, 700, PALETA.blanco, 'left', `${capa.id ?? 'radar'}:n${i}`, {alpha: g});
+    LNr[i].forEach((ln, q) => rot(env, ln, B.x + 2 * rr + 14 * u, y + q * tam(env, 26) * 1.1, 26, 700, PALETA.blanco, 'left', `${capa.id ?? 'radar'}:n${i}${q ? ':' + q : ''}`, {alpha: g}));
     rot(env, vt, B.x + B.w, y, 26, 800, acento, 'right', `${capa.id ?? 'radar'}:v${i}`, {mono: true, alpha: g});
   });
   else L.ejes.forEach((e, i) => {
@@ -378,7 +378,24 @@ function calendario(env, capa) {
   const leyH = S * 3.4, wA = med(env, '2000', 18, 700, true) + 14 * u;
   ctx.save(); ctx.globalAlpha *= ap;
   let aviso = '';
-  if (!diario) {
+  if (!diario && vert) {   // VERTICAL: meses en filas y años en columnas, con la cifra en cada casilla (cuántos años caben lo decide el ancho de «−12,3»)
+    const wM = med(env, 'sep', 18, 700, true) + 18 * u, numW = med(env, '−12,3', 18, 700, true) + 10 * u, nAn = Math.max(3, Math.min(12, Math.floor((B.w - wM) / numW))), anios = L.anios.slice(-nAn);
+    if (anios.length < L.anios.length) aviso = ` MOSTRANDO LOS ÚLTIMOS ${anios.length} AÑOS DE ${L.anios.length}.`;
+    const x0 = B.x + wM, cw = (B.w - wM) / anios.length, y0 = B.y + S * 1.6, filaH = Math.min(S * 2.8, (B.h - leyH - S * 2) / 12);
+    nota(env, B, capa.nota ?? `CADA CASILLA ES EL RETORNO DE ESE MES: ÚLTIMO CIERRE DEL MES ÷ ÚLTIMO CIERRE DEL MES ANTERIOR − 1, EN %. COLOR PLENO A ±${fN(lim, {decimales: lim < 10 ? 1 : 0})} %; MÁS ALLÁ SE SATURA.${aviso}${L.rets.get(L.ult)?.parcial ? ' EL ÚLTIMO MES ESTÁ INCOMPLETO.' : ''}`, capa.id ?? 'calendario', ap);
+    anios.forEach((an, c) => rot(env, String(an), x0 + cw * (c + 0.5), B.y + S * 1.1, 18, 700, PALETA.piedraClara, 'center', `${capa.id ?? 'calendario'}:a${an}`, {mono: true, tipo: 'eje-x'}));
+    for (let m = 0; m < 12; m++) {
+      const y = y0 + m * filaH, g = ent(env, t0 + 0.2, m, 12); rot(env, MES3[m], B.x + wM - 12 * u, y + filaH * 0.64, 18, 600, PALETA.piedraOscura, 'right', `${capa.id ?? 'calendario'}:m${m}`, {mono: true, tipo: 'eje-y', alpha: g});
+      anios.forEach((an, c) => {
+        const q = L.rets.get(an * 12 + m), g2 = clamp(p * 1.6 - (c * 12 + m) / (anios.length * 12) * 0.6); if (g2 <= 0) return;
+        ctx.globalAlpha = ap * g2; ctx.fillStyle = q ? colorRet(q.r, lim) : rgba(PALETA.tarjeta, 0.5); ctx.fillRect(x0 + c * cw + 1.5 * u, y + 1.5 * u, cw - 3 * u, filaH - 3 * u);
+        if (q && q.parcial) { ctx.strokeStyle = PALETA.blanco; ctx.setLineDash([5 * u, 4 * u]); ctx.lineWidth = 2 * u; ctx.strokeRect(x0 + c * cw + 2 * u, y + 2 * u, cw - 4 * u, filaH - 4 * u); ctx.setLineDash([]); }
+        ctx.globalAlpha = ap;
+        if (q) rot(env, fN(q.r, {decimales: 1}).replace('-', '−'), x0 + (c + 0.5) * cw, y + filaH * 0.66, 18, 700, tintaSobre(colorRet(q.r, lim)), 'center', `${capa.id ?? 'calendario'}:c${an}-${m}`, {mono: true, alpha: g2, halo: false});
+      });
+    }
+    leyenda(env, B, capa, lim, B.y + B.h - leyH * 0.6, ap);
+  } else if (!diario) {
     const filaH = Math.max(S * 1.5, Math.min(S * 2.2, (B.h - leyH - S * 2) / Math.max(1, L.anios.length))), cap = Math.max(3, Math.floor((B.h - leyH - S * 2) / filaH)), anios = L.anios.slice(-cap);
     if (anios.length < L.anios.length) aviso = ` MOSTRANDO LOS ÚLTIMOS ${anios.length} AÑOS DE ${L.anios.length}.`;
     const x0 = B.x + wA, cw = (B.w - wA) / 12, y0 = B.y + S * 1.6, mostrarNum = med(env, '−12,3', 18, 700, true) < cw - 6 * u;
@@ -466,11 +483,11 @@ function bullet(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const L = (capa._bl ??= armarBullet(capa, tab)), n = L.length, S = tam(env, 18), N = tam(env, 26), p = prog(t, t0, t1, ease.io2);
-  const lhB = tam(env, 26) * 1.12, LNB = (capa._bn ??= L.map((r) => nombreEnLineas(env, r.nombre, B.w - med(env, fN(r.v, r.fmt), 28, 800, true) - 20 * u, 26, 700, 2))), extB = Math.max(...LNB.map((l) => l.length)) - 1, fila = Math.min((B.h - S * 0.5) / n, N * 7 + extB * lhB), bh = Math.max(26 * u, N * 1.0);
+  const lhB = tam(env, 26) * 1.12, LNB = (capa._bn ??= L.map((r) => nombreEnLineas(env, r.nombre, B.w - med(env, fN(r.v, r.fmt), 28, 800, true) - 20 * u, 26, 700, 2))), extB = Math.max(...LNB.map((l) => l.length)) - 1, fila = Math.min((B.h - S * 0.5) / n, N * 7 + extB * lhB), oy = vert ? Math.max(0, (B.h - S * 0.5 - fila * n) / 2) : 0, bh = Math.max(26 * u, N * 1.0);   // vertical: el bloque de medidores se centra en su caja en vez de pegarse arriba
   nota(env, B, capa.nota ?? 'BARRA: ÚLTIMO DATO. FONDO: HISTORIA DE LA SERIE EN TRES TRAMOS (MÍNIMO–P25, P25–P75, P75–MÁXIMO). RAYA BLANCA: LA META. LA ESCALA ARRANCA EN 0.', capa.id ?? 'bullet', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   L.forEach((r, i) => {
-    const y = B.y + i * fila, g = clamp(p * (n + 1) - i * 0.7), e = ease.out3(g); if (g <= 0) return;
+    const y = B.y + oy + i * fila, g = clamp(p * (n + 1) - i * 0.7), e = ease.out3(g); if (g <= 0) return;
     const lo = Math.min(0, r.min), hi = Math.max(r.max, r.v, r.meta), px = (v) => B.x + ((v - lo) / (hi - lo)) * B.w, yb = y + N * 1.5 + (LNB[i].length - 1) * lhB, c = acento_(capa);
     const vTxt = fN(r.v, r.fmt), wv = med(env, vTxt, 28, 800, true);
     LNB[i].forEach((ln, k) => rot(env, ln, B.x, y + N * 0.95 + k * lhB, 26, 700, PALETA.blanco, 'left', `${capa.id ?? 'bullet'}:n${i}:${k}`, {alpha: g}));

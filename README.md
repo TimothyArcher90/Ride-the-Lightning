@@ -30,7 +30,7 @@ Real data, real frames (final frame of each animation). Vertical versions follow
 | <img src="docs/gallery/radar-pais-v.png" width="180"> | <img src="docs/gallery/comparar-v.png" width="180"> | <img src="docs/gallery/ranking-v.png" width="180"> | <img src="docs/gallery/waffle-v.png" width="180"> | <img src="docs/gallery/lollipop-v.png" width="180"> |
 |:--:|:--:|:--:|:--:|:--:|
 
-All 62 images (31 cases × horizontal/vertical): [`docs/gallery/`](docs/gallery/). Regenerate with `npm run gallery`.
+All 64 images (32 cases × horizontal/vertical): [`docs/gallery/`](docs/gallery/). Regenerate with `npm run gallery`.
 
 ---
 

@@ -113,6 +113,11 @@ if (quiere('agrupadas')) {
   if (ENERGIA.every(hay)) await pieza('agrupadas · energía por fuente en 3 momentos', {plantilla: 'agrupadas', series: bib(...ENERGIA), titulo: 'La energía, fuente por fuente'});
 }
 
+if (quiere('agrupadas') && hay('pais_COL_urbanizacion')) {
+  console.log('\n7b) Barras por década (serie anual con tendencia)');
+  await pieza('barras_decada · urbanización de Colombia', {plantilla: 'barras_decada', series: bib('pais_COL_urbanizacion'), titulo: 'Colombia, década a década'});
+}
+
 // ── 8. BULLET ───────────────────────────────────────────────────────────────────────────────────────────────────
 if (quiere('bullet')) {
   console.log('\n8) Bullet');
