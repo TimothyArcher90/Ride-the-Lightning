@@ -316,6 +316,7 @@ function histograma(env, capa) {
   // marcas: mediana y último valor (en filas distintas de la franja superior para que sus rótulos nunca se pisen)
   const marca = (v, fila, color, txt, id) => { const x = clamp(px(v), x0, x1), w = med(env, txt, 18, 700, true), xx = clamp(x, x0 + w / 2, x1 - w / 2), g = ent(env, t0 + 1.2, fila);
     ctx.globalAlpha = ap * g; ctx.strokeStyle = color; ctx.lineWidth = 2.5 * u; ctx.setLineDash(fila ? [] : [8 * u, 6 * u]); ctx.beginPath(); ctx.moveTo(x, B.y + S * (fila ? 3.2 : 1.9)); ctx.lineTo(x, y1); ctx.stroke(); ctx.setLineDash([]);
+    if (fila) { ctx.save(); ctx.globalAlpha = ap * g; ctx.fillStyle = rgba(PALETA.fondo, 0.96); ctx.fillRect(xx - w / 2 - 8 * u, B.y + S * 2.95 - S * 0.95, w + 16 * u, S * 1.3); ctx.restore(); }   // placa del fondo: la línea punteada de la mediana no atraviesa el rótulo de la fila de abajo
     rot(env, txt, xx, B.y + S * (fila ? 2.95 : 1.65), 18, 800, color, 'center', `${capa.id ?? 'histograma'}:${id}`, {mono: true, alpha: g}); ctx.globalAlpha = ap; };
   const etM = (v) => (L.ret ? fmtSigno(v, {decimales: 2, sufijo: ' %'}) : etX(v));   // las marcas llevan más decimales que el eje: «0 %» no puede esconder un −0,24 %
   marca(L.mediana, 0, PALETA.piedraClara, `MEDIANA ${etM(L.mediana)}`, 'mediana');

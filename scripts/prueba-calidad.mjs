@@ -81,8 +81,9 @@ function evaluar(modelo, formato, frames, T, dur) {
   for (const f of asentados) for (const x of f.textos) {
     if (x.a < 0.95 || !x.s.trim() || x.x1 < 0 || x.y1 < 0) continue;
     const k = `${x.s}|${Math.round(x.px)}`; if (vistos.has(k)) continue; vistos.add(k);
-    const piso = pie(x.s, f) ? pisoPie : esNombre(x.s) ? pisoNombre : pisoGeneral;
-    if (x.px < piso - 0.6) e.push(`letra pequeña: «${x.s.slice(0, 40)}» mide ${x.px.toFixed(0)} px y el mínimo es ${piso} px (${pie(x.s, f) ? 'pie de fuente' : esNombre(x.s) ? 'nombre o etiqueta' : 'cifra, eje o unidad'})`);
+    const enBloqueTitulo = vert && x.y1 < 0.27 * H, nom = esNombre(x.s) && !enBloqueTitulo;   // las líneas del subtítulo (rol «sub», 34 px) caen en el bloque de título: no son nombres de gráfica
+    const piso = pie(x.s, f) ? pisoPie : nom ? pisoNombre : pisoGeneral;
+    if (x.px < piso - 0.6) e.push(`letra pequeña: «${x.s.slice(0, 40)}» mide ${x.px.toFixed(0)} px y el mínimo es ${piso} px (${pie(x.s, f) ? 'pie de fuente' : nom ? 'nombre o etiqueta' : 'cifra, eje o unidad'})`);
     if (x.contraste != null && x.contraste < 4.5) e.push(`poco contraste: «${x.s.slice(0, 40)}» tiene ${x.contraste.toFixed(1).replace('.', ',')}:1 y el mínimo es 4,5:1`);
   }
   // 3: zona segura del celular, en TODOS los fotogramas (incluye el pie)

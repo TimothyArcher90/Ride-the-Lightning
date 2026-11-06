@@ -468,25 +468,26 @@ function calor(env, capa) {
   const [t0, t1] = capa.t ?? [0.5, 3];
   const ap = aparece(env, capa, t0); if (ap <= 0) return;
   const m = M.etiquetas.length, vert = env.H > env.W;
-  ctx.font = fnt(700, 22 * u); const LW = Math.min(B.w * 0.36, Math.max(...M.etiquetas.map((e) => ctx.measureText(e).width)) + 24 * u);
-  const cabeza = (vert ? 200 : 120) * u, side = Math.min(B.w - LW, B.h - cabeza) * 0.98, c = side / m;
+  ctx.font = fnt(700, 22 * u); const LW = Math.min(B.w * (vert ? 0.44 : 0.36), Math.max(...M.etiquetas.map((e) => ctx.measureText(e).width)) + 24 * u);
+  const cabeza = (vert ? 250 : 120) * u, side = Math.min(B.w - LW, B.h - cabeza) * 0.98, c = side / m, ch = vert ? Math.min(c * 1.7, (B.h - cabeza) * 0.98 / m) : c;   // en vertical las casillas son más altas que anchas: llenan el lienzo
   const ox = B.x + LW, oy = B.y + cabeza;
   const col = (v) => colorDivergente(clamp(v, -1, 1));   // BrBG vendorizado (motor/escalas.js): el cero ya no se confunde con el fondo y distingue negativo/positivo un daltónico
   ctx.save(); ctx.globalAlpha = ap;
   for (let i = 0; i < m; i++) {
     // nombres completos en hasta 2 líneas (antes «Bono del Tesoro 10 años (di…»); solo si ni así caben, el último recurso es cortar
-    ctx.font = fnt(700, 22 * u); const lhN = escalarFuente(22 * u) * 1.1, lnC = envolverEntero(ctx, M.etiquetas[i], LW - 20 * u, 2) ?? [cortar(ctx, M.etiquetas[i], LW - 20 * u)], yC = oy + i * c + c / 2 + mid(22 * u) - ((lnC.length - 1) * lhN) / 2;
+    ctx.font = fnt(700, 22 * u); const lhN = escalarFuente(22 * u) * 1.1, lnC = envolverEntero(ctx, M.etiquetas[i], LW - 20 * u, 3) ?? [cortar(ctx, M.etiquetas[i], LW - 20 * u)], yC = oy + i * ch + ch / 2 + mid(22 * u) - ((lnC.length - 1) * lhN) / 2;
     lnC.forEach((l, q) => texto(ctx, l, ox - 14 * u, yC + q * lhN, fnt(700, 22 * u), PALETA.piedraClara, 'right'));
     reg(env, 'etiqueta', [ox - 14 * u - Math.max(...lnC.map((l) => ctx.measureText(l).width)), yC - escalarFuente(22 * u), ox - 14 * u, yC + (lnC.length - 1) * lhN + 12 * u], `${capa.id ?? 'calor'}:f:${i}`);
     ctx.save(); ctx.translate(ox + i * c + c / 2, oy - 14 * u); ctx.rotate(-Math.PI / 4);
-    ctx.font = fnt(700, 22 * u); const lnR = envolverEntero(ctx, M.etiquetas[i], cabeza * 1.5, 2) ?? [cortar(ctx, M.etiquetas[i], cabeza * 1.5)]; lnR.forEach((l, q) => texto(ctx, l, 0, -(lnR.length - 1 - q) * lhN, fnt(700, 22 * u), PALETA.piedraClara, 'left')); ctx.restore();
+    ctx.font = fnt(700, 22 * u); const limR = cabeza * (vert ? 1.9 : 1.5); let fzR = 22 * u; if (vert) while (fzR > 17 * u && ctx.measureText(M.etiquetas[i]).width > limR) { fzR -= 1 * u; ctx.font = fnt(700, fzR); }   // en vertical el rótulo inclinado se achica un poco antes que partirse
+    const lnR = envolverEntero(ctx, M.etiquetas[i], limR, vert ? 1 : 2) ?? envolverEntero(ctx, M.etiquetas[i], limR, 2) ?? [cortar(ctx, M.etiquetas[i], limR)]; lnR.forEach((l, q) => texto(ctx, l, 0, -(lnR.length - 1 - q) * lhN, fnt(700, fzR), PALETA.piedraClara, 'left')); ctx.restore();
     for (let j = 0; j < m; j++) {
       const ini = t0 + ((Math.abs(i - j) + (i + j) * 0.15) / (m * 1.3)) * (t1 - t0), g = prog(t, ini, ini + 0.45, ease.outBack);
       if (g <= 0) continue;
       const v = M.valores[i][j];
-      ctx.save(); ctx.translate(ox + j * c + c / 2, oy + i * c + c / 2); ctx.scale(g, g);
+      ctx.save(); ctx.translate(ox + j * c + c / 2, oy + i * ch + ch / 2); ctx.scale(g, g);
       const fondoC = col(v == null ? 0 : v), tinta = contraste(fondoC, PALETA.blanco) >= contraste(fondoC, TINTA_OSCURA) ? PALETA.blanco : TINTA_OSCURA;   // la cifra elige la tinta que más contrasta con su celda
-      ctx.fillStyle = fondoC; ctx.fillRect(-c / 2 + 2 * u, -c / 2 + 2 * u, c - 4 * u, c - 4 * u);
+      ctx.fillStyle = fondoC; ctx.fillRect(-c / 2 + 2 * u, -ch / 2 + 2 * u, c - 4 * u, ch - 4 * u);
       const txtV = v == null ? '—' : fmtNum(v, {decimales: 2}); let fz = escalarFuente(26 * u); ctx.font = fuenteCss(700, fz, true); const wV = ctx.measureText(txtV).width;
       if (wV > c - 10 * u) fz *= (c - 10 * u) / wV;   // la cifra se achica para caber en su casilla (con celdas pequeñas la tipografía mínima se montaba sobre la vecina)
       texto(ctx, txtV, 0, mid(26 * u), fuenteCss(700, fz, true), tinta, 'center');
@@ -537,8 +538,17 @@ function cajaTitulo(env, capa) {
   while ((lineas.length > maxL || lineas.some((l) => ctx.measureText(l).width > libre)) && tam > minimo) { tam -= 2 * u; lineas = medir(); }
   ctx.font = fuenteCssT(tam);
   const w = Math.max(...lineas.map((l) => ctx.measureText(l).width)), lh = tam * 1.12, ult = y + (lineas.length - 1) * lh;
-  const subT = capa.sub ? tipo(env, 'sub') : 0, abajo = ult + 24 * u + (capa.sub ? subT * 1.25 + 6 * u : 0);
-  return {x, y, w, tam, lh, lineas, texto: lineas.join(' '), ult, subT, caja: [x - 6 * u, y - tam, x + w + 6 * u, abajo]};
+  const subT = capa.sub ? tipo(env, 'sub') : 0;
+  // subtítulo: se envuelve por palabras (2 líneas, 3 si hace falta) en vez de cortarse con «…»; solo si una palabra sola no cabe se recorta
+  let subLineas = [];
+  if (capa.sub) {
+    ctx.font = fuenteCss(500, subT); const tope = vert ? ZONA.x * W - x - 6 : Math.min(W - 2 * x, Math.max(w + 400 * u, W * 0.5));
+    subLineas = ctx.measureText(String(capa.sub)).width <= tope ? [String(capa.sub)] : (envolverEntero(ctx, String(capa.sub), tope, 2) ?? envolverEntero(ctx, String(capa.sub), tope, 3) ?? envolver(ctx, String(capa.sub), tope, 3));
+  }
+  // si el subtítulo ocupa 2+ líneas (vertical, posición por defecto) el bloque sube lo que crece, para no invadir el contador ni la gráfica
+  const dy = vert && !capa.pos ? -Math.min(Math.max(0, subLineas.length - 1) * subT * 1.25, 0.035 * H) : 0, yy = y + dy, ult2 = ult + dy;
+  const abajo = ult2 + 24 * u + (capa.sub ? subT * 1.25 * subLineas.length + 6 * u : 0);
+  return {x, y: yy, w, tam, lh, lineas, texto: lineas.join(' '), ult: ult2, subT, subLineas, caja: [x - 6 * u, yy - tam, x + w + 6 * u, abajo]};
 }
 const fuenteCssT = (px) => fuenteCss(800, px);
 function cajaContador(env, capa) {
@@ -772,10 +782,7 @@ function titulo(env, capa) {
   const r = prog(t, t0 + 0.2, t0 + 0.9, ease.out3);
   ctx.fillStyle = color; ctx.fillRect(x, T.ult + 16 * u, Math.min(w, 200 * u) * r, 4 * u);
   if (capa.sub) {
-    ctx.font = fuenteCss(500, T.subT); let sb = String(capa.sub), cortado = false; const tope = env.W - 2 * x;   // nunca más allá del lienzo con el mismo margen a la derecha
-    while (sb.length > 6 && (ctx.measureText(sb).width > tope || (ctx.measureText(sb).width > T.w + 400 * u && ctx.measureText(sb).width > (env.H > env.W ? ZONA.x * env.W - x : env.W * 0.5)))) { sb = sb.slice(0, -2); cortado = true; }
-    if (cortado) sb = sb.trimEnd().replace(/[,:;.\s]+$/, '') + '…';
-    texto(ctx, sb, x, T.ult + 24 * u + T.subT, fuenteCss(500, T.subT), PALETA.piedraClara, 'left', 'alphabetic', prog(t, t0 + 0.5, t0 + 1.0, ease.out3));
+    T.subLineas.forEach((sb, q) => texto(ctx, sb, x, T.ult + 24 * u + T.subT + q * T.subT * 1.25, fuenteCss(500, T.subT), PALETA.piedraClara, 'left', 'alphabetic', prog(t, t0 + 0.5, t0 + 1.0, ease.out3)));
   }
   ctx.restore();
   reg(env, 'titulo', T.caja, capa.id);
@@ -1013,6 +1020,10 @@ function sankey(env, capa) {
     ctx.save(); ctx.globalAlpha *= la;
     const f1 = fnt(700, 23 * u * k), f2 = fnt(500, 19 * u * k, true), f3 = fnt(600, 17 * u * k, true), {x, aling: al, yTop, al: alto, caja} = n.lab;
     const [lh1, lh2, lh3] = L.lhs;
+    if (n.nivel > 0 && n.nivel < L.ncol - 1) {   // nodo central: el rótulo cae sobre cintas, así que lleva una placa del color del fondo detrás (legible sin tapar el flujo del todo)
+      ctx.fillStyle = rgba(PALETA.fondo, 0.78); const pad = 7 * u, r = 8 * u, bx = caja[0] - pad, by = caja[1] - pad * 0.4, bw = caja[2] - caja[0] + pad * 2, bh = caja[3] - caja[1] + pad * 0.8;
+      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx, by, bw, bh, r) : ctx.rect(bx, by, bw, bh); ctx.fill();
+    }
     rotulo(ctx, n.l1, x, yTop + lh1 - 4 * u, f1, PALETA.blanco, al, u);
     if (n.l2) rotulo(ctx, n.l2, x, yTop + lh1 + lh2 - 4 * u, f2, PALETA.piedraClara, al, u);
     if (n.l3) rotulo(ctx, n.l3, x, yTop + lh1 + (n.l2 ? lh2 : 0) + lh3 - 4 * u, f3, env.H > env.W ? PALETA.piedraClara : (n.valor >= n.anterior ? COLOR.verde : COLOR.rojo), al, u);
@@ -1179,10 +1190,10 @@ function separar(ys, gap, lo, hi) {
 /** Pendiente (slope chart): dos momentos, una línea por serie. Responde «¿quién subió y quién bajó entre A y B?». */
 function pendiente(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
-  const B = caja(env, capa, vert ? [0.0667, 0.27, 0.64, 0.54] : [0.05, 0.25, 0.9, 0.62]);
+  const B = caja(env, capa, vert ? [0.0667, 0.27, 0.64, 0.55] : [0.05, 0.22, 0.9, 0.62]);
   const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const n = tab.x.length, i0 = capa.de ?? 0, i1 = capa.a ?? n - 1;
-  const xl = B.x + B.w * (vert ? 0.4 : 0.36), xr = B.x + B.w * (vert ? 0.62 : 0.64), fT = fnt(700, 26 * u), fL = fnt(500, 20 * u, true), fR = fnt(800, 26 * u, true), fD = fnt(700, 20 * u, true);
+  const xl = B.x + B.w * (vert ? 0.43 : 0.36), xr = B.x + B.w * (vert ? 0.62 : 0.72), fT = fnt(700, 26 * u), fL = fnt(500, 20 * u, true), fR = fnt(800, 26 * u, true), fD = fnt(700, 20 * u, true);
   const sT = escalarFuente(26 * u), sS = escalarFuente(20 * u);
   const L = (capa._pl ??= (() => {
     const idxs = (capa.series ?? tab.series.map((_, i) => i)).filter((si) => tab.series[si].y[i0] != null && tab.series[si].y[i1] != null);
@@ -1190,7 +1201,7 @@ function pendiente(env, capa) {
     const logE = lo > 0 && hi / lo > 8 && capa.escala !== 'lineal', f = logE ? Math.log10 : (v) => v;   // magnitudes muy distintas: escala logarítmica (se avisa en pantalla)
     const py = (v) => bajo - ((f(v) - f(lo)) / ((f(hi) - f(lo)) || 1)) * (bajo - top);
     ctx.font = fT;
-    const nombres = idxs.map((si) => envolver(ctx, tab.series[si].nombre, xl - 22 * u - B.x, vert ? 2 : 1));
+    const nombres = idxs.map((si) => { const nm = tab.series[si].nombre, an = xl - 22 * u - B.x; return ctx.measureText(nm).width <= an ? [nm] : (envolverEntero(ctx, nm, an, vert ? 3 : 2) ?? envolver(ctx, nm, an, vert ? 3 : 2)); });   // nombre completo en 2-3 líneas, nunca «…» salvo una palabra que no cabe sola
     const alto = Math.max(...nombres.map((l) => l.length)) * sT * 1.15 + sS * 1.3, gap = Math.min(alto + 14 * u, Math.max(sT * 2, (bajo - top) / Math.max(1, idxs.length)));
     const yl = separar(idxs.map((si) => py(tab.series[si].y[i0])), gap, top - 10 * u, bajo + 10 * u), yr = separar(idxs.map((si) => py(tab.series[si].y[i1])), gap, top - 10 * u, bajo + 10 * u);
     return {idxs, py, yl, yr, logE, nombres, omitidas: (capa.series ?? tab.series.map((_, i) => i)).length - idxs.length};
@@ -1397,20 +1408,29 @@ function waffle(env, capa) {
 /** Lollipop: ranking de partes con palo desde CERO (base honesta) y un círculo; cada fila lleva valor y porcentaje. Pensada para vertical (tipografía grande). */
 function lollipop(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
-  const B = caja(env, capa, vert ? [0.0667, 0.26, 0.64, 0.6] : [0.05, 0.24, 0.9, 0.64]);
+  const B = caja(env, capa, vert ? [0.0667, 0.26, 0.64, 0.6] : [0.05, 0.22, 0.9, 0.68]);
   const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const items = (capa._lp ??= [...tab.items].filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor)), total = items.reduce((a, x) => a + x.valor, 0), n = items.length;
-  const fila = Math.min(vert ? 118 * u : 96 * u, B.h / n), k = clamp(fila / (100 * u), 0.6, 1), fN = fnt(700, 31 * u * k), fV = fnt(800, 29 * u * k, true), fP = fnt(700, 24 * u * k, true);
+  const fila = Math.min(vert ? 118 * u : 120 * u, B.h / n), k = vert ? clamp(fila / (100 * u), 0.6, 1) : clamp(fila / (70 * u), 0.8, 1), fN = fnt(700, 31 * u * k), fV = fnt(800, 29 * u * k, true), fP = fnt(700, 24 * u * k, true);
   const pal = paletaCat(), vmax = items[0].valor, p = prog(t, t0, t1, ease.io2) * n, y0 = B.y + (B.h - fila * n) / 2;
-  ctx.font = fV; const wMax = Math.max(...items.map((it) => ctx.measureText(`${fmtNum(it.valor, tab.fmt)}  ·  ${pctTxt((it.valor / total) * 100)}`).width)), largo = Math.max(60 * u, B.w - 24 * u - wMax - 56 * u * k);
+  ctx.font = fV; const wMax = Math.max(...items.map((it) => ctx.measureText(`${fmtNum(it.valor, tab.fmt)}  ·  ${pctTxt((it.valor / total) * 100)}`).width));
+  ctx.font = fN; const nameW = vert ? 0 : Math.min(B.w * 0.3, Math.max(...items.map((it) => ctx.measureText(it.nombre).width)) + 28 * u);   // horizontal: nombre a la izquierda y el palo a la derecha, en UNA fila (fuentes más grandes y menos alto por fila)
+  const xs = B.x + 12 * u + nameW, largo = Math.max(60 * u, B.x + B.w - 24 * u - xs - wMax - 56 * u * k);
   ctx.save(); ctx.globalAlpha *= ap;
   items.forEach((it, i) => {
     const a = clamp(p - i), e = ease.out3(a); if (a <= 0) return;
-    const y = y0 + i * fila, col = pal[i % pal.length], ancho = B.w - 24 * u, xe = B.x + 12 * u + (it.valor / vmax) * largo * e, yb = y + fila * 0.68;
-    ctx.font = fN; const nom = cortar(ctx, it.nombre, B.w - 16 * u);
-    rotulo(ctx, nom, B.x + 12 * u, y + fila * 0.34, fN, PALETA.blanco, 'left', u);
-    reg(env, 'etiqueta', [B.x + 12 * u, y + fila * 0.34 - 28 * u * k, B.x + 12 * u + ctx.measureText(nom).width, y + fila * 0.34 + 8 * u], `${capa.id ?? 'lollipop'}:n:${it.nombre}`);
-    ctx.strokeStyle = col; ctx.lineWidth = 7 * u * k; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(B.x + 12 * u, yb); ctx.lineTo(xe, yb); ctx.stroke();
+    const y = y0 + i * fila, col = pal[i % pal.length], ancho = B.w - 24 * u, xe = xs + (it.valor / vmax) * largo * e, yb = vert ? y + fila * 0.68 : y + fila / 2;
+    ctx.font = fN;
+    if (vert) {
+      const nom = cortar(ctx, it.nombre, B.w - 16 * u);
+      rotulo(ctx, nom, B.x + 12 * u, y + fila * 0.34, fN, PALETA.blanco, 'left', u);
+      reg(env, 'etiqueta', [B.x + 12 * u, y + fila * 0.34 - 28 * u * k, B.x + 12 * u + ctx.measureText(nom).width, y + fila * 0.34 + 8 * u], `${capa.id ?? 'lollipop'}:n:${it.nombre}`);
+    } else {
+      const ln = envolverEntero(ctx, it.nombre, nameW - 16 * u, 2) ?? [cortar(ctx, it.nombre, nameW - 16 * u)], lhn = escalarFuente(31 * u * k) * 1.1, y1 = yb + 10 * u * k - ((ln.length - 1) * lhn) / 2;
+      ln.forEach((l, q) => rotulo(ctx, l, B.x + 12 * u, y1 + q * lhn, fN, PALETA.blanco, 'left', u));
+      reg(env, 'etiqueta', [B.x + 12 * u, y1 - 28 * u * k, B.x + 12 * u + Math.max(...ln.map((l) => ctx.measureText(l).width)), y1 + (ln.length - 1) * lhn + 8 * u], `${capa.id ?? 'lollipop'}:n:${it.nombre}`);
+    }
+    ctx.strokeStyle = col; ctx.lineWidth = 7 * u * k; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(vert ? B.x + 12 * u : xs, yb); ctx.lineTo(xe, yb); ctx.stroke();
     ctx.fillStyle = col; ctx.beginPath(); ctx.arc(xe, yb, 15 * u * k * (0.5 + 0.5 * e), 0, 7); ctx.fill();
     const la = clamp((a - 0.5) / 0.5); if (la <= 0) return;
     const txt = `${fmtNum(it.valor, tab.fmt)}  ·  ${pctTxt((it.valor / total) * 100)}`; ctx.font = fV;
