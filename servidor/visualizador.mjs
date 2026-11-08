@@ -5,12 +5,18 @@ import {generar, PLANTILLAS} from './plantillas.mjs';
 import {compilar} from './compilar.mjs';
 import {auditarColisiones} from './render.mjs';
 import {reglasExtra} from './visualizador_extra.mjs';   // reglas de los modelos del visualizador universal
+import {traducirPorque} from './porque_en.mjs';
+import {conIdioma, fijarIdioma, idioma as idiomaActual} from '../motor/idioma.js';
 
 const TEMAS = ['oscuro', 'harris', 'carbon'];
-const nombreDe = (id) => PLANTILLAS.find((p) => p.id === id)?.nombre ?? id;
+const nombreDe = (id) => { const p = PLANTILLAS.find((q) => q.id === id); return (idiomaActual() === 'en' && p?.nombre_en) || p?.nombre || id; };
 
 /** Qué plantillas encajan con este dato y por qué, de la mejor a la menos buena. No genera nada todavía. */
-export function candidatas(series, {partes = null, haySignos = false, haAnterior = false} = {}) {
+export function candidatas(series, opciones = {}, idioma = null) {
+  const C = candidatasEs(series, opciones);
+  return (idioma ?? idiomaActual()) === 'en' ? C.map((c) => ({...c, porque: traducirPorque(c.porque)})) : C;   // 'es' no cambia; 'en' traduce el «porque»
+}
+function candidatasEs(series, {partes = null, haySignos = false, haAnterior = false} = {}) {
   const n = series.length, tabla = series.find((s) => s.tabla)?.tabla ?? null, C = [];
   const add = (plantilla, porque) => { const d = PLANTILLAS.find((p) => p.id === plantilla); if (d && n >= d.necesita.min && n <= d.necesita.max) C.push({plantilla, porque}); };
   if (tabla === 'flujos') { add('resultados', 'Es una tabla de flujos (de dónde a dónde): un Sankey muestra el reparto sin que el ojo tenga que comparar áreas.'); return C; }
@@ -42,7 +48,8 @@ export function candidatas(series, {partes = null, haySignos = false, haAnterior
  * Cada opción: {plantilla, nombre, porque, tema, spec, ok, problemas[]}. Solo `ok` se debe entregar.
  */
 /** Solo la recomendación (rápida, no dibuja nada): las plantillas que encajan, de la mejor a la menos buena, cada una con su porqué. */
-export function recomendar(entrada) {
+export function recomendar(entrada) { return conIdioma(entrada.idioma, () => recomendarEn(entrada)); }
+function recomendarEn(entrada) {
   const series = entrada.series ?? [], formato = entrada.formato ?? 'vertical';
   let partes = null, haySignos = false, haAnterior = false;
   if (series.some((s) => s.tabla === 'categorias')) {
@@ -53,7 +60,11 @@ export function recomendar(entrada) {
   return candidatas(series, {partes, haySignos, haAnterior});
 }
 
-export async function proponer(entrada, {max = 4, auditar = true, paso = 0.6} = {}) {
+export async function proponer(entrada, opciones = {}) {
+  fijarIdioma(entrada.idioma);   // el «porque» y los nombres salen en el idioma pedido ('es' por defecto)
+  try { return await proponerEn(entrada, opciones); } finally { fijarIdioma('es'); }   // una pieza en inglés no deja el estado en inglés
+}
+async function proponerEn(entrada, {max = 4, auditar = true, paso = 0.6} = {}) {
   const series = entrada.series ?? [], formato = entrada.formato ?? 'vertical';
   let partes = null, haySignos = false, haAnterior = false;
   if (series.some((s) => s.tabla === 'categorias')) {

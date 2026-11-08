@@ -7,6 +7,48 @@ import {colorDivergente} from './escalas.js';
 import {PALETA, COLOR, TEMA, clamp, lerp, ease, prog, colorDe, mezcla, rgba, fmtNum, fmtSigno, fmtFecha, ticksNum, ticksFecha, etiquetaTick} from './nucleo.js';
 import {escalarFuente, fuenteCss, margenes, envolver, contraste, entrada as entradaDiseno} from './diseno.js';
 import {envolverEntero} from './etiquetas.js';
+import {t as tr, registrar, idioma, MESES_CORTO} from './idioma.js';   // «tr»: en las capas «t» es el tiempo
+
+// Textos dibujados por los modelos del visualizador universal (es = original, en = versión inglesa). Se leen con tr('ce.clave', {vars}).
+registrar('ce', {
+  radar_tabla: {es: 'ESCALA COMÚN DE TODOS LOS EJES: DE 0 A {esc}.{ant}', en: 'COMMON SCALE FOR ALL AXES: FROM 0 TO {esc}.{ant}'},
+  radar_ant: {es: ' LÍNEA PUNTEADA: VALOR ANTERIOR.', en: ' DOTTED LINE: PREVIOUS VALUE.'},
+  radar_serie: {es: 'CADA EJE VA DE 0 (MÍNIMO HISTÓRICO DE ESA SERIE) A 100 (SU MÁXIMO HISTÓRICO). EL PUNTO ES LA ÚLTIMA OBSERVACIÓN.', en: 'EACH AXIS RUNS FROM 0 (THAT SERIES\' HISTORICAL LOW) TO 100 (ITS HISTORICAL HIGH). THE DOT IS THE LATEST OBSERVATION.'},
+  uni: {es: ' UNIDAD: {u}.', en: ' UNIT: {u}.'},
+  apilada_pct: {es: 'CADA FRANJA ES EL % QUE REPRESENTA SOBRE EL TOTAL DE ESE MOMENTO: SIEMPRE SUMAN 100 %.', en: 'EACH BAND IS THE % IT REPRESENTS OF THAT MOMENT\'S TOTAL: THEY ALWAYS ADD UP TO 100%.'},
+  apilada_abs: {es: 'LAS FRANJAS SE APILAN: LA ALTURA TOTAL ES LA SUMA DE TODAS, EMPEZANDO EN 0.', en: 'THE BANDS ARE STACKED: THE TOTAL HEIGHT IS THE SUM OF ALL, STARTING AT 0.'},
+  u_dia: {es: 'DÍA', en: 'DAY'}, u_semana: {es: 'SEMANA', en: 'WEEK'}, u_mes: {es: 'MES', en: 'MONTH'}, u_trimestre: {es: 'TRIMESTRE', en: 'QUARTER'}, u_anio: {es: 'AÑO', en: 'YEAR'},
+  velas_real: {es: 'CADA VELA = 1 {un}. VERDE: CIERRA POR ENCIMA DE DONDE ABRE; ROJA: POR DEBAJO.{log}', en: 'EACH CANDLE = 1 {un}. GREEN: CLOSES ABOVE WHERE IT OPENS; RED: BELOW.{log}'},
+  velas_log_real: {es: ' ESCALA LOGARÍTMICA: LA ALTURA ES PROPORCIONAL AL CAMBIO PORCENTUAL.', en: ' LOGARITHMIC SCALE: HEIGHT IS PROPORTIONAL TO THE PERCENTAGE CHANGE.'},
+  velas_cierres: {es: 'CADA VELA = 1 {un}, ARMADA CON CIERRES DIARIOS: ABRE = PRIMER CIERRE, CIERRA = ÚLTIMO CIERRE, LAS MECHAS SON EL MAYOR Y MENOR CIERRE (NO HAY EXTREMOS DEL DÍA).{log}', en: 'EACH CANDLE = 1 {un}, BUILT FROM DAILY CLOSES: OPEN = FIRST CLOSE, CLOSE = LAST CLOSE, WICKS ARE THE HIGHEST AND LOWEST CLOSE (NO INTRADAY EXTREMES).{log}'},
+  velas_log: {es: ' ESCALA LOGARÍTMICA.', en: ' LOGARITHMIC SCALE.'},
+  velas_o: {es: 'ABRE', en: 'OPEN'}, velas_h: {es: 'MÁXIMO', en: 'HIGH'}, velas_l: {es: 'MÍNIMO', en: 'LOW'}, velas_c: {es: 'CIERRA', en: 'CLOSE'},
+  velas_o2: {es: 'PRIMER CIERRE', en: 'FIRST CLOSE'}, velas_h2: {es: 'MAYOR CIERRE', en: 'HIGHEST CLOSE'}, velas_l2: {es: 'MENOR CIERRE', en: 'LOWEST CLOSE'}, velas_c2: {es: 'ÚLTIMO CIERRE', en: 'LAST CLOSE'},
+  f_diarios: {es: 'diarios', en: 'daily'}, f_semanales: {es: 'semanales', en: 'weekly'}, f_mensuales: {es: 'mensuales', en: 'monthly'}, f_trimestrales: {es: 'trimestrales', en: 'quarterly'}, f_anuales: {es: 'anuales', en: 'yearly'},
+  hist_ret: {es: 'CADA BARRA: % DE LOS {n} RETORNOS {per} (ENTRE FILAS CONSECUTIVAS) QUE CAEN EN ESE RANGO.{col}', en: 'EACH BAR: % OF THE {n} {per} RETURNS (BETWEEN CONSECUTIVE ROWS) THAT FALL IN THAT RANGE.{col}'},
+  hist_col: {es: ' LAS BARRAS DE LOS EXTREMOS AGRUPAN LAS COLAS.', en: ' THE BARS AT THE ENDS GROUP THE TAILS.'},
+  hist_niv: {es: 'CADA BARRA: % DE LAS {n} OBSERVACIONES QUE CAEN EN ESE RANGO DE VALORES. EJE Y: % DEL TOTAL.', en: 'EACH BAR: % OF THE {n} OBSERVATIONS THAT FALL IN THAT RANGE OF VALUES. Y AXIS: % OF TOTAL.'},
+  mediana: {es: 'MEDIANA {v}', en: 'MEDIAN {v}'},
+  ultimo_pct: {es: 'ÚLTIMO {v} · SUPERA AL {p} %', en: 'LATEST {v} · ABOVE {p}% OF VALUES'},
+  antes: {es: 'ANTES', en: 'BEFORE'}, ahora: {es: 'AHORA', en: 'NOW'},
+  dumbbell: {es: 'CADA FILA UNE EL VALOR «{l0}» (PUNTO GRIS) CON EL «{l1}» (PUNTO DE COLOR) EN LA MISMA ESCALA{cero}. VERDE: SUBIÓ · ROJO: BAJÓ.{u}', en: 'EACH ROW JOINS THE "{l0}" VALUE (GRAY DOT) WITH THE "{l1}" VALUE (COLORED DOT) ON THE SAME SCALE{cero}. GREEN: ROSE · RED: FELL.{u}'},
+  dumbbell_cero: {es: ', QUE ARRANCA EN 0', en: ', WHICH STARTS AT 0'},
+  cal_ultimos: {es: ' MOSTRANDO LOS ÚLTIMOS {a} AÑOS DE {b}.', en: ' SHOWING THE LAST {a} YEARS OF {b}.'},
+  cal_mes_vert: {es: 'CADA CASILLA ES EL RETORNO DE ESE MES: ÚLTIMO CIERRE DEL MES ÷ ÚLTIMO CIERRE DEL MES ANTERIOR − 1, EN %. COLOR PLENO A ±{lim} %; MÁS ALLÁ SE SATURA.{aviso}{parcial}', en: "EACH CELL IS THAT MONTH'S RETURN: MONTH'S LAST CLOSE ÷ PREVIOUS MONTH'S LAST CLOSE − 1, IN %. FULL COLOR AT ±{lim}%; BEYOND THAT IT SATURATES.{aviso}{parcial}"},
+  cal_mes: {es: 'CADA CASILLA ES EL RETORNO DE ESE MES: ÚLTIMO CIERRE DEL MES ÷ ÚLTIMO CIERRE DEL MES ANTERIOR − 1. COLOR PLENO A ±{lim} %; MÁS ALLÁ SE SATURA.{aviso}{parcial}', en: "EACH CELL IS THAT MONTH'S RETURN: MONTH'S LAST CLOSE ÷ PREVIOUS MONTH'S LAST CLOSE − 1. FULL COLOR AT ±{lim}%; BEYOND THAT IT SATURATES.{aviso}{parcial}"},
+  cal_parcial: {es: ' EL ÚLTIMO MES ESTÁ INCOMPLETO.', en: ' THE LATEST MONTH IS INCOMPLETE.'},
+  cal_dia: {es: 'CADA CUADRO ES UN DÍA; COLOR = SU RETORNO RESPECTO AL CIERRE ANTERIOR. COLOR PLENO A ±{lim} %. COLUMNAS = SEMANAS.', en: "EACH SQUARE IS ONE DAY; COLOR = ITS RETURN VERSUS THE PREVIOUS CLOSE. FULL COLOR AT ±{lim}%. COLUMNS = WEEKS."},
+  agrupadas: {es: 'BARRAS DE LONGITUD PROPORCIONAL AL VALOR, TODAS EN LA MISMA ESCALA QUE ARRANCA EN 0. CADA COLOR ES UN MOMENTO.', en: 'BARS WITH LENGTH PROPORTIONAL TO THE VALUE, ALL ON THE SAME SCALE STARTING AT 0. EACH COLOR IS ONE POINT IN TIME.'},
+  meta: {es: 'META', en: 'TARGET'}, promedio: {es: 'PROMEDIO', en: 'AVERAGE'}, max_hist: {es: 'MÁXIMO HISTÓRICO', en: 'HISTORICAL HIGH'}, min_hist: {es: 'MÍNIMO HISTÓRICO', en: 'HISTORICAL LOW'}, mediana_n: {es: 'MEDIANA', en: 'MEDIAN'},
+  bullet: {es: 'BARRA: ÚLTIMO DATO. FONDO: HISTORIA DE LA SERIE EN TRES TRAMOS (MÍNIMO–P25, P25–P75, P75–MÁXIMO). RAYA BLANCA: LA META. LA ESCALA ARRANCA EN 0.', en: 'BAR: LATEST DATA POINT. BACKGROUND: THE SERIES\' HISTORY IN THREE RANGES (LOW–P25, P25–P75, P75–HIGH). WHITE LINE: THE TARGET. THE SCALE STARTS AT 0.'},
+  bandas: {es: 'BANDA CLARA: MÍNIMO A MÁXIMO DE CADA MES ENTRE {desde} Y {hasta}. BANDA OSCURA: PERCENTILES 25 A 75. LÍNEA PUNTEADA: MEDIANA. LÍNEA DE COLOR: {anio}, DATO REAL, SIN PROYECCIONES.{u}', en: 'LIGHT BAND: LOW TO HIGH FOR EACH MONTH BETWEEN {desde} AND {hasta}. DARK BAND: 25TH TO 75TH PERCENTILES. DOTTED LINE: MEDIAN. COLORED LINE: {anio}, ACTUAL DATA, NO PROJECTIONS.{u}'},
+  picto: {es: 'CADA CUADRO = {un}. LOS CUADROS INCOMPLETOS SON FRACCIONES EXACTAS DEL VALOR. EL % ES EL VALOR ENTRE LA SUMA DE TODAS LAS PARTES.{om}', en: 'EACH SQUARE = {un}. PARTIAL SQUARES ARE EXACT FRACTIONS OF THE VALUE. THE % IS THE VALUE DIVIDED BY THE SUM OF ALL PARTS.{om}'},
+  picto_om: {es: ' SE MUESTRAN LAS {n} MAYORES DE {m}.', en: ' SHOWING THE {n} LARGEST OF {m}.'},
+  ranking: {es: 'ORDEN DE MAYOR A MENOR. LA LONGITUD DE LA BARRA ES PROPORCIONAL AL VALOR{cero}.{om}', en: 'SORTED FROM LARGEST TO SMALLEST. BAR LENGTH IS PROPORTIONAL TO THE VALUE{cero}.{om}'},
+  ranking_cero: {es: ' Y ARRANCA EN 0', en: ' AND STARTS AT 0'},
+  ranking_om: {es: ' SE MUESTRAN {n} DE {m}.', en: ' SHOWING {n} OF {m}.'},
+});
+const mes3 = () => MESES_CORTO[idioma()];
 
 export const TIPOS_EXTRA = ['radar', 'apilada', 'velas', 'histograma', 'dumbbell', 'calendario', 'agrupadas', 'bullet', 'bandas', 'pictograma', 'ranking'];
 /** Qué clase de dato consume cada capa: serie de tiempo, tabla de categorías, o ambas. */
@@ -15,7 +57,6 @@ export const EXTRA_CLASE = {radar: 'ambas', apilada: 'serie', velas: 'serie', hi
 // ── utilidades ─────────────────────────────────────────────────────────────────────────────────────────────────
 /** fmtNum que escribe el cero como «0» (con 'auto' daba «0,000000») y no deja que un valor casi nulo salga como «−0,0». */
 const fN = (v, f = {}) => { if (v === 0 || (typeof f.decimales === 'number' && Math.abs(v) < Math.pow(10, -f.decimales) / 2)) return fmtNum(0, {...f, decimales: 0}); return fmtNum(v, f); };
-const MES3 = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const tam = (env, base) => escalarFuente(base) * env.u;                      // tamaño final en px de un rol (con piso de legibilidad)
 const F = (env, peso, base, mono = false) => fuenteCss(peso, tam(env, base), mono);
 const aparece = (env, capa, t0) => prog(env.t, (capa.aparece ?? t0 - 0.5), (capa.aparece ?? t0 - 0.5) + 0.5, ease.out3);
@@ -32,7 +73,7 @@ const pTxt = (x, dec = 1) => fN(x, {decimales: dec, sufijo: ' %'});
 const pSigno = (x, dec = 1) => fmtSigno(x, {decimales: dec, sufijo: ' %'});
 /** Cuántos decimales para un porcentaje: 1 si es pequeño, 0 si es grande (nunca «0 %» para algo que no es cero). */
 const decPct = (x) => (Math.abs(x) < 10 ? 1 : 0);
-const frecuencia = (pasoMs) => (pasoMs <= 4 * DIA ? 'diarios' : pasoMs <= 10 * DIA ? 'semanales' : pasoMs <= 45 * DIA ? 'mensuales' : pasoMs <= 120 * DIA ? 'trimestrales' : 'anuales');
+const frecuencia = (pasoMs) => tr(pasoMs <= 4 * DIA ? 'ce.f_diarios' : pasoMs <= 10 * DIA ? 'ce.f_semanales' : pasoMs <= 45 * DIA ? 'ce.f_mensuales' : pasoMs <= 120 * DIA ? 'ce.f_trimestrales' : 'ce.f_anuales');
 
 /** Texto con halo del color del fondo y su caja REGISTRADA para la auditoría de choques. `base` = tamaño en la rejilla de 1080 px. */
 function rot(env, s, x, y, base, peso, color, align = 'left', id = null, o = {}) {
@@ -98,7 +139,7 @@ export function acortarNombres(ns) {
   }
   return r.map((q) => q.charAt(0).toUpperCase() + q.slice(1));
 }
-const uni = (fmt) => (fmt?.unidad ? ` UNIDAD: ${String(fmt.unidad).toUpperCase()}.` : '');
+const uni = (fmt) => (fmt?.unidad ? tr('ce.uni', {u: String(fmt.unidad).toUpperCase()}) : '');
 const fechaCorta = (ms, modo) => (modo === 'anio' ? fmtFecha(ms, 'anio') : fmtFecha(ms, 'mes'));
 
 // ═══ 1. RADAR ═══════════════════════════════════════════════════════════════════════════════════════════════════
@@ -125,7 +166,7 @@ function radar(env, capa) {
   const wLab = B.w * 0.21, lh = tam(env, 26) * 1.18, fila = tam(env, 26) * 1.5, rrL = tam(env, 18) * 0.62, LNr = vert ? (capa._rn ??= L.ejes.map((e) => nombreEnLineas(env, e.nombre, B.w - 2 * rrL - med(env, fN(e.v, e.fmt), 26, 800, true) - 40 * u, 26, 700, 2))) : [], offY = LNr.map((_, i) => LNr.slice(0, i).reduce((a, l) => a + (l.length - 1) * tam(env, 26) * 1.1, 0)), hLista = vert ? N * fila + (offY.length ? offY[N - 1] + (LNr[N - 1].length - 1) * tam(env, 26) * 1.1 : 0) + 18 * u : 0;   // vertical: los rótulos van en una lista numerada debajo (los laterales no caben en la zona segura)
   const R = vert ? Math.min(B.w / 2 - 44 * u, (B.h - hLista - 190 * u) / 2) : Math.min(B.w / 2 - wLab, B.h / 2 - lh * 3.3), cx = B.x + B.w / 2, cy = vert ? B.y + 54 * u + R : B.y + B.h / 2, p = prog(t, t0, t1, ease.io2);
   const ang = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / N;
-  nota(env, B, capa.nota ?? (L.tabla ? `ESCALA COMÚN DE TODOS LOS EJES: DE 0 A ${fN(L.esc, L.fmt)}.${L.conAnt ? ' LÍNEA PUNTEADA: VALOR ANTERIOR.' : ''}` : 'CADA EJE VA DE 0 (MÍNIMO HISTÓRICO DE ESA SERIE) A 100 (SU MÁXIMO HISTÓRICO). EL PUNTO ES LA ÚLTIMA OBSERVACIÓN.'), capa.id ?? 'radar', ap);
+  nota(env, B, capa.nota ?? (L.tabla ? tr('ce.radar_tabla', {esc: fN(L.esc, L.fmt), ant: L.conAnt ? tr('ce.radar_ant') : ''}) : tr('ce.radar_serie')), capa.id ?? 'radar', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   // anillos y ejes
   ctx.lineWidth = 1.5 * u;
@@ -189,7 +230,7 @@ function apilada(env, capa) {
   const xa = tab.x[L.filas[0]], xb = tab.x[L.filas[F_ - 1]], px = (x) => x0 + ((x - xa) / (xb - xa)) * (x1 - x0), py = (v) => y1 - (v / L.top) * (y1 - y0);
   const reveal = prog(t, t0, t1, ease.io2), xh = lerp(xa, xb, reveal);
   const frac = (r, j) => { let v = 0; for (let q = 0; q <= j; q++) v += tab.series[L.idx[L.orden[q]]].y[L.filas[r]]; return pct ? (v / L.tot[r]) * 100 : v; };
-  nota(env, B, capa.nota ?? (pct ? 'CADA FRANJA ES EL % QUE REPRESENTA SOBRE EL TOTAL DE ESE MOMENTO: SIEMPRE SUMAN 100 %.' : 'LAS FRANJAS SE APILAN: LA ALTURA TOTAL ES LA SUMA DE TODAS, EMPEZANDO EN 0.' + uni(fmt)), capa.id ?? 'apilada', ap);
+  nota(env, B, capa.nota ?? (pct ? tr('ce.apilada_pct') : tr('ce.apilada_abs') + uni(fmt)), capa.id ?? 'apilada', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   ctx.lineWidth = 1 * u;
   L.ticks.forEach((v) => { const y = py(v); ctx.strokeStyle = rgba(PALETA.piedra, v === 0 ? 0.3 : 0.07); ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); rot(env, etY(v), x0 - 10 * u, y + tam(env, 18) * 0.35, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'right', `${capa.id ?? 'apilada'}:y${v}`, {mono: true, tipo: 'eje-y'}); });
@@ -260,8 +301,8 @@ function velas(env, capa) {
   const conVol = capa.volumen != null && L.velas.some((v) => v.v != null), hVol = conVol ? (B.h - cab) * 0.2 : 0;
   const x0 = B.x + wEje, x1 = B.x + B.w, y0 = B.y + cab, y1 = B.y + B.h - S * 1.7 - hVol, yv0 = y1 + S * 0.4, yv1 = B.y + B.h - S * 1.7;
   const py = (v) => y1 - ((f(v) - a) / (b - a)) * (y1 - y0), paso = (x1 - x0) / n, px = (i) => x0 + paso * (i + 0.5), cw = Math.max(2 * u, Math.min(paso * 0.7, 30 * u)), reveal = prog(t, t0, t1, ease.io2), vis = Math.min(n, Math.floor(reveal * n) + 1);
-  const un = {dia: 'DÍA', semana: 'SEMANA', mes: 'MES', trimestre: 'TRIMESTRE', anio: 'AÑO'}[L.unidad];
-  nota(env, B, capa.nota ?? (L.real ? `CADA VELA = 1 ${un}. VERDE: CIERRA POR ENCIMA DE DONDE ABRE; ROJA: POR DEBAJO.${logE ? ' ESCALA LOGARÍTMICA: LA ALTURA ES PROPORCIONAL AL CAMBIO PORCENTUAL.' : ''}` : `CADA VELA = 1 ${un}, ARMADA CON CIERRES DIARIOS: ABRE = PRIMER CIERRE, CIERRA = ÚLTIMO CIERRE, LAS MECHAS SON EL MAYOR Y MENOR CIERRE (NO HAY EXTREMOS DEL DÍA).${logE ? ' ESCALA LOGARÍTMICA.' : ''}`), capa.id ?? 'velas', ap);
+  const un = tr('ce.u_' + L.unidad);
+  nota(env, B, capa.nota ?? (L.real ? tr('ce.velas_real', {un, log: logE ? tr('ce.velas_log_real') : ''}) : tr('ce.velas_cierres', {un, log: logE ? tr('ce.velas_log') : ''})), capa.id ?? 'velas', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   ticks.forEach((v) => { const y = py(v); ctx.strokeStyle = rgba(PALETA.piedra, 0.07); ctx.lineWidth = 1 * u; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); rot(env, etY(v), x0 - 10 * u, y + S * 0.35, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'right', `${capa.id ?? 'velas'}:y${v}`, {mono: true, tipo: 'eje-y'}); });
   ctx.save(); ctx.beginPath(); ctx.rect(x0, y0 - 4 * u, x1 - x0 + 1, yv1 - y0 + 8 * u); ctx.clip();
@@ -277,7 +318,7 @@ function velas(env, capa) {
   const nm = Math.max(2, Math.floor((x1 - x0) / (med(env, 'sep 2026', 18, 500, true) * 1.5))), largo = L.unidad === 'trimestre' || L.unidad === 'anio' || tab.x[tab.x.length - 1] - tab.x[0] > 8 * 365.25 * DIA;
   for (let k = 0; k < nm; k++) { const i = Math.round((k * (n - 1)) / Math.max(1, nm - 1)); const lb = fechaCorta(L.velas[i].xi, largo ? 'anio' : 'mes'), hw = med(env, lb, 18, 500, true) / 2; rot(env, lb, clamp(px(i), x0 + hw, x1 - hw), B.y + B.h - S * 0.2, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'center', `${capa.id ?? 'velas'}:x${k}`, {mono: true, tipo: 'eje-x'}); }
   // lectura de la vela en curso: abre / máx / mín / cierra con el periodo
-  const v = L.velas[vis - 1], et = L.real ? ['ABRE', 'MÁXIMO', 'MÍNIMO', 'CIERRA'] : ['PRIMER CIERRE', 'MAYOR CIERRE', 'MENOR CIERRE', 'ÚLTIMO CIERRE'], vals = [v.o, v.h, v.l, v.c];
+  const v = L.velas[vis - 1], et = L.real ? [tr('ce.velas_o'), tr('ce.velas_h'), tr('ce.velas_l'), tr('ce.velas_c')] : [tr('ce.velas_o2'), tr('ce.velas_h2'), tr('ce.velas_l2'), tr('ce.velas_c2')], vals = [v.o, v.h, v.l, v.c];
   const colW = vert ? (x1 - B.x) / 2 : (x1 - B.x) / 4;
   rot(env, fechaCorta(v.x, L.unidad === 'anio' || L.unidad === 'trimestre' ? 'anio' : 'mes').toUpperCase() + (L.unidad === 'dia' ? ' · ' + fmtFecha(v.x, 'dia') : ''), B.x, B.y + S * 1.0, 18, 700, PALETA.piedraClara, 'left', `${capa.id ?? 'velas'}:per`, {mono: true});
   et.forEach((e, k) => { const cx_ = B.x + (vert ? (k % 2) * colW : k * colW), cy_ = B.y + S * 2.25 + (vert ? Math.floor(k / 2) * S * 1.9 : 0); rot(env, e, cx_, cy_, 18, 500, PALETA.piedraOscura, 'left', `${capa.id ?? 'velas'}:e${k}`); rot(env, fN(vals[k], fmt), cx_, cy_ + S * 1.0, 18, 800, k === 3 ? (v.c >= v.o ? COLOR.verde : COLOR.rojo) : PALETA.blanco, 'left', `${capa.id ?? 'velas'}:l${k}`, {mono: true}); });
@@ -307,7 +348,7 @@ function histograma(env, capa) {
   const mxS = Math.max(...L.share), yt = marcasHasta(mxS * 1.05, 4), etY = (v) => `${fN(v, {decimales: decDe(yt.ticks[1] - yt.ticks[0])})} %`, wEje = Math.max(...yt.ticks.map((v) => med(env, etY(v), 18, 500, true))) + 14 * u;
   const cab = S * 4.4, x0 = B.x + wEje, x1 = B.x + B.w, y0 = B.y + cab, y1 = B.y + B.h - S * 1.9, px = (v) => x0 + ((v - L.e0) / (L.paso * L.nb)) * (x1 - x0), py = (v) => y1 - (v / yt.top) * (y1 - y0), p = prog(t, t0, t1, ease.io2);
   const per = frecuencia(L.paso2), xt = ticksNum(L.e0, L.e0 + L.paso * L.nb, Math.max(3, Math.floor((x1 - x0) / (med(env, '−4,5 %', 18, 500, true) * 1.9)))), etX = (v) => fN(v, {...fmt, prefijo: fmt.prefijo ?? '', decimales: L.ret ? decDe(L.paso) : (fmt.decimales ?? 'auto')});
-  nota(env, B, capa.nota ?? (L.ret ? `CADA BARRA: % DE LOS ${fN(L.n, {decimales: 0})} RETORNOS ${per.toUpperCase()} (ENTRE FILAS CONSECUTIVAS) QUE CAEN EN ESE RANGO.${L.fuera0 + L.fuera1 ? ' LAS BARRAS DE LOS EXTREMOS AGRUPAN LAS COLAS.' : ''}` : `CADA BARRA: % DE LAS ${fN(L.n, {decimales: 0})} OBSERVACIONES QUE CAEN EN ESE RANGO DE VALORES. EJE Y: % DEL TOTAL.${uni(fmt)}`), capa.id ?? 'histograma', ap);
+  nota(env, B, capa.nota ?? (L.ret ? tr('ce.hist_ret', {n: fN(L.n, {decimales: 0}), per: per.toUpperCase(), col: L.fuera0 + L.fuera1 ? tr('ce.hist_col') : ''}) : tr('ce.hist_niv', {n: fN(L.n, {decimales: 0})}) + uni(fmt)), capa.id ?? 'histograma', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   yt.ticks.forEach((v) => { const y = py(v); ctx.strokeStyle = rgba(PALETA.piedra, v === 0 ? 0.3 : 0.07); ctx.lineWidth = 1 * u; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); rot(env, etY(v), x0 - 10 * u, y + S * 0.35, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'right', `${capa.id ?? 'histograma'}:y${v}`, {mono: true, tipo: 'eje-y'}); });
   const bw = (x1 - x0) / L.nb;
@@ -319,14 +360,14 @@ function histograma(env, capa) {
     if (fila) { ctx.save(); ctx.globalAlpha = ap * g; ctx.fillStyle = rgba(PALETA.fondo, 0.96); ctx.fillRect(xx - w / 2 - 8 * u, B.y + S * 2.95 - S * 0.95, w + 16 * u, S * 1.3); ctx.restore(); }   // placa del fondo: la línea punteada de la mediana no atraviesa el rótulo de la fila de abajo
     rot(env, txt, xx, B.y + S * (fila ? 2.95 : 1.65), 18, 800, color, 'center', `${capa.id ?? 'histograma'}:${id}`, {mono: true, alpha: g}); ctx.globalAlpha = ap; };
   const etM = (v) => (L.ret ? fmtSigno(v, {decimales: 2, sufijo: ' %'}) : etX(v));   // las marcas llevan más decimales que el eje: «0 %» no puede esconder un −0,24 %
-  marca(L.mediana, 0, PALETA.piedraClara, `MEDIANA ${etM(L.mediana)}`, 'mediana');
-  marca(L.ultimo, 1, colorDe(capa.color ?? 'oro', 0), `ÚLTIMO ${etM(L.ultimo)} · SUPERA AL ${fN(L.percentil, {decimales: 0})} %`, 'ultimo');
+  marca(L.mediana, 0, PALETA.piedraClara, tr('ce.mediana', {v: etM(L.mediana)}), 'mediana');
+  marca(L.ultimo, 1, colorDe(capa.color ?? 'oro', 0), tr('ce.ultimo_pct', {v: etM(L.ultimo), p: fN(L.percentil, {decimales: 0})}), 'ultimo');
   ctx.restore();
 }
 
 // ═══ 5. DUMBBELL (antes / después por categoría) ═════════════════════════════════════════════════════════════════
 function filasAD(capa, tab) {
-  if (tab.items) return {filas: tab.items.filter((i) => i.anterior != null).map((i) => ({nombre: i.nombre, v0: i.anterior, v1: i.valor, fmt: tab.fmt})), l0: capa.etiquetaAntes ?? 'ANTES', l1: capa.etiquetaDespues ?? 'AHORA'};
+  if (tab.items) return {filas: tab.items.filter((i) => i.anterior != null).map((i) => ({nombre: i.nombre, v0: i.anterior, v1: i.valor, fmt: tab.fmt})), l0: capa.etiquetaAntes ?? tr('ce.antes'), l1: capa.etiquetaDespues ?? tr('ce.ahora')};
   const n = tab.x.length, i0 = capa.de ?? 0, i1 = capa.a ?? n - 1, idx = capa.series ?? tab.series.map((_, i) => i);
   const et = (i) => (tab.tipoX === 'fecha' ? fmtFecha(tab.x[i], 'anio') : String(tab.x[i]));
   return {filas: idx.filter((si) => tab.series[si].y[i0] != null && tab.series[si].y[i1] != null).map((si) => ({nombre: tab.series[si].nombre, v0: tab.series[si].y[i0], v1: tab.series[si].y[i1], fmt: tab.series[si].fmt})), l0: et(i0), l1: et(i1)};
@@ -340,7 +381,7 @@ function dumbbell(env, capa) {
   const dTxt = (f) => { const d = f.v0 > 0 ? (f.v1 / f.v0 - 1) * 100 : null; return d == null ? '' : pSigno(d, decPct(d)); }, vTxt = (f) => `${fN(f.v0, f.fmt)} → ${fN(f.v1, f.fmt)}`;
   const wUna = Math.max(...L.filas.map((f) => med(env, `${vTxt(f)}  ${dTxt(f)}`, 26, 800, true))), wNom = Math.max(...L.filas.map((f) => med(env, f.nombre, 26, 700))), dos = wUna + Math.min(wNom, B.w * 0.4) + 24 * u > B.w;   // ¿caben nombre y valores en una línea?
   const cab = S * 1.0, holg = n <= 6 ? (vert ? 2.3 : 1.55) : 1, fila = Math.min((B.h - cab - S * 2.4) / n, (dos ? N * 2.5 + S * 2.2 : N * 2.5) * holg), x0 = B.x + 8 * u, x1 = B.x + B.w - 8 * u, px = (v) => x0 + ((v - lo) / (hi - lo)) * (x1 - x0), p = prog(t, t0, t1, ease.io2) * n, yy = B.y + cab, fmt = L.filas[0].fmt;
-  nota(env, B, capa.nota ?? `CADA FILA UNE EL VALOR «${L.l0}» (PUNTO GRIS) CON EL «${L.l1}» (PUNTO DE COLOR) EN LA MISMA ESCALA${pos ? ', QUE ARRANCA EN 0' : ''}. VERDE: SUBIÓ · ROJO: BAJÓ.${uni(L.filas[0].fmt)}`, capa.id ?? 'dumbbell', ap);
+  nota(env, B, capa.nota ?? tr('ce.dumbbell', {l0: L.l0, l1: L.l1, cero: pos ? tr('ce.dumbbell_cero') : '', u: uni(L.filas[0].fmt)}), capa.id ?? 'dumbbell', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   eje.ticks.forEach((v) => { const x = px(v); if (x < x0 - 1 || x > x1 + 1) return; ctx.strokeStyle = rgba(PALETA.piedra, v === lo ? 0.3 : 0.08); ctx.lineWidth = 1 * u; ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x, yy + fila * n); ctx.stroke(); rot(env, fN(v, {...fmt, decimales: decDe(eje.ticks[1] - eje.ticks[0])}), x, yy + fila * n + S * 1.3, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'center', `${capa.id ?? 'dumbbell'}:x${v}`, {mono: true, tipo: 'eje-x', lim: [x0, x1]}); });
   L.filas.forEach((f, i) => {
@@ -380,12 +421,12 @@ function calendario(env, capa) {
   let aviso = '';
   if (!diario && vert) {   // VERTICAL: meses en filas y años en columnas, con la cifra en cada casilla (cuántos años caben lo decide el ancho de «−12,3»)
     const wM = med(env, 'sep', 18, 700, true) + 18 * u, numW = med(env, '−12,3', 18, 700, true) + 10 * u, nAn = Math.max(3, Math.min(12, Math.floor((B.w - wM) / numW))), anios = L.anios.slice(-nAn);
-    if (anios.length < L.anios.length) aviso = ` MOSTRANDO LOS ÚLTIMOS ${anios.length} AÑOS DE ${L.anios.length}.`;
+    if (anios.length < L.anios.length) aviso = tr('ce.cal_ultimos', {a: anios.length, b: L.anios.length});
     const x0 = B.x + wM, cw = (B.w - wM) / anios.length, y0 = B.y + S * 1.6, filaH = Math.min(S * 2.8, (B.h - leyH - S * 2) / 12);
-    nota(env, B, capa.nota ?? `CADA CASILLA ES EL RETORNO DE ESE MES: ÚLTIMO CIERRE DEL MES ÷ ÚLTIMO CIERRE DEL MES ANTERIOR − 1, EN %. COLOR PLENO A ±${fN(lim, {decimales: lim < 10 ? 1 : 0})} %; MÁS ALLÁ SE SATURA.${aviso}${L.rets.get(L.ult)?.parcial ? ' EL ÚLTIMO MES ESTÁ INCOMPLETO.' : ''}`, capa.id ?? 'calendario', ap);
+    nota(env, B, capa.nota ?? tr('ce.cal_mes_vert', {lim: fN(lim, {decimales: lim < 10 ? 1 : 0}), aviso, parcial: L.rets.get(L.ult)?.parcial ? tr('ce.cal_parcial') : ''}), capa.id ?? 'calendario', ap);
     anios.forEach((an, c) => rot(env, String(an), x0 + cw * (c + 0.5), B.y + S * 1.1, 18, 700, PALETA.piedraClara, 'center', `${capa.id ?? 'calendario'}:a${an}`, {mono: true, tipo: 'eje-x'}));
     for (let m = 0; m < 12; m++) {
-      const y = y0 + m * filaH, g = ent(env, t0 + 0.2, m, 12); rot(env, MES3[m], B.x + wM - 12 * u, y + filaH * 0.64, 18, 600, PALETA.piedraOscura, 'right', `${capa.id ?? 'calendario'}:m${m}`, {mono: true, tipo: 'eje-y', alpha: g});
+      const y = y0 + m * filaH, g = ent(env, t0 + 0.2, m, 12); rot(env, mes3()[m], B.x + wM - 12 * u, y + filaH * 0.64, 18, 600, PALETA.piedraOscura, 'right', `${capa.id ?? 'calendario'}:m${m}`, {mono: true, tipo: 'eje-y', alpha: g});
       anios.forEach((an, c) => {
         const q = L.rets.get(an * 12 + m), g2 = clamp(p * 1.6 - (c * 12 + m) / (anios.length * 12) * 0.6); if (g2 <= 0) return;
         ctx.globalAlpha = ap * g2; ctx.fillStyle = q ? colorRet(q.r, lim) : rgba(PALETA.tarjeta, 0.5); ctx.fillRect(x0 + c * cw + 1.5 * u, y + 1.5 * u, cw - 3 * u, filaH - 3 * u);
@@ -397,10 +438,10 @@ function calendario(env, capa) {
     leyenda(env, B, capa, lim, B.y + B.h - leyH * 0.6, ap);
   } else if (!diario) {
     const filaH = Math.max(S * 1.5, Math.min(S * 2.2, (B.h - leyH - S * 2) / Math.max(1, L.anios.length))), cap = Math.max(3, Math.floor((B.h - leyH - S * 2) / filaH)), anios = L.anios.slice(-cap);
-    if (anios.length < L.anios.length) aviso = ` MOSTRANDO LOS ÚLTIMOS ${anios.length} AÑOS DE ${L.anios.length}.`;
+    if (anios.length < L.anios.length) aviso = tr('ce.cal_ultimos', {a: anios.length, b: L.anios.length});
     const x0 = B.x + wA, cw = (B.w - wA) / 12, y0 = B.y + S * 1.6, mostrarNum = med(env, '−12,3', 18, 700, true) < cw - 6 * u;
-    nota(env, B, capa.nota ?? `CADA CASILLA ES EL RETORNO DE ESE MES: ÚLTIMO CIERRE DEL MES ÷ ÚLTIMO CIERRE DEL MES ANTERIOR − 1. COLOR PLENO A ±${fN(lim, {decimales: lim < 10 ? 1 : 0})} %; MÁS ALLÁ SE SATURA.${aviso}${L.rets.get(L.ult)?.parcial ? ' EL ÚLTIMO MES ESTÁ INCOMPLETO.' : ''}`, capa.id ?? 'calendario', ap);
-    for (let m = 0; m < 12; m++) rot(env, MES3[m], x0 + cw * (m + 0.5), B.y + S * 1.1, 18, 600, PALETA.piedraOscura, 'center', `${capa.id ?? 'calendario'}:m${m}`, {mono: true, tipo: 'eje-x'});
+    nota(env, B, capa.nota ?? tr('ce.cal_mes', {lim: fN(lim, {decimales: lim < 10 ? 1 : 0}), aviso, parcial: L.rets.get(L.ult)?.parcial ? tr('ce.cal_parcial') : ''}), capa.id ?? 'calendario', ap);
+    for (let m = 0; m < 12; m++) rot(env, mes3()[m], x0 + cw * (m + 0.5), B.y + S * 1.1, 18, 600, PALETA.piedraOscura, 'center', `${capa.id ?? 'calendario'}:m${m}`, {mono: true, tipo: 'eje-x'});
     anios.forEach((an, r) => {
       const y = y0 + r * filaH, g = ent(env, t0 + 0.2, r, anios.length); rot(env, String(an), B.x + wA - 10 * u, y + filaH * 0.64, 18, 700, PALETA.piedraClara, 'right', `${capa.id ?? 'calendario'}:a${an}`, {mono: true, tipo: 'eje-y', alpha: g});
       for (let m = 0; m < 12; m++) {
@@ -414,12 +455,12 @@ function calendario(env, capa) {
     leyenda(env, B, capa, lim, B.y + B.h - leyH * 0.6, ap);
   } else {
     const rows = L.dias.some((d) => { const w = new Date(d.x).getUTCDay(); return w === 0 || w === 6; }) ? 7 : 5, cw = Math.min((B.w - wA) / 54, 26 * u), bloque = rows * cw + S * 2.1, cap = Math.max(1, Math.floor((B.h - leyH) / bloque)), anios = [...new Set(L.dias.map((d) => new Date(d.x).getUTCFullYear()))].slice(-cap);
-    nota(env, B, capa.nota ?? `CADA CUADRO ES UN DÍA; COLOR = SU RETORNO RESPECTO AL CIERRE ANTERIOR. COLOR PLENO A ±${fN(lim, {decimales: lim < 10 ? 1 : 0})} %. COLUMNAS = SEMANAS.`, capa.id ?? 'calendario', ap);
+    nota(env, B, capa.nota ?? tr('ce.cal_dia', {lim: fN(lim, {decimales: lim < 10 ? 1 : 0})}), capa.id ?? 'calendario', ap);
     const x0 = B.x + wA;
     anios.forEach((an, r) => {
       const yb = B.y + S * 1.3 + r * bloque, j1 = new Date(Date.UTC(an, 0, 1)), off = (j1.getUTCDay() + 6) % 7;
       rot(env, String(an), B.x + wA - 10 * u, yb + S * 1.0, 18, 700, PALETA.piedraClara, 'right', `${capa.id ?? 'calendario'}:a${an}`, {mono: true, tipo: 'eje-y'});
-      for (let m = 0; m < 12; m++) { const dm = Math.floor((Date.UTC(an, m, 1) - Date.UTC(an, 0, 1)) / DIA), wk = Math.floor((dm + off) / 7); rot(env, MES3[m], x0 + wk * cw, yb - S * 0.35, 18, 500, PALETA.piedraOscura, 'left', `${capa.id ?? 'calendario'}:m${an}-${m}`, {mono: true, tipo: 'eje-x', halo: false}); }
+      for (let m = 0; m < 12; m++) { const dm = Math.floor((Date.UTC(an, m, 1) - Date.UTC(an, 0, 1)) / DIA), wk = Math.floor((dm + off) / 7); rot(env, mes3()[m], x0 + wk * cw, yb - S * 0.35, 18, 500, PALETA.piedraOscura, 'left', `${capa.id ?? 'calendario'}:m${an}-${m}`, {mono: true, tipo: 'eje-x', halo: false}); }
       L.dias.forEach((d) => { const dt = new Date(d.x); if (dt.getUTCFullYear() !== an) return; const dd = Math.floor((d.x - Date.UTC(an, 0, 1)) / DIA), wk = Math.floor((dd + off) / 7), wd = (dt.getUTCDay() + 6) % 7; if (wd >= rows) return; const g = clamp(p * 1.5 - wk / 54 * 0.5); ctx.globalAlpha = ap * g; ctx.fillStyle = colorRet(d.r, lim); ctx.fillRect(x0 + wk * cw + 1 * u, yb + S * 0.3 + wd * cw + 1 * u, cw - 2 * u, cw - 2 * u); });
       ctx.globalAlpha = ap;
     });
@@ -451,7 +492,7 @@ function agrupadas(env, capa) {
   let lx = B.x, ly = B.y + S * 1.0; const sw = 18 * u;
   L.et.forEach((e, j) => { const w = med(env, e, 18, 700, true) + sw + 26 * u; if (lx + w > B.x + B.w) { lx = B.x; ly += S * 1.4; } ctx.save(); ctx.globalAlpha *= ap; ctx.fillStyle = cols[j]; ctx.fillRect(lx, ly - sw * 0.8, sw, sw); ctx.restore(); rot(env, e, lx + sw + 8 * u, ly, 18, 700, PALETA.piedraClara, 'left', `${capa.id ?? 'agrupadas'}:l${j}`, {mono: true, alpha: ap}); lx += w; });
   const cab = ly - B.y + S * 0.9, grupoH = (B.h - cab) / n, bh = Math.max(10 * u, Math.min(N * 1.1, (grupoH - N * 1.45) / k - 3 * u)), p = prog(t, t0, t1, ease.io2) * n;
-  nota(env, B, capa.nota ?? 'BARRAS DE LONGITUD PROPORCIONAL AL VALOR, TODAS EN LA MISMA ESCALA QUE ARRANCA EN 0. CADA COLOR ES UN MOMENTO.' + uni(fmt), capa.id ?? 'agrupadas', ap);
+  nota(env, B, capa.nota ?? tr('ce.agrupadas') + uni(fmt), capa.id ?? 'agrupadas', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   L.idx.forEach((si, g) => {
     const a = clamp(p - g), e = ease.out3(a); if (a <= 0) return;
@@ -475,7 +516,7 @@ function armarBullet(capa, tab) {
     const s = tab.series[si], par = tab.x.map((x, i) => [x, s.y[i]]).filter((q) => q[1] != null), vs = par.map((q) => q[1]).sort((a, b) => a - b), [xl, v] = par[par.length - 1];
     const mt = capa.meta ?? {tipo: 'mediana'}, media = vs.reduce((a, q) => a + q, 0) / vs.length;
     const meta = mt.valor != null ? mt.valor : mt.tipo === 'media' ? media : mt.tipo === 'max' ? vs[vs.length - 1] : mt.tipo === 'min' ? vs[0] : pctl(vs, 0.5);
-    const nomMeta = mt.valor != null ? (mt.etiqueta ?? 'META') : {media: 'PROMEDIO', max: 'MÁXIMO HISTÓRICO', min: 'MÍNIMO HISTÓRICO'}[mt.tipo] ?? 'MEDIANA';
+    const nomMeta = mt.valor != null ? (mt.etiqueta ?? tr('ce.meta')) : tr({media: 'ce.promedio', max: 'ce.max_hist', min: 'ce.min_hist'}[mt.tipo] ?? 'ce.mediana_n');
     return {nombre: s.nombre, v, fecha: xl, fmt: s.fmt, min: vs[0], max: vs[vs.length - 1], p25: pctl(vs, 0.25), p75: pctl(vs, 0.75), meta, nomMeta, n: vs.length};
   });
 }
@@ -484,7 +525,7 @@ function bullet(env, capa) {
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const L = (capa._bl ??= armarBullet(capa, tab)), n = L.length, S = tam(env, 18), N = tam(env, 26), p = prog(t, t0, t1, ease.io2);
   const lhB = tam(env, 26) * 1.12, LNB = (capa._bn ??= L.map((r) => nombreEnLineas(env, r.nombre, B.w - med(env, fN(r.v, r.fmt), 28, 800, true) - 20 * u, 26, 700, 2))), extB = Math.max(...LNB.map((l) => l.length)) - 1, fila = Math.min((B.h - S * 0.5) / n, N * 7 + extB * lhB), oy = vert ? Math.max(0, (B.h - S * 0.5 - fila * n) / 2) : 0, bh = Math.max(26 * u, N * 1.0);   // vertical: el bloque de medidores se centra en su caja en vez de pegarse arriba
-  nota(env, B, capa.nota ?? 'BARRA: ÚLTIMO DATO. FONDO: HISTORIA DE LA SERIE EN TRES TRAMOS (MÍNIMO–P25, P25–P75, P75–MÁXIMO). RAYA BLANCA: LA META. LA ESCALA ARRANCA EN 0.', capa.id ?? 'bullet', ap);
+  nota(env, B, capa.nota ?? tr('ce.bullet'), capa.id ?? 'bullet', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   L.forEach((r, i) => {
     const y = B.y + oy + i * fila, g = clamp(p * (n + 1) - i * 0.7), e = ease.out3(g); if (g <= 0) return;
@@ -523,7 +564,7 @@ function bandas(env, capa) {
   const vs = [...L.bandas.filter(Boolean).flatMap((b) => [b.min, b.max]), ...L.actual.filter((q) => q != null)], ticks = ticksNum(Math.min(...vs) - (Math.max(...vs) - Math.min(...vs)) * 0.04, Math.max(...vs) + (Math.max(...vs) - Math.min(...vs)) * 0.04, 5);
   const lo = Math.min(...vs), hi = Math.max(...vs), a = Math.min(ticks[0], lo), b = Math.max(ticks[ticks.length - 1], hi), etY = (v) => fN(v, {...fmt, prefijo: '', sufijo: '', decimales: decDe(ticks[1] - ticks[0])}), wEje = Math.max(...ticks.map((v) => med(env, etY(v), 18, 500, true))) + 14 * u;
   const cab = S * 2.8, x0 = B.x + wEje, x1 = B.x + B.w - 10 * u, y0 = B.y + cab, y1 = B.y + B.h - S * 1.9, px = (m) => x0 + ((m + 0.5) / 12) * (x1 - x0), py = (v) => y1 - ((v - a) / (b - a)) * (y1 - y0), reveal = prog(t, t0, t1, ease.io2);
-  nota(env, B, capa.nota ?? `BANDA CLARA: MÍNIMO A MÁXIMO DE CADA MES ENTRE ${L.desde} Y ${L.hasta}. BANDA OSCURA: PERCENTILES 25 A 75. LÍNEA PUNTEADA: MEDIANA. LÍNEA DE COLOR: ${L.anio}, DATO REAL, SIN PROYECCIONES.${uni(fmt)}`, capa.id ?? 'bandas', ap);
+  nota(env, B, capa.nota ?? tr('ce.bandas', {desde: L.desde, hasta: L.hasta, anio: L.anio, u: uni(fmt)}), capa.id ?? 'bandas', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   ticks.forEach((v) => { const y = py(v); ctx.strokeStyle = rgba(PALETA.piedra, 0.07); ctx.lineWidth = 1 * u; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); rot(env, etY(v), x0 - 10 * u, y + S * 0.35, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'right', `${capa.id ?? 'bandas'}:y${v}`, {mono: true, tipo: 'eje-y'}); });
   const idx = L.bandas.map((q, m) => (q ? m : -1)).filter((m) => m >= 0), poligono = (k1, k2) => { ctx.beginPath(); idx.forEach((m, i) => { const x = px(m), y = py(L.bandas[m][k1]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); [...idx].reverse().forEach((m) => ctx.lineTo(px(m), py(L.bandas[m][k2]))); ctx.closePath(); };
@@ -531,14 +572,14 @@ function bandas(env, capa) {
   poligono('max', 'min'); ctx.fillStyle = rgba(PALETA.piedra, 0.17); ctx.fill(); poligono('p75', 'p25'); ctx.fillStyle = rgba(PALETA.piedra, 0.3); ctx.fill();
   ctx.strokeStyle = rgba(PALETA.piedraClara, 0.8); ctx.lineWidth = 2 * u; ctx.setLineDash([8 * u, 7 * u]); ctx.beginPath(); idx.forEach((m, i) => { const x = px(m), y = py(L.bandas[m].med); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); ctx.setLineDash([]);
   ctx.restore();
-  MES3.forEach((mm, m) => rot(env, mm, px(m), y1 + S * 1.3, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'center', `${capa.id ?? 'bandas'}:x${m}`, {mono: true, tipo: 'eje-x'}));
+  mes3().forEach((mm, m) => rot(env, mm, px(m), y1 + S * 1.3, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'center', `${capa.id ?? 'bandas'}:x${m}`, {mono: true, tipo: 'eje-x'}));
   // línea del año
   const pts = L.actual.map((v, m) => (v == null ? null : [px(m), py(v), m, v])).filter(Boolean), vis = Math.min(pts.length - 1, reveal * (pts.length - 1) * 1.0 + 0.0001);
   ctx.strokeStyle = acento; ctx.lineWidth = 5 * u; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.beginPath();
   pts.forEach((q, i) => { if (i > Math.floor(vis) + 1) return; const f = i > vis ? vis - Math.floor(vis) : 1, pr = pts[i - 1] ?? q, x = i > vis ? lerp(pr[0], q[0], f) : q[0], y = i > vis ? lerp(pr[1], q[1], f) : q[1]; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
   pts.forEach((q, i) => { if (i <= vis) { ctx.fillStyle = acento; ctx.beginPath(); ctx.arc(q[0], q[1], 6 * u, 0, 7); ctx.fill(); } });
   const last = pts[pts.length - 1];
-  if (last && reveal > 0.97) { const txt = `${MES3[last[2]].toUpperCase()} ${L.anio}: ${fN(last[3], fmt)}`, w = med(env, txt, 18, 800, true), xx = clamp(last[0], x0 + w / 2, x1 - w / 2), arriba = last[1] - y0 > S * 2.4; rot(env, txt, xx, arriba ? last[1] - 16 * u : last[1] + S * 1.9, 18, 800, acento, 'center', `${capa.id ?? 'bandas'}:ultimo`, {mono: true, alpha: ent(env, t1, 0)}); }
+  if (last && reveal > 0.97) { const txt = `${mes3()[last[2]].toUpperCase()} ${L.anio}: ${fN(last[3], fmt)}`, w = med(env, txt, 18, 800, true), xx = clamp(last[0], x0 + w / 2, x1 - w / 2), arriba = last[1] - y0 > S * 2.4; rot(env, txt, xx, arriba ? last[1] - 16 * u : last[1] + S * 1.9, 18, 800, acento, 'center', `${capa.id ?? 'bandas'}:ultimo`, {mono: true, alpha: ent(env, t1, 0)}); }
   ctx.restore();
 }
 
@@ -552,7 +593,7 @@ function pictograma(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const L = (capa._pc ??= armarPicto(capa, tab, B, env)), n = L.items.length, S = tam(env, 18), N = tam(env, 26), pal = paleta(), p = prog(t, t0, t1, ease.io2) * n, lhP = tam(env, 26) * 1.12, LN = (capa._pn ??= L.items.map((it) => { const pct = (it.valor / L.total) * 100; return nombreEnLineas(env, it.nombre, B.w - med(env, `${fN(it.valor, tab.fmt)}  ·  ${pTxt(pct, decPct(pct))}`, 26, 800, true) - 24 * u, 26, 700, 3); })), ext = Math.max(...LN.map((l) => l.length)) - 1, fila = Math.min((B.h - S * 2) / n, (vert ? N * 4.1 : N * 3.2) + L.sq * (vert ? 1.9 : 1.4) + ext * lhP), cab = S * 1.9;
-  nota(env, B, capa.nota ?? `CADA CUADRO = ${fN(L.unidad, tab.fmt)}. LOS CUADROS INCOMPLETOS SON FRACCIONES EXACTAS DEL VALOR. EL % ES EL VALOR ENTRE LA SUMA DE TODAS LAS PARTES.${L.omitidas ? ` SE MUESTRAN LAS ${n} MAYORES DE ${n + L.omitidas}.` : ''}`, capa.id ?? 'pictograma', ap);
+  nota(env, B, capa.nota ?? tr('ce.picto', {un: fN(L.unidad, tab.fmt), om: L.omitidas ? tr('ce.picto_om', {n, m: n + L.omitidas}) : ''}), capa.id ?? 'pictograma', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   L.items.forEach((it, i) => {
     const a = clamp(p - i), y = B.y + (i * fila), col = pal[i % pal.length]; if (a <= 0) return;
@@ -583,7 +624,7 @@ function ranking(env, capa) {
   const N = tam(env, 26), L = (capa._rk ??= armarRanking(capa, tab, vert, Math.max(6, Math.min(14, Math.floor(B.h / (N * 2.45)))))), n = L.filas.length, S = tam(env, 18), pal = paleta(), p = prog(t, t0, t1, ease.io2) * n, fila = Math.min(B.h / n, N * 3.1), acento = acento_(capa);
   const vmax = L.todos[0].valor, anyNeg = L.todos.some((i) => i.valor < 0), wC = Math.max(...L.filas.filter((f) => f.codigo).map((f) => med(env, f.codigo, 18, 800, true) + 22 * u), 0), wR = med(env, '10', 18, 800, true) + 12 * u;
   const wV = Math.max(...L.filas.filter((f) => !f.salto).map((f) => med(env, fN(f.valor, tab.fmt), 26, 800, true))), x0 = B.x, xb = x0 + wR + wC + 8 * u, largo = B.x + B.w - xb - wV - 18 * u;
-  nota(env, B, capa.nota ?? `ORDEN DE MAYOR A MENOR. LA LONGITUD DE LA BARRA ES PROPORCIONAL AL VALOR${anyNeg ? '' : ' Y ARRANCA EN 0'}.${L.omitidas > 0 ? ` SE MUESTRAN ${n - (L.filas.some((f) => f.salto) ? 1 : 0)} DE ${L.todos.length}.` : ''}`, capa.id ?? 'ranking', ap);
+  nota(env, B, capa.nota ?? tr('ce.ranking', {cero: anyNeg ? '' : tr('ce.ranking_cero'), om: L.omitidas > 0 ? tr('ce.ranking_om', {n: n - (L.filas.some((f) => f.salto) ? 1 : 0), m: L.todos.length}) : ''}), capa.id ?? 'ranking', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   L.filas.forEach((f, i) => {
     const a = clamp(p - i), e = ease.out3(a), y = B.y + i * fila; if (a <= 0) return;

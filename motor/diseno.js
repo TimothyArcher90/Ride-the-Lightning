@@ -18,6 +18,8 @@
 //
 // ZONA SEGURA (TikTok/Reels): en vertical no puede haber NADA con x ≥ 72,2 % del ancho e y ≥ 43,75 % del alto.
 
+import {t} from './idioma.js';
+
 export const ZONA = {x: 0.722, y: 0.4375};
 
 /** Pisos de tamaño por rol y formato. `escalarFuente` sube cualquier tamaño suelto al piso de su banda. */
@@ -102,7 +104,7 @@ export const salida = (t, t1, dur = MOV.salida) => 1 - CURVA.salida(Math.min(1, 
 
 // ── Pie de fuente ───────────────────────────────────────────────────────────────────────────────────────────────
 /** «Fuente: <nombre> · <fecha del último dato> · RTL» (el pie obligatorio de toda pieza). */
-export const textoPie = (nombre, fecha) => `Fuente: ${[nombre, fecha].filter(Boolean).join(' · ')} · RTL`;
+export const textoPie = (nombre, fecha) => `${t('fuente')}: ${[nombre, fecha].filter(Boolean).join(' · ')} · RTL`;
 /** Parte un texto en líneas que caben en `ancho` (por palabras; si una palabra sola no cabe, se corta con «…»). */
 export function envolver(ctx, s, ancho, maxLineas = 3) {
   const pal = String(s).split(' '), out = []; let l = '';

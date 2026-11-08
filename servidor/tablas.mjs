@@ -1,6 +1,7 @@
 // Datos que NO son series de tiempo: flujos (de → a → cuánto, para diagramas Sankey) y categorías (concepto → valor, para
 // donut y cascada). Mismas reglas de exactitud que las series: fuente obligatoria, números de verdad, y lo que debe cuadrar cuadra.
 import {columnaNumeros, indiceColumna} from './datos.mjs';
+import {traducir} from '../motor/idioma.js';   // etiquetas de reportes y unidades en el idioma de la pieza
 
 const sinTildes = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const ALIAS = {
@@ -22,7 +23,7 @@ export function detectarTabla(columnas) {
 }
 
 const TIPOS_NODO = ['ingreso', 'beneficio', 'costo', 'neutral'];
-const fmtDe = (d) => ({prefijo: d.prefijo ?? '', sufijo: d.sufijo ?? '', decimales: d.decimales ?? 'auto', unidad: d.unidad ?? ''});
+const fmtDe = (d) => ({prefijo: d.prefijo ?? '', sufijo: traducir(d.sufijo ?? ''), decimales: d.decimales ?? 'auto', unidad: traducir(d.unidad ?? '')});
 
 function numeros(t, col, d, err) {
   const r = columnaNumeros(t, col, {decimal: d.decimal});
@@ -42,7 +43,7 @@ export function cargarFlujos(id, d, t, informe) {
   const enlaces = [], orden = [], nodos = new Map();
   const nodo = (n) => { if (!nodos.has(n)) { nodos.set(n, {nombre: n, tipo: null, entra: 0, sale: 0, entraAnt: 0, saleAnt: 0, filas: [], orden: orden.length}); orden.push(n); } return nodos.get(n); };
   t.filas.forEach((f, k) => {
-    const a = f[io] == null ? '' : String(f[io]).trim(), b = f[idd] == null ? '' : String(f[idd]).trim(), v = vals[k];
+    const a = f[io] == null ? '' : traducir(String(f[io]).trim()), b = f[idd] == null ? '' : traducir(String(f[idd]).trim()), v = vals[k];
     if (!a && !b && v == null) return;
     if (!a || !b) { err(`fila ${k + 2}: falta el origen o el destino.`); return; }
     if (v == null || !(v > 0)) { err(`fila ${k + 2} (${a} → ${b}): el valor debe ser un número mayor que 0 (los costos también van en positivo; el color lo da el tipo).`); return; }
@@ -96,7 +97,7 @@ export function cargarCategorias(id, d, t, informe) {
   const ic = indiceColumna(t, cc), it = ct ? indiceColumna(t, ct) : -1;
   const items = [];
   t.filas.forEach((f, k) => {
-    const nombre = f[ic] == null ? '' : String(f[ic]).trim(); if (!nombre && vals[k] == null) return;
+    const nombre = f[ic] == null ? '' : traducir(String(f[ic]).trim()); if (!nombre && vals[k] == null) return;
     if (!nombre) { err(`fila ${k + 2}: falta el nombre del concepto.`); return; }
     if (vals[k] == null) { err(`fila ${k + 2} («${nombre}»): falta el valor.`); return; }
     const tp = it >= 0 && f[it] != null ? sinTildes(f[it]) : '';

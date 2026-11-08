@@ -247,14 +247,59 @@ instalarExtra(ADAPTADORES, pedir);   // Tesoro (FiscalData genérico), NASA GIST
 
 export const rutaCatalogo = path.join(RAIZ, 'catalogo', 'series.json');
 export const rutaVerificado = path.join(RAIZ, 'catalogo', 'verificado.json');
-export const leerCatalogo = () => JSON.parse(fs.readFileSync(rutaCatalogo, 'utf8'));
+export const rutaCatalogoEn = path.join(RAIZ, 'catalogo', 'series.en.json');   // overlay generado por scripts/construir-ingles.mjs
 const leerVerificado = () => (fs.existsSync(rutaVerificado) ? JSON.parse(fs.readFileSync(rutaVerificado, 'utf8')) : {});
 
-export function buscar(consulta = '', catalogo = leerCatalogo()) {
-  const q = consulta.toLowerCase().split(/\s+/).filter(Boolean), ver = leerVerificado();
+// Overlay en inglés: {id: {nombre, categoria, tema, etiquetas, unidad_vis, frecuencia, fuente_original, fuente_corto, licencia, nota, pais}}. Solo texto VISIBLE:
+// ids, adaptador, args y `unidad` (la del original) nunca cambian. Se cachea por fecha de modificación (el actualizador 24/7 y la reconstrucción lo pueden cambiar).
+let cacheEn = null;
+export function leerOverlayEn() {
+  try {
+    const st = fs.statSync(rutaCatalogoEn);
+    if (cacheEn && cacheEn.mtime === st.mtimeMs) return cacheEn.mapa;
+    cacheEn = {mtime: st.mtimeMs, mapa: JSON.parse(fs.readFileSync(rutaCatalogoEn, 'utf8')).series ?? {}};
+    return cacheEn.mapa;
+  } catch { return {}; }
+}
+/**
+ * Catálogo en el idioma pedido. 'es' (por defecto) es EXACTAMENTE series.json. 'en' mezcla el overlay inglés sobre cada entrada y añade `unidad_vis`
+ * (`unidad` sigue siendo la original). Una serie sin entrada en el overlay se devuelve tal cual (en español) con `unidad_vis` = `unidad`.
+ */
+export function leerCatalogo(idioma = 'es') {
+  const base = JSON.parse(fs.readFileSync(rutaCatalogo, 'utf8'));
+  if (idioma !== 'en') return base;
+  const ov = leerOverlayEn();
+  return base.map((e) => {
+    const o = ov[e.id];
+    if (!o) return e.unidad === undefined ? e : {...e, unidad_vis: e.unidad};
+    return {...e, ...o, ...(o.pais ? {pais: {...e.pais, ...o.pais}} : {})};
+  });
+}
+
+// Búsqueda bilingüe: cada serie se indexa con su texto en español Y en inglés, sea cual sea el idioma pedido.
+let cacheBusq = null;
+function indiceBusqueda() {
+  if (cacheBusq && Date.now() - cacheBusq.visto < 1000) return cacheBusq.mapa;   // coincideBusqueda se llama por cada serie: no tocar el disco 4.480 veces
+  const llave =`${fs.statSync(rutaCatalogo).mtimeMs}:${fs.existsSync(rutaCatalogoEn) ? fs.statSync(rutaCatalogoEn).mtimeMs : 0}`;
+  if (cacheBusq?.llave === llave) { cacheBusq.visto = Date.now(); return cacheBusq.mapa; }
+  const ov = leerOverlayEn(), mapa = new Map();
+  const txt = (e) => `${e.nombre ?? ''} ${e.categoria ?? ''} ${e.tema ?? ''} ${(e.etiquetas ?? []).join(' ')} ${e.pais?.nombre ?? ''}`;
+  for (const e of JSON.parse(fs.readFileSync(rutaCatalogo, 'utf8'))) mapa.set(e.id, `${e.id} ${txt(e)} ${ov[e.id] ? txt(ov[e.id]) : ''}`.toLowerCase());
+  cacheBusq = {llave, mapa, visto: Date.now()};
+  return mapa;
+}
+/** ¿La serie coincide con TODOS los términos (en minúsculas)? Busca en español e inglés a la vez. */
+export function coincideBusqueda(e, terminos, indice = indiceBusqueda()) {
+  const h = indice.get(e.id) ?? `${e.id} ${e.nombre} ${e.categoria} ${(e.etiquetas ?? []).join(' ')}`.toLowerCase();
+  return terminos.every((p) => h.includes(p));
+}
+
+export function buscar(consulta = '', catalogo = null, idioma = 'es') {
+  catalogo ??= leerCatalogo(idioma);
+  const q = consulta.toLowerCase().split(/\s+/).filter(Boolean), ver = leerVerificado(), indice = indiceBusqueda();
   return catalogo
-    .filter((e) => q.every((p) => `${e.id} ${e.nombre} ${e.categoria} ${(e.etiquetas ?? []).join(' ')}`.toLowerCase().includes(p)))
-    .map((e) => ({id: e.id, nombre: e.nombre, categoria: e.categoria, unidad: e.unidad, frecuencia: e.frecuencia, fuente: e.fuente_original, verificado: ver[e.id] ? {inicio: ver[e.id].inicio, fin: ver[e.id].fin, filas: ver[e.id].filas, descargado: ver[e.id].descargado} : null}));
+    .filter((e) => coincideBusqueda(e, q, indice))
+    .map((e) => ({id: e.id, nombre: e.nombre, categoria: e.categoria, unidad: e.unidad, ...(idioma === 'en' ? {unidad_vis: e.unidad_vis ?? e.unidad} : {}), frecuencia: e.frecuencia, fuente: e.fuente_original, verificado: ver[e.id] ? {inicio: ver[e.id].inicio, fin: ver[e.id].fin, filas: ver[e.id].filas, descargado: ver[e.id].descargado} : null}));
 }
 
 /** Descarga una entrada del catálogo (historia COMPLETA) y la guarda con su procedencia. */

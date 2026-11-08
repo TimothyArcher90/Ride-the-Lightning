@@ -13,6 +13,10 @@ import {leerTabla, columnaNumeros, columnaFechas, indiceColumna, metaSerie} from
 import {fmtNum, fmtSigno, fmtPct, fmtFecha, colorDe, utc, TEMAS_DISPONIBLES} from '../motor/nucleo.js';
 import {cargarFlujos, cargarCategorias} from './tablas.mjs';
 import {TIPOS_EXTRA, EXTRA_CLASE, validarExtra} from '../motor/capas_extra.js';
+import {fijarIdioma, traducir, t as tr, registrar} from '../motor/idioma.js';
+import {traducirInforme} from './mensajes_en.mjs';
+
+registrar('m', {indice_unidad: {es: 'Índice (100 = {base})', en: 'Index (100 = {base})'}});
 
 export const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TIPOS_GRAFICA = ['linea', 'barras', 'carrera', 'dispersion', 'calor', 'sankey', 'donut', 'cascada', 'pendiente', 'bump', 'treemap', 'waffle', 'lollipop', 'divergente', ...TIPOS_EXTRA];
@@ -97,7 +101,7 @@ function cargarDataset(id, d, informe) {
     series.push({
       nombre: c.nombre ?? c.col, col: c.col, color: c.color, nulos: r.nulos,
       y: r.valores.map((v) => (v == null ? null : v / div)),
-      fmt: {prefijo: c.prefijo ?? '', sufijo: c.sufijo ?? '', decimales: c.decimales ?? 2, unidad: c.unidad ?? ''},
+      fmt: {prefijo: c.prefijo ?? '', sufijo: traducir(c.sufijo ?? ''), decimales: c.decimales ?? 2, unidad: traducir(c.unidad ?? '')},
       divisor: div,
     });
   }
@@ -136,7 +140,7 @@ function cargarDataset(id, d, informe) {
       if (!(base > 0)) { err(`base100: la serie «${s.nombre}» no tiene un valor positivo en ${fb}.`); return; }
       s.y = s.y.map((v) => (v == null ? null : (v / base) * 100));
       s.divisor = (base / 100) * s.divisor;
-      s.fmt = {prefijo: '', sufijo: '', decimales: 1, unidad: `Índice (100 = ${tipoFinal === 'fecha' ? fmtFecha(tab.x[b], 'mes') : fb})`};
+      s.fmt = {prefijo: '', sufijo: '', decimales: 1, unidad: tr('m.indice_unidad', {base: tipoFinal === 'fecha' ? fmtFecha(tab.x[b], 'mes') : fb})};
     });
     informe.metodos.push(`datos.${id}: series expresadas como ÍNDICE BASE 100 en ${fb} (valor / valor en esa fecha × 100), para poder compararlas aunque tengan unidades o tamaños distintos. El valor original de cada cifra se conserva en el informe.`);
   }
@@ -222,6 +226,7 @@ function resolverAncla(capa, tab, si, informe, donde) {
 }
 
 export function compilar(spec, {raiz = RAIZ} = {}) {
+  fijarIdioma(spec.idioma);   // el compilador formatea cifras y fechas con el idioma de la pieza ('es' por defecto)
   const informe = {errores: [], avisos: [], datos: [], cifras: [], metodos: []};
   const E = (m) => informe.errores.push(m);
   if (spec.version && spec.version !== 1) E(`version ${spec.version} no soportada (actual: 1).`);
@@ -368,15 +373,16 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
   if (spec.tema && !TEMAS_DISPONIBLES.includes(spec.tema)) E(`tema "${spec.tema}" no existe. Disponibles: ${TEMAS_DISPONIBLES.join(', ')}.`);
   // sello de fuente automático (todas las fuentes distintas)
   if (spec.sello !== false && informe.datos.length) {
-    const f = [...new Set(informe.datos.map((d) => `${d.fuente.corto ?? d.fuente.nombre}${d.fuente.obtenido ? ` (obtenido ${d.fuente.obtenido})` : ''}`))].join(' · ');
+    const f = [...new Set(informe.datos.map((d) => `${traducir(d.fuente.corto ?? d.fuente.nombre)}${d.fuente.obtenido ? ` (obtenido ${d.fuente.obtenido})` : ''}`))].join(' · ');
     capas.push({tipo: 'sello', texto: f});
   }
 
   const plano = {
-    version: 1, titulo: spec.titulo ?? '', ancho, alto, fps, duracion, formato, fondo: spec.fondo ?? {}, tema: spec.tema ?? 'oscuro',
+    version: 1, titulo: spec.titulo ?? '', ...(spec.idioma && spec.idioma !== 'es' ? {idioma: spec.idioma} : {}), ancho, alto, fps, duracion, formato, fondo: spec.fondo ?? {}, tema: spec.tema ?? 'oscuro',
     tablas: Object.fromEntries(Object.entries(tablas).map(([k, t]) => [k, t.tipoX === 'flujos' || t.tipoX === 'categorias' ? {tipoX: t.tipoX, x: [], series: [], nodos: t.nodos, enlaces: t.enlaces, items: t.items, total: t.total, fmt: t.fmt, baseNodo: t.baseNodo} : {tipoX: t.tipoX, x: t.x, series: t.series.map((s) => ({nombre: s.nombre, y: s.y, color: colorDe(s.color, 0) && s.color, fmt: s.fmt}))}])),
     capas, imagenes: [...imagenes],
   };
+  if (spec.idioma === 'en') traducirInforme(informe);   // avisos, errores y métodos en el idioma de la pieza (el original en español no se toca)
   informe.ok = informe.errores.length === 0;
   return {spec: plano, informe};
 }

@@ -12,6 +12,22 @@ import sankeyD3 from './vendor/d3-sankey/sankey.js';
 import {stepAfter as curvaEscalon} from './vendor/d3-shape/curve/step.js';
 import {monotoneX as curvaMonotona} from './vendor/d3-shape/curve/monotone.js';
 import {relajar1D, envolverEntero} from './etiquetas.js';
+import {t as tr, registrar} from './idioma.js';   // «tr»: en las capas «t» es el tiempo
+
+// Textos fijos que dibujan las capas base (es = original, en = versión inglesa). Se leen con tr('c.clave', {vars}).
+registrar('c', {
+  curva_escalon: {es: 'ESCALONES: EL VALOR SE MANTIENE HASTA EL SIGUIENTE DATO', en: 'STEPS: THE VALUE HOLDS UNTIL THE NEXT DATA POINT'},
+  curva_suave: {es: 'CURVA SUAVIZADA: SOLO UNE LOS DATOS', en: 'SMOOTHED CURVE: IT ONLY JOINS THE DATA POINTS'},
+  r2: {es: 'R² = {r2} · {n} datos', en: 'R² = {r2} · {n} data points'},
+  cifras_en: {es: 'CIFRAS EN {un}', en: 'FIGURES IN {un}'},
+  otras_partes: {es: 'Otras {n} partes', en: 'Other {n} parts'},
+  total: {es: 'Total', en: 'Total'},
+  log_nota: {es: 'Escala logarítmica: la distancia entre los puntos es proporcional al cambio en %.', en: 'Logarithmic scale: the distance between points is proportional to the % change.'},
+  bump_crecio: {es: 'El 1.º es el que más creció desde {x}.', en: '1st is the one that grew the most since {x}.'},
+  bump_valor: {es: 'El 1.º es el de mayor valor.', en: '1st is the one with the highest value.'},
+  obtenido: {es: 'obtenido', en: 'retrieved'},
+  waffle_nota: {es: 'Cada cuadro vale 1 % del total', en: 'Each square is worth 1% of the total'},
+});
 
 import {escalarFuente, fuenteCss, tipo, ZONA, margenes, envolver, textoPie, MOV, CURVA, entrada as entradaEsc, retardo, contraste, legible} from './diseno.js';
 // TODA fuente pasa por el sistema de diseño (motor/diseno.js): nunca baja del piso de legibilidad de su banda y formato.
@@ -181,7 +197,7 @@ function linea(env, capa) {
   }
   if (capa.ejeUnidad && fmtL?.unidad) texto(ctx, fmtL.unidad.toUpperCase(), B.x, B.y - 22 * u, fnt(500, 17 * u, true), PALETA.piedraOscura, 'left');
   if (capa.curva === 'escalon' || capa.curva === 'monotono') {   // la curva siempre se declara en pantalla: no se dibuja nada que parezca un dato que no existe
-    const dec = capa.curva === 'escalon' ? 'ESCALONES: EL VALOR SE MANTIENE HASTA EL SIGUIENTE DATO' : 'CURVA SUAVIZADA: SOLO UNE LOS DATOS', fD = fnt(500, 17 * u, true), sD = escalarFuente(17 * u) * 1.2; ctx.font = fD;
+    const dec = tr(capa.curva === 'escalon' ? 'c.curva_escalon' : 'c.curva_suave'), fD = fnt(500, 17 * u, true), sD = escalarFuente(17 * u) * 1.2; ctx.font = fD;
     const lnD = envolverEntero(ctx, dec, B.w, 3) ?? [dec], yD = B.y + B.h + 100 * u;   // debajo de las marcas del eje X, a la izquierda
     lnD.forEach((l, q) => texto(ctx, l, B.x, yD + q * sD, fD, PALETA.piedraOscura, 'left')); reg(env, 'etiqueta', [B.x, yD - escalarFuente(17 * u), B.x + Math.max(...lnD.map((l) => ctx.measureText(l).width)), yD + (lnD.length - 1) * sD + 8 * u], `${capa.id ?? 'linea'}:curva`);
   }
@@ -457,7 +473,7 @@ function dispersion(env, capa) {
       const xa = Math.max(xl, tab.x[0]), xb = lerp(xa, Math.min(xh, tab.x[n - 1]), w);
       ctx.save(); ctx.strokeStyle = PALETA.blanco; ctx.lineWidth = 3 * u; ctx.setLineDash([14 * u, 9 * u]);
       ctx.beginPath(); ctx.moveTo(X(xa), Y(R.m * xa + R.b)); ctx.lineTo(X(xb), Y(R.m * xb + R.b)); ctx.stroke(); ctx.restore();
-      { const rt = `R² = ${fmtNum(R.r2, {decimales: 2})} · ${R.n} datos`; texto(ctx, rt, B.x + B.w, B.y - 22 * u, fnt(700, 26 * u, true), PALETA.blanco, 'right', 'alphabetic', w); ctx.font = fnt(700, 26 * u, true); reg(env, 'etiqueta', [B.x + B.w - ctx.measureText(rt).width, B.y - 62 * u, B.x + B.w, B.y - 8 * u], `${capa.id ?? 'dispersion'}:r2`); }
+      { const rt = tr('c.r2', {r2: fmtNum(R.r2, {decimales: 2}), n: R.n}); texto(ctx, rt, B.x + B.w, B.y - 22 * u, fnt(700, 26 * u, true), PALETA.blanco, 'right', 'alphabetic', w); ctx.font = fnt(700, 26 * u, true); reg(env, 'etiqueta', [B.x + B.w - ctx.measureText(rt).width, B.y - 62 * u, B.x + B.w, B.y - 8 * u], `${capa.id ?? 'dispersion'}:r2`); }
     }
   }
   ctx.restore();
@@ -574,7 +590,7 @@ function datosSello(env, capa) {
       const n = best.x.length, pasos = []; for (let i = 1; i < Math.min(n, 400); i++) pasos.push((best.x[i] - best.x[i - 1]) / 86400000);
       pasos.sort((a, b) => a - b); const med = pasos[pasos.length >> 1];
       fecha = fmtFecha(best.x[n - 1], med <= 8 ? 'dia' : med >= 300 ? 'anio' : 'mes');
-    } else if (m) fecha = 'obtenido ' + fmtFecha(utc(+m[1], +m[2], +m[3]), 'dia');
+    } else if (m) fecha = tr('c.obtenido') + ' ' + fmtFecha(utc(+m[1], +m[2], +m[3]), 'dia');
   }
   return {nombre: txt, fecha};
 }
@@ -968,7 +984,7 @@ function disenarSankeyV(env, capa, tab, B) {
 
 function dibujarSankeyV(env, capa, tab, B, L, p) {
   const {ctx, u} = env, ry = lerp(B.y, env.H * 0.95, p), id = capa.id ?? 'sankey';   // el borde recorre también la zona de rótulos de abajo
-  const un = `${tab.fmt.prefijo ?? ''}${tab.fmt.sufijo ?? ''}`.trim() || tab.fmt.unidad || '', cap = `CIFRAS EN ${un}`.toUpperCase();   // la unidad de todas las cifras, una sola vez y siempre visible
+  const un = `${tab.fmt.prefijo ?? ''}${tab.fmt.sufijo ?? ''}`.trim() || tab.fmt.unidad || '', cap = tr('c.cifras_en', {un}).toUpperCase();   // la unidad de todas las cifras, una sola vez y siempre visible
   if (un) { texto(ctx, cap, B.x, B.y - 10 * u, fnt(500, 18 * u, true), PALETA.piedraClara, 'left'); ctx.font = fnt(500, 18 * u, true); reg(env, 'etiqueta', [B.x, B.y - 10 * u - escalarFuente(18 * u), B.x + ctx.measureText(cap).width, B.y + 6 * u], `${id}:unidad`); }
   ctx.save(); ctx.beginPath(); ctx.rect(B.x - 4, B.y - 80 * u, B.w + 8, ry - B.y + 80 * u); ctx.clip();   // el borde avanza de arriba hacia abajo
   for (const e of L.enl) {
@@ -1042,7 +1058,7 @@ function filasLeyenda(items, total, maxF, pal) {
   const fila = (it, i) => ({nombre: it.nombre, valor: it.valor, pct: (it.valor / total) * 100, col: pal[i % pal.length], idx: [i]});
   if (items.length <= maxF) return items.map(fila);
   const vis = items.slice(0, maxF - 1), resto = items.slice(maxF - 1), sum = resto.reduce((a, x) => a + x.valor, 0);
-  return [...vis.map(fila), {nombre: `Otras ${resto.length} partes`, valor: sum, pct: (sum / total) * 100, col: PALETA.piedra, idx: resto.map((_, j) => maxF - 1 + j), agregada: true}];
+  return [...vis.map(fila), {nombre: tr('c.otras_partes', {n: resto.length}), valor: sum, pct: (sum / total) * 100, col: PALETA.piedra, idx: resto.map((_, j) => maxF - 1 + j), agregada: true}];
 }
 /** Una fila de leyenda con nombre (clave), cifra con unidad (secundario) y porcentaje grande. Ocupa `rh` de alto. */
 function filaLeyenda(env, capa, f, x, y, rh, lw, la, idBase) {
@@ -1086,7 +1102,7 @@ function donut(env, capa) {
   const s2 = escalarFuente(20 * u);
   rotulo(ctx, num, cx, cy - s2 * 0.1, fnt(800, tam, true), PALETA.blanco, 'center', u);
   if (un) rotulo(ctx, un, cx, cy - s2 * 0.1 + s2 * 1.2, fnt(600, 20 * u, true), PALETA.piedraClara, 'center', u);
-  rotulo(ctx, (capa.etiquetaTotal ?? 'Total').toUpperCase(), cx, cy - s2 * 0.1 + s2 * 2.4, fnt(600, 18 * u, true), PALETA.piedraOscura, 'center', u);
+  rotulo(ctx, (capa.etiquetaTotal ?? tr('c.total')).toUpperCase(), cx, cy - s2 * 0.1 + s2 * 2.4, fnt(600, 18 * u, true), PALETA.piedraOscura, 'center', u);
   // leyenda: una fila por parte, con su valor y su porcentaje calculados de los datos
   const lx = vert ? B.x : cx + R + 90 * u, ly0 = vert ? cy + R + 36 * u : B.y, area = vert ? B.y + B.h - ly0 : B.h, lw = vert ? B.w : B.x + B.w - lx;
   const paso = vert ? 92 * u : 70 * u, maxF = Math.max(3, Math.floor(area / paso)), filas = filasLeyenda(items, total, maxF, paleta), rh = Math.min(vert ? 100 * u : 78 * u, area / filas.length);
@@ -1215,7 +1231,7 @@ function pendiente(env, capa) {
   ctx.save(); ctx.globalAlpha *= ap;
   [[xl, i0], [xr, i1]].forEach(([x, i]) => { rotulo(ctx, etiquetaX(tab, i), x, B.y + 40 * u, fnt(800, 30 * u, true), PALETA.piedraClara, 'center', u); ctx.font = fnt(800, 30 * u, true); const w = ctx.measureText(etiquetaX(tab, i)).width; reg(env, 'etiqueta', [x - w / 2, B.y - 4 * u, x + w / 2, B.y + 50 * u], `${capa.id ?? 'pendiente'}:x${i}`); });
   if (L.logE) {
-    ctx.font = fnt(600, 16 * u); const lin = envolver(ctx, 'Escala logarítmica: la distancia entre los puntos es proporcional al cambio en %.', B.w, 3), s = escalarFuente(16 * u);
+    ctx.font = fnt(600, 16 * u); const lin = envolver(ctx, tr('c.log_nota'), B.w, 3), s = escalarFuente(16 * u);
     lin.forEach((l, q) => rotulo(ctx, l, B.x, B.y + B.h + 30 * u + s + q * s * 1.25, fnt(600, 16 * u), PALETA.piedraOscura, 'left', u));
     reg(env, 'etiqueta', [B.x, B.y + B.h + 30 * u, B.x + B.w, B.y + B.h + 30 * u + s * (1.25 * lin.length + 0.5)], `${capa.id ?? 'pendiente'}:escala`);
   }
@@ -1271,7 +1287,7 @@ function bump(env, capa) {
   // años: solo los que caben (el primero y el último siempre)
   ctx.font = fnt(700, 21 * u, true); const wy = ctx.measureText(etiquetaX(tab, L.pts[0])).width, cada = Math.max(1, Math.ceil((wy * 1.5) / paso));
   L.pts.forEach((i, q) => { if ((q % cada === 0 && L.pts.length - 1 - q >= cada) || q === L.pts.length - 1) { const tx = etiquetaX(tab, i); rotulo(ctx, tx, cx(q), B.y + 44 * u, fnt(700, 21 * u, true), PALETA.piedraClara, 'center', u); const w = ctx.measureText(tx).width; reg(env, 'etiqueta', [cx(q) - w / 2, B.y + 8 * u, cx(q) + w / 2, B.y + 56 * u], `${capa.id ?? 'bump'}:p${q}`); } });
-  const nota = capa.orden !== 'valor' ? `El 1.º es el que más creció desde ${etiquetaX(tab, L.pts[0])}.` : 'El 1.º es el de mayor valor.';
+  const nota = capa.orden !== 'valor' ? tr('c.bump_crecio', {x: etiquetaX(tab, L.pts[0])}) : tr('c.bump_valor');
   ctx.font = fnt(600, 16 * u); const nl = envolver(ctx, nota, B.w, 2), sNota = escalarFuente(16 * u);
   nl.forEach((l, q) => rotulo(ctx, l, B.x, B.y + B.h + 30 * u + sNota + q * sNota * 1.25, fnt(600, 16 * u), PALETA.piedraOscura, 'left', u));
   reg(env, 'etiqueta', [B.x, B.y + B.h + 30 * u, B.x + B.w, B.y + B.h + 30 * u + sNota * (1.25 * nl.length + 0.4)], `${capa.id ?? 'bump'}:orden`);
@@ -1396,8 +1412,8 @@ function waffle(env, capa) {
   });
   ctx.globalAlpha = ap;
   const sN = escalarFuente(18 * u); ctx.font = fnt(600, 18 * u);
-  rotulo(ctx, 'Cada cuadro vale 1 % del total', gx, gy + lado + 14 * u + sN, fnt(600, 18 * u), PALETA.piedraOscura, 'left', u);
-  reg(env, 'etiqueta', [gx, gy + lado + 10 * u, gx + ctx.measureText('Cada cuadro vale 1 % del total').width, gy + lado + 24 * u + sN], `${capa.id ?? 'waffle'}:nota`);
+  rotulo(ctx, tr('c.waffle_nota'), gx, gy + lado + 14 * u + sN, fnt(600, 18 * u), PALETA.piedraOscura, 'left', u);
+  reg(env, 'etiqueta', [gx, gy + lado + 10 * u, gx + ctx.measureText(tr('c.waffle_nota')).width, gy + lado + 24 * u + sN], `${capa.id ?? 'waffle'}:nota`);
   const lx = vert ? B.x : gx + lado + 70 * u, ly0 = vert ? gy + lado + 24 * u + sN + 24 * u : B.y, area = vert ? B.y + B.h - ly0 : B.h, lw = vert ? B.w : B.x + B.w - lx;
   const itemsL = L.base.map((b) => b.it), paso = vert ? 92 * u : 70 * u, maxF = Math.max(3, Math.floor(area / paso));
   // las filas muestran el % EXACTO (no el redondeado a cuadros); si se agrupan, se suman los exactos

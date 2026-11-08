@@ -61,6 +61,8 @@ node servidor/cli.mjs render   examples/gold-copper-oil/spec.json --borrador # f
 3. **Camera and pace** — one recommended setting; advanced options folded away.
 4. **Review and download** — draft (~30 s) or final (MP4 + ProRes 4444 with alpha + verification report).
 
+**Language switch:** the **EN | ES** button in the studio header sets the language of the interface *and* of the piece (titles, units, month names, notes). It defaults to English unless your browser is in Spanish, and your choice is remembered. The command line takes `--lang=es|en` (or `RTL_LANG`), and the MCP server and the chat follow `RTL_LANG`.
+
 Guide: [docs/USER_GUIDE.md](docs/USER_GUIDE.md).
 
 ---
@@ -237,7 +239,7 @@ node scripts/prueba-paises.mjs        # country cards and comparisons (network)
 
 ## Language note
 
-The studio UI and the text drawn *inside* the charts are in **Spanish** (the primary user's language and audience); the documentation, code-level docs and commit messages are in English. Original Spanish notes are kept in [`docs/es/`](docs/es/). Contributions that add UI/chart localization are welcome.
+The studio UI and the text drawn *inside* the charts are available in **English and Spanish** (EN | ES switch in the studio header; `idioma: "en" | "es"` in a spec). Spanish is the original language of the project and of some data labels; the documentation, code-level docs and commit messages are in English. Original Spanish notes are kept in [`docs/es/`](docs/es/). Adding a language is one column in `web/i18n.js` (interface) and `motor/idioma.js` (drawn text).
 
 ---
 

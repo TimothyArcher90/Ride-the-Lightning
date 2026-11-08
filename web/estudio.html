@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ride the Lightning · estudio</title>
+<title>Ride the Lightning · Studio</title>
 <style>
   @font-face { font-family: "Geist"; src: url(/fuentes/Geist.ttf); font-weight: 100 900; font-display: swap; }
   @font-face { font-family: "Geist Mono"; src: url(/fuentes/GeistMono.ttf); font-weight: 100 900; font-display: swap; }
@@ -121,6 +121,9 @@
   .pulso { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--oro); animation:pul 1s infinite; }
   @keyframes pul { 0%,100% { opacity:.25 } 50% { opacity:1 } }
 
+  .lang { display:inline-flex; border:1px solid var(--linea2); border-radius:var(--r); overflow:hidden; } .lang button { min-height:48px; min-width:52px; padding:0 12px; background:transparent; color:var(--suave); border:0; font:700 14px "Geist Mono"; cursor:pointer; } .lang button[aria-pressed="true"] { background:var(--oro); color:var(--oro-t); }
+  header .btn { white-space:nowrap; } .pill { max-width:100%; }
+  @media (max-width:640px) { header { gap:var(--s2); } header .btn { padding:0 12px; font-size:14px; } .lang button { min-width:44px; } }
   /* ── pulido de usabilidad: qué es, qué hago ahora, menos ruido ── */
   body { font-size:17px; }
   .ayuda { font-size:16px; color:#CFCABF; }
@@ -183,42 +186,43 @@
   <h1><svg class="logo" viewBox="0 0 256 256" aria-hidden="true"><rect width="256" height="256" rx="52" fill="#232320"/><polygon points="146,28 78,138 120,138 100,228 182,106 138,106" fill="#C9A84C" stroke="#FFF3C4" stroke-width="6" stroke-linejoin="round"/></svg>Ride the <b>Lightning</b></h1>
   <span class="pill" id="estadoDatos" role="status" aria-live="polite"></span>
   <span class="esp"></span>
-  <button class="btn" id="btnEjemplos" aria-haspopup="true">Ver un ejemplo</button>
-  <button class="btn" id="btnExperto" aria-pressed="false">Modo experto</button>
+  <div class="lang" role="group" id="lang" data-i-aria="idioma_aria" data-i-title="idioma_titulo"><button type="button" data-l="en" aria-pressed="true">EN</button><button type="button" data-l="es" aria-pressed="false">ES</button></div>
+  <button class="btn" id="btnEjemplos" aria-haspopup="true" data-i="hdr_ejemplos">See an example</button>
+  <button class="btn" id="btnExperto" aria-pressed="false" data-i="hdr_experto">Expert mode</button>
 </header>
 
-<nav class="pasos" aria-label="Pasos para crear tu animación" id="pasos"></nav>
+<nav class="pasos" data-i-aria="pasos_aria" aria-label="Steps to create your animation" id="pasos"></nav>
 
 <main>
   <section id="paso" aria-live="polite"></section>
 
-  <aside class="vista" aria-label="Vista previa">
+  <aside class="vista" data-i-aria="vista_aria" aria-label="Preview">
     <div class="marco" id="marco">
-      <canvas id="lienzo" width="960" height="540" role="img" aria-label="Vista previa de la animación"></canvas>
-      <div class="vacio" id="vacio"><div><p style="font-size:20px;font-weight:700;margin:0 0 6px">Aquí verás tu animación</p><p style="margin:0">Elige un dato a la izquierda y aparece sola.</p></div></div>
-      <div class="carga" id="carga" hidden><span>Preparando tu animación…</span></div>
+      <canvas id="lienzo" width="960" height="540" role="img" data-i-aria="lienzo_aria" aria-label="Animation preview"></canvas>
+      <div class="vacio" id="vacio"><div><p style="font-size:20px;font-weight:700;margin:0 0 6px" data-i="vacio_t">Your animation will appear here</p><p style="margin:0" data-i="vacio_s">Choose some data on the left and it builds itself.</p></div></div>
+      <div class="carga" id="carga" hidden><span data-i="carga">Preparing your animation…</span></div>
     </div>
     <div class="control">
-      <button class="btn" id="play" aria-label="Reproducir" style="width:56px;padding:0"></button>
-      <input type="range" id="t" min="0" max="10" step="0.01" value="0" aria-label="Posición en la animación">
+      <button class="btn" id="play" aria-label="Play" style="width:56px;padding:0"></button>
+      <input type="range" id="t" min="0" max="10" step="0.01" value="0" data-i-aria="posicion" aria-label="Position in the animation">
       <span class="reloj" id="tt"></span>
     </div>
     <div class="simple" id="simple" hidden></div>
     <div class="experto" id="expertoPanel">
-      <h3>Spec (para expertos)</h3>
+      <h3 data-i="spec_h">Spec (for experts)</h3>
       <label class="sr" for="specTxt">Spec JSON</label>
       <textarea id="specTxt" spellcheck="false"></textarea>
-      <div class="fila" style="margin-top:8px"><button class="btn p" id="aplicarSpec">Aplicar cambios</button><span class="ayuda" style="margin:0">Se compila y valida igual que lo demás.</span></div>
+      <div class="fila" style="margin-top:8px"><button class="btn p" id="aplicarSpec" data-i="spec_aplicar">Apply changes</button><span class="ayuda" style="margin:0" data-i="spec_nota">It is compiled and validated like everything else.</span></div>
       <pre class="mono" id="expertoInforme" style="white-space:pre-wrap;font-size:12px;color:var(--suave)"></pre>
     </div>
   </aside>
 </main>
-<button id="chatBtn" aria-expanded="false" aria-controls="chat"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Pedir cambios hablando</button>
-<section id="chat" hidden aria-label="Chat para editar la animación">
-  <header><strong>Edita hablando</strong><span class="esp" style="flex:1"></span><button class="btn" id="chatNuevo" title="Empezar una conversación nueva" style="padding:6px 10px;font-size:13px">Nuevo</button><button class="btn" id="chatCerrar" aria-label="Cerrar el chat" style="padding:6px 10px">✕</button></header>
+<button id="chatBtn" aria-expanded="false" aria-controls="chat"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span data-i="chat_btn">Ask for changes in chat</span></button>
+<section id="chat" hidden data-i-aria="chat_aria" aria-label="Chat to edit the animation">
+  <header><strong data-i="chat_h">Edit by chat</strong><span class="esp" style="flex:1"></span><button class="btn" id="chatNuevo" data-i-title="chat_nuevo_t" data-i="chat_nuevo" title="Start a new conversation" style="padding:6px 10px;font-size:13px">New</button><button class="btn" id="chatCerrar" data-i-aria="chat_cerrar" aria-label="Close chat" style="padding:6px 10px">✕</button></header>
   <div id="chatMsgs" role="log" aria-live="polite"></div>
   <div id="chatSug"></div>
-  <form id="chatForm"><label class="sr" for="chatIn">Tu mensaje</label><textarea id="chatIn" rows="1" placeholder="Ej.: pásalo a vertical, pon el trimestre anterior, quita los impuestos…"></textarea><button class="btn p" id="chatEnviar" type="submit">Enviar</button></form>
+  <form id="chatForm"><label class="sr" for="chatIn" data-i="chat_msg">Your message</label><textarea id="chatIn" rows="1" data-i-ph="chat_ph" placeholder=""></textarea><button class="btn p" id="chatEnviar" type="submit" data-i="chat_enviar">Send</button></form>
 </section>
 <div id="ejemplos" hidden style="position:fixed;top:64px;right:24px;z-index:30;background:var(--tarjeta);border:1px solid var(--linea2);border-radius:var(--r);padding:var(--s2);min-width:280px"></div>
 <script type="module" src="/web/estudio.js"></script>

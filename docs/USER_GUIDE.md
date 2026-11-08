@@ -2,7 +2,7 @@ Spanish original: [es/GUIA_USUARIO.md](es/GUIA_USUARIO.md)
 
 # Quick guide (no code, no finance background needed)
 
-> The studio interface is in Spanish. UI labels are quoted in Spanish with an English translation the first time they appear.
+> **Language switch:** the **EN | ES** button at the top right of the studio changes the language of the interface *and* of the animation itself (titles, units, month names, notes). The studio starts in English unless your browser is in Spanish, and remembers your choice. Some labels below are quoted in Spanish with an English translation, as they appear in the Spanish interface.
 
 **To open it:** double-click **"Ride the Lightning"** on the desktop. A page opens in your browser. Keep the black (console) window open while you use it.
 
