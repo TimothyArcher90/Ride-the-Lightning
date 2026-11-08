@@ -140,7 +140,7 @@ async function api(req, res) {
       case '/api/indicadores-pais': { const m = await import('./paises.mjs'); return json(res, {indicadores: m.indicadoresPais(lang)}); }
       case '/api/ranking-pais': { const m = await import('./paises.mjs'); return json(res, await m.rankingPais(String(q.get('clave') ?? ''), String(q.get('iso') ?? ''), lang)); }
       case '/api/ficha-pais': { const m = await import('./paises.mjs'); return json(res, await m.fichaPais(String(q.get('iso') ?? '').toUpperCase(), lang)); }
-      case '/api/plantillas': return json(res, {plantillas: PLANTILLAS, camaras: Object.entries(CAMARAS).map(([id, c]) => ({id, ...c}))});
+      case '/api/plantillas': return json(res, {plantillas: PLANTILLAS.filter((p) => !p.soloSpec), camaras: Object.entries(CAMARAS).map(([id, c]) => ({id, ...c}))});
       case '/api/analizar': { const {series} = await delCuerpo(); await asegurar(series); return json(res, analizar(series, lang)); }
       case '/api/recomendar': { const ent = await delCuerpo(); if (!IDIOMAS.includes(ent.idioma)) ent.idioma = lang; await asegurar(ent.series); return json(res, {recomendadas: recomendar(ent)}); }
       case '/api/generar': { const ent = await delCuerpo(); if (!IDIOMAS.includes(ent.idioma)) ent.idioma = lang; await asegurar(ent.series); const r = generar(ent); return json(res, {...r, spec: r.spec}); }

@@ -154,6 +154,24 @@ const REGLAS = [
   [/^el ranking de barras no admite valores negativos \(usa «divergente» o «dumbbell»\)\.$/, 'the bar ranking does not accept negative values (use "divergente" or "dumbbell").'],
   [/^«(.*?)» no está en los datos; no se resalta nada\.$/, '"$1" is not in the data; nothing is highlighted.'],
   [/^ordenado de mayor a menor; barras proporcionales al valor\. El código \(ISO o ticker\) sale del texto anterior a « · » en el concepto; no se dibujan banderas\.$/, 'sorted from largest to smallest; bars proportional to the value. The code (ISO or ticker) comes from the text before " · " in the concept; no flags are drawn.'],
+  // ── dos hitos (dos_hitos) y piezas pendientes
+  [/^pieza pendiente: (.*)$/, 'pending piece: $1'],
+  [/^dos_hitos usa una sola serie; se usa la primera\.$/, 'dos_hitos uses a single series; the first one is used.'],
+  [/^serie (\d+) no existe \(hay (\d+)\)\.$/, 'series $1 does not exist (there are $2).'],
+  [/^dos_hitos necesita exactamente 2 hitos en "hitos":\[\{"fecha":"AAAA-MM-DD","nombre":"…"\},…\] \(hay (\d+)\)\.$/, 'dos_hitos needs exactly 2 milestones in "hitos":[{"fecha":"YYYY-MM-DD","nombre":"…"},…] (there are $1).'],
+  [/^dos_hitos necesita una serie diaria con muchos datos \(hay (\d+)\)\.$/, 'dos_hitos needs a daily series with many data points (there are $1).'],
+  [/^dos_hitos necesita una serie diaria \(hay un dato cada (\d+) días\): las sesiones se cuentan por fila con dato\.$/, 'dos_hitos needs a daily series (there is one data point every $1 days): sessions are counted per row with data.'],
+  [/^el hito (\d+) no tiene una fecha AAAA-MM-DD válida\.$/, 'milestone $1 does not have a valid YYYY-MM-DD date.'],
+  [/^el hito «(.*?)» \((.*?)\) cae antes del primer dato \((.*?)\)\.$/, 'the milestone "$1" ($2) falls before the first data point ($3).'],
+  [/^el hito «(.*?)» \((.*?)\) no tiene una sesión a menos de 5 días \(la anterior es (.*?)\)\.$/, 'the milestone "$1" ($2) has no session within 5 days (the previous one is $3).'],
+  [/^la fecha del hito «(.*?)» \((.*?)\) no es una sesión con dato; se usa la sesión anterior \((.*?)\)\.$/, 'the date of the milestone "$1" ($2) is not a session with data; the previous session ($3) is used.'],
+  [/^en el hito «(.*?)» el valor base no es positivo\.$/, 'at the milestone "$1" the base value is not positive.'],
+  [/^desde el hito «(.*?)» quedan solo (\d+) sesiones; hacen falta al menos 30\.$/, 'after the milestone "$1" only $2 sessions remain; at least 30 are needed.'],
+  [/^los dos hitos caen en la misma sesión \((.*?)\); no hay nada que comparar\.$/, 'both milestones fall on the same session ($1); there is nothing to compare.'],
+  [/^la escala logarítmica necesita valores positivos\.$/, 'the logarithmic scale needs positive values.'],
+  [/^escala debe ser auto, lineal o log \(no «(.*?)»\)\.$/, 'escala must be auto, lineal or log (not "$1").'],
+  [/^«(.*?)» termina en la sesión (\d+) y «(.*?)» sigue hasta la (\d+); la parte sin la serie corta se sombrea «sin proyección» y no se proyecta nada\.$/, '"$1" ends at session $2 and "$3" continues to session $4; the part without the short series is shaded "no projection" and nothing is projected.'],
+  [/^cada hito rebasa la serie a base 100 en el cierre de su fecha \(valor ÷ valor del hito × 100\) y las dos curvas se alinean por sesiones \(filas con dato\) desde el hito, no por fecha\. Caída = valor ÷ máximo acumulado desde el hito − 1; retorno = valor ÷ valor del hito − 1\. Eje de crecimiento (LOGARÍTMICO \(máximo\/mínimo > 5\)|lineal)\. Se calcula todo de la serie; no se proyecta nada\.$/, (m, esc) => `each milestone rebases the series to base 100 at the close of its date (value ÷ milestone value × 100) and the two curves are aligned by sessions (rows with data) since the milestone, not by date. Drawdown = value ÷ running maximum since the milestone − 1; return = value ÷ milestone value − 1. Growth axis: ${esc === 'lineal' ? 'linear' : 'LOGARITHMIC (max/min > 5)'}. Everything is computed from the series; nothing is projected.`],
 ];
 
 /** Traduce un mensaje del informe al inglés; si no hay regla se devuelve igual. */

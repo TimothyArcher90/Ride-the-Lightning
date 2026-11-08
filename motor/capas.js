@@ -12,6 +12,7 @@ import sankeyD3 from './vendor/d3-sankey/sankey.js';
 import {stepAfter as curvaEscalon} from './vendor/d3-shape/curve/step.js';
 import {monotoneX as curvaMonotona} from './vendor/d3-shape/curve/monotone.js';
 import {relajar1D, envolverEntero} from './etiquetas.js';
+import {decimarPorColumna, decimaDesde} from './decimar.js';
 import {t as tr, registrar} from './idioma.js';   // «tr»: en las capas «t» es el tiempo
 
 // Textos fijos que dibujan las capas base (es = original, en = versión inglesa). Se leen con tr('c.clave', {vars}).
@@ -247,6 +248,15 @@ function linea(env, capa) {
     const a = Math.max(0, lowerBound(tab.x, cam.x[0]) - 1), b = Math.min(n - 1, lowerBound(tab.x, Math.min(cam.x[1], xh)));
     const P = new Path2D();
     let abierto = false, x0p = null, ult = null, seg = null; const segs = [];   // seg/segs: solo con curva declarada (escalón o monótona)
+    if (!curva && capa.decimar !== false && b - a + 1 > decimaDesde(B.w)) {
+      // serie más larga que ~2 filas por píxel: de cada columna de píxeles se dibujan el primer, el mínimo, el máximo y el último dato REAL (nada se interpola ni se salta un extremo)
+      for (const sg of decimarPorColumna(tab.x, s.y, a, b, px, xh)) sg.forEach((i, q) => {
+        const xi = tab.x[i], y = s.y[i];
+        if (q === 0) P.moveTo(px(xi), py(y)); else P.lineTo(px(xi), py(y));
+        if (x0p === null) x0p = px(xi);
+        ult = [xi, y];
+      });
+    } else {
     const bucket = Math.max(1, Math.floor((b - a) / (B.w * 2)));
     for (let i = a; i <= b; i += bucket) {
       let y = s.y[i], xi = tab.x[i];
@@ -255,6 +265,7 @@ function linea(env, capa) {
       if (curva) { if (!seg) segs.push(seg = []); seg.push([px(xi), py(y)]); if (x0p === null) x0p = px(xi); }
       else if (!abierto) { P.moveTo(px(xi), py(y)); abierto = true; if (x0p === null) x0p = px(xi); } else P.lineTo(px(xi), py(y));
       ult = [xi, y];
+    }
     }
     // el valor mostrado siempre sale de los datos originales. Con escalones, entre dos datos el valor es el del último dato (nunca uno interpolado)
     const yo = capa.curva === 'escalon' ? valorEscalon(orig.x, orig.series[si].y, xh) : valorEn(orig.x, orig.series[si].y, xh);

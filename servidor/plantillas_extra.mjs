@@ -23,6 +23,9 @@ registrar('pe', {
   pictograma: {es: 'Cada cuadro vale una unidad redonda elegida para que la parte mayor quepa en una fila; se declara en pantalla y los cuadros incompletos son fracciones exactas.', en: 'Each square is worth a round unit chosen so the largest part fits in one row; this is stated on screen and partial squares are exact fractions.'},
   ranking: {es: 'Barras ordenadas de mayor a menor, proporcionales al valor y desde 0. El código sale del texto anterior a « · » en el concepto; no se usan banderas.', en: 'Bars sorted from largest to smallest, proportional to the value and starting at 0. The code comes from the text before " · " in the concept; no flags are used.'},
   e_desconocida: {es: 'Plantilla extra desconocida: {p}', en: 'Unknown extra template: {p}'},
+  dos_hitos: {es: 'Cada hito rebasa la serie a base 100 en el cierre de su fecha y las dos curvas se alinean por sesiones desde el hito. El eje es logarítmico si el máximo supera 5 veces el mínimo. Las fechas-hito y sus nombres los pone quien arma la pieza: confírmalas con una fuente primaria antes de publicar.', en: 'Each milestone rebases the series to 100 at the close of its date and the two curves are aligned by sessions since the milestone. The axis is logarithmic when the maximum exceeds 5 times the minimum. The milestone dates and names are set by whoever builds the piece: confirm them against a primary source before publishing.'},
+  e_hitos: {es: 'dos_hitos necesita "hitos": dos fechas AAAA-MM-DD con su nombre, por ejemplo [{"fecha":"2008-09-15","nombre":"…"},{"fecha":"2020-03-11","nombre":"…"}]. Las fechas son afirmaciones: confírmalas con una fuente primaria.', en: 'dos_hitos needs "hitos": two YYYY-MM-DD dates with their names, for example [{"fecha":"2008-09-15","nombre":"…"},{"fecha":"2020-03-11","nombre":"…"}]. The dates are claims: confirm them against a primary source.'},
+  sub_hitos: {es: 'La misma serie desde dos fechas', en: 'The same series from two dates'},
 });
 
 export const PLANTILLAS_EXTRA = [
@@ -42,6 +45,7 @@ export const PLANTILLAS_EXTRA = [
   {id: 'bandas', nombre: 'Este año contra el rango histórico', descripcion: 'Para cada mes, una banda con el mínimo–máximo y los percentiles 25–75 de los años anteriores, y encima la línea del año. Sin proyecciones.', necesita: {min: 1, max: 1}, ayuda: 'Elige 1 serie mensual (o diaria) con al menos 5 años.'},
   {id: 'pictograma', datos: 'categorias', nombre: 'Cada cuadro = una cantidad', descripcion: 'Filas de cuadros donde cada cuadro vale una cantidad declarada; los incompletos son fracciones exactas. Para «cuánto es esto» de forma concreta.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor).'},
   {id: 'ranking_pais', datos: 'categorias', nombre: 'Ranking con códigos (países o empresas)', descripcion: 'Barras ordenadas de mayor a menor con el código ISO o ticker en una ficha (sin banderas). Si resaltas uno que no está en los primeros, aparece abajo con su puesto real.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías; escribe el concepto como «COL · Colombia» para mostrar el código.'},
+  {id: 'dos_hitos', soloSpec: true, nombre: 'Dos hitos, la misma serie', descripcion: 'Una serie diaria vista desde dos fechas-hito: cada hito rebasa la serie a base 100 en su cierre y las dos curvas se alinean por sesiones desde el hito. Con caída desde el máximo, tabla viva y dos cifras finales. Pide "hitos" (dos fechas con nombre).', necesita: {min: 1, max: 1}, ayuda: 'Elige 1 serie diaria y escribe las 2 fechas-hito en "hitos" (solo desde una spec, el MCP o la CLI).'},
 ];
 
 export const IDS_EXTRA = new Set(PLANTILLAS_EXTRA.map((p) => p.id));
@@ -56,6 +60,12 @@ export function generarExtra(plantilla, c) {
   const dib = Math.max(4, Math.min(8, P.dibujo + (['apilada', 'apilada100', 'velas', 'calendario', 'bandas'].includes(plantilla) ? 1 : 0))), dur = +(1 + dib + 3.2).toFixed(1);
   const base = {datos: 'd', id: 'g1', t: [0.9, +(0.9 + dib).toFixed(2)]}, notas = [];
   let capa;
+  if (plantilla === 'dos_hitos') {   // temporización propia: trazo largo + espera con la tabla viva + dos cifras finales (todo texto ≥ 3 s en pantalla)
+    if (!Array.isArray(entrada.hitos) || entrada.hitos.length !== 2) throw new Error(t('pe.e_hitos'));
+    const dibH = Math.max(6.5, Math.min(11, P.dibujo + 2)), espera = 3.4, t1H = +(0.9 + dibH).toFixed(2), durH = +(t1H + espera + 4.2).toFixed(1);
+    const capaH = {tipo: 'dos_hitos', datos: 'd', id: 'g1', t: [0.9, t1H], espera, hitos: entrada.hitos.map((h) => ({fecha: h.fecha, nombre: h.nombre})), ...(entrada.escala && entrada.escala !== 'auto' ? {escala: entrada.escala} : {}), ...(entrada.aviso != null ? {aviso: entrada.aviso} : {}), ...(entrada.colores ? {colores: entrada.colores} : {})};
+    return {duracion: durH, capas: [{tipo: 'titulo', texto: titulo, color: 'oro', sub: t('pe.sub_hitos'), t: [0.2, +(durH - 0.1).toFixed(2)]}, capaH], notas: [t('pe.dos_hitos')]};
+  }
   switch (plantilla) {
     case 'radar': case 'radar_tabla': capa = {tipo: 'radar', ...base, ...(entrada.nota ? {nota: entrada.nota} : {})}; notas.push(t(plantilla === 'radar' ? 'pe.radar' : 'pe.radar_tabla')); break;
     case 'apilada': case 'apilada100': capa = {tipo: 'apilada', ...base, modo: plantilla === 'apilada100' ? 'pct' : 'abs'}; notas.push(t(plantilla === 'apilada100' ? 'pe.apilada100' : 'pe.apilada')); break;

@@ -230,6 +230,7 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
   const informe = {errores: [], avisos: [], datos: [], cifras: [], metodos: []};
   const E = (m) => informe.errores.push(m);
   if (spec.version && spec.version !== 1) E(`version ${spec.version} no soportada (actual: 1).`);
+  if (spec.pendiente) E(`pieza pendiente: ${spec.pendiente}`);   // p. ej. «pending open licence»: la pieza no se compila hasta que exista el dato abierto
   const formato = spec.formato ?? 'horizontal';
   if (!MAX_PX[formato]) E(`formato debe ser horizontal|vertical, no "${formato}".`);
   const [ancho, alto] = MAX_PX[formato] ?? MAX_PX.horizontal;

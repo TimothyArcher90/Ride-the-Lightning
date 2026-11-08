@@ -23,6 +23,7 @@ Verify any example: `node servidor/cli.mjs compilar examples/<slug>/spec.json` (
 | [oil-monthly-returns-calendar](../examples/oil-monthly-returns-calendar/) | calendario | Every month of WTI since 1986 as a heat square | EIA via FRED (public domain) |
 | [eurusd-daily-returns](../examples/eurusd-daily-returns/) | retornos | Distribution of daily EUR/USD moves since 1999 | Federal Reserve H.10 via FRED (public domain) |
 | [wti-candlesticks](../examples/wti-candlesticks/) | velas | WTI candlesticks (closes only, declared) | EIA via FRED (public domain) |
+| [two-milestones-dollar](../examples/two-milestones-dollar/) | dos_hitos | The broad dollar index from two milestone dates (base 100, aligned by sessions) | Federal Reserve via FRED (public domain) |
 | [nvidia-how-it-makes-money](../examples/nvidia-how-it-makes-money/) | sankey | Revenue → costs → net income of the latest quarter | SEC EDGAR (public domain) |
 | [apple-revenue-to-profit](../examples/apple-revenue-to-profit/) | cascada | Revenue to net income waterfall | SEC EDGAR (public domain) |
 | [amazon-dollar-treemap](../examples/amazon-dollar-treemap/) | treemap | Where each Amazon dollar goes | SEC EDGAR (public domain) |

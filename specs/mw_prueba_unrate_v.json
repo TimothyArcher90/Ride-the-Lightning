@@ -1,0 +1,114 @@
+{
+ "version": 1,
+ "titulo": "Desempleo en EE. UU.",
+ "formato": "vertical",
+ "fps": 30,
+ "duracion": 9.6,
+ "datos": {
+  "d": {
+   "archivo": "datos/biblioteca/fred_unrate.csv",
+   "x": "fecha",
+   "tipoX": "fecha",
+   "columnas": [
+    {
+     "col": "UNRATE",
+     "nombre": "Tasa de desempleo EE. UU.",
+     "color": "oro",
+     "sufijo": " %",
+     "unidad": "%",
+     "decimales": 2
+    }
+   ]
+  }
+ },
+ "capas": [
+  {
+   "tipo": "titulo",
+   "texto": "Desempleo en EE. UU.",
+   "color": "oro",
+   "t": [
+    0.12,
+    9.54
+   ],
+   "sub": "% · {desde}–{hasta}"
+  },
+  {
+   "tipo": "linea",
+   "id": "g1",
+   "datos": "d",
+   "area": true,
+   "t": [
+    0.36,
+    3.06
+   ],
+   "camara": [
+    {
+     "t": 0.0,
+     "x": "auto",
+     "y": "auto"
+    },
+    {
+     "t": 3.9,
+     "x": [
+      1436747328000,
+      1734651072000
+     ],
+     "y": "ajustar",
+     "mov": 0.54
+    },
+    {
+     "t": 6.48,
+     "x": [
+      1490317056000,
+      1788220800000
+     ],
+     "y": "ajustar",
+     "mov": 0.54
+    },
+    {
+     "t": 9.06,
+     "x": "auto",
+     "y": "auto",
+     "mov": 0.54
+    }
+   ]
+  },
+  {
+   "tipo": "contador",
+   "capa": "g1",
+   "serie": 0,
+   "t": [
+    0.0,
+    9.54
+   ]
+  },
+  {
+   "tipo": "llamada",
+   "capa": "g1",
+   "serie": 0,
+   "ancla": {
+    "max": true
+   },
+   "t": [
+    3.99,
+    5.79
+   ],
+   "texto": "Máximo",
+   "color": "oro"
+  },
+  {
+   "tipo": "llamada",
+   "capa": "g1",
+   "serie": 0,
+   "ancla": {
+    "ultimo": true
+   },
+   "t": [
+    6.57,
+    8.37
+   ],
+   "texto": "Último dato",
+   "color": "oro"
+  }
+ ]
+}

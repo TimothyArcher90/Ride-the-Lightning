@@ -12,15 +12,17 @@ import {iniciarServidor} from '../servidor/web.mjs';
 import {lanzarNavegador, auditarColisiones} from '../servidor/render.mjs';
 import {compilar, RAIZ} from '../servidor/compilar.mjs';
 import {generar} from '../servidor/plantillas.mjs';
-import {construirModelos, MODELOS} from './modelos-16.mjs';
+import {construirModelos, construirExtras, MODELOS} from './modelos-16.mjs';
 import {TIPO, ZONA, MOV, retardo, entrada, CURVA, contraste} from '../motor/diseno.js';
-import {PALETA, COLOR, mezcla, ticksNum} from '../motor/nucleo.js';
+import {PALETA, COLOR, TEMA, TEMAS_DISPONIBLES, aplicarTema, mezcla, ticksNum} from '../motor/nucleo.js';
+import {decimarPorColumna, decimaDesde} from '../motor/decimar.js';
 import {celdas} from '../motor/arbol.js';
 import {relajar1D} from '../motor/etiquetas.js';
 import {colorDivergente, colorSecuencial, DIV} from '../motor/escalas.js';
 
 const filtro = (process.argv[2] ?? '').split(',').filter(Boolean), soloFormato = process.argv[3];
-const ESCOGIDOS = filtro.length ? MODELOS.filter((m) => filtro.includes(m)) : MODELOS;
+const EXTRAS_CALIDAD = ['dos_hitos'];   // modelos del visualizador universal que también pasan esta lista (los demás extras los cubre prueba-universal)
+const TODOS = [...MODELOS, ...EXTRAS_CALIDAD], ESCOGIDOS = filtro.length ? TODOS.filter((m) => filtro.includes(m)) : TODOS;
 let fallos = 0; const resumen = [];
 const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) fallos++; return c; };
 
@@ -215,13 +217,61 @@ console.log('\n0b) Escalas de color: contraste con el fondo y daltonismo');
   ok(sucios === 0 && demasiados === 0, `ticksNum: 400 rangos sin ruido de coma flotante (${sucios}) y sin pasar el máximo de intervalos (${demasiados})`);
 }
 
+// ── decimación de líneas largas por columna de píxel (idea de uPlot, código propio): ningún valor cambia y ningún extremo se pierde
+console.log('\n0c) Decimación por columna de píxel (motor/decimar.js, usada por la capa «linea»)');
+{
+  const n = 9000; let sem = 12345; const az = () => (sem = (sem * 16807) % 2147483647) / 2147483647;
+  const x = Array.from({length: n}, (_, i) => i * 86400000), y = []; let v = 100;
+  for (let i = 0; i < n; i++) { v += (az() - 0.5) * 2; y.push(i % 997 === 0 ? null : i === 4321 ? v + 90 : i === 6789 ? v - 60 : v); }   // ruido + un pico, un suelo y huecos (null) a propósito
+  const px = (xx) => 100 + (xx / x[n - 1]) * 1000, segs = decimarPorColumna(x, y, 0, n - 1, px), todos = segs.flat(), reales = y.map((q, i) => (q == null ? null : i)).filter((i) => i != null);
+  const maxD = Math.max(...reales.map((i) => y[i])), minD = Math.min(...reales.map((i) => y[i]));
+  ok(Math.max(...todos.map((i) => y[i])) === maxD && Math.min(...todos.map((i) => y[i])) === minD, `el máximo y el mínimo de la línea decimada son EXACTAMENTE los de los datos (${maxD.toFixed(2).replace('.', ',')} y ${minD.toFixed(2).replace('.', ',')})`);
+  ok(segs.every((sg) => sg.every((i, q) => !q || i > sg[q - 1])) && todos.every((i) => Number.isInteger(i) && y[i] != null), `solo se dibujan filas reales de los datos, en orden y nunca una fila vacía: no se interpola nada (${todos.length} de ${reales.length} filas)`);
+  ok(todos.includes(reales[0]) && todos.includes(reales[reales.length - 1]), 'la primera y la última fila con dato siempre se dibujan');
+  const huecos = []; let corridas = 0; y.forEach((q, i) => { if (q != null && (i === 0 || y[i - 1] == null)) corridas++; });
+  ok(segs.length === corridas, `los huecos (null) parten la línea: ${segs.length} tramos = ${corridas} corridas de datos (no se une a través de un hueco)`);
+  const porCol = (idx) => { const m = new Map(); idx.forEach((i) => { const c = Math.floor(px(x[i])), e = m.get(c) ?? {mn: Infinity, mx: -Infinity}; e.mn = Math.min(e.mn, y[i]); e.mx = Math.max(e.mx, y[i]); m.set(c, e); }); return m; };
+  const A = porCol(reales), Bq = porCol(todos); let distintas = 0; for (const [c, e] of A) { const d = Bq.get(c); if (!d || d.mn !== e.mn || d.mx !== e.mx) distintas++; }
+  ok(distintas === 0 && todos.length <= 4 * A.size, `en cada una de las ${A.size} columnas de píxeles el mínimo y el máximo dibujados son los de los datos (${distintas} distintas) y se dibujan ≤ 4 puntos por columna`);
+  ok(decimaDesde(1000) === 2000, 'no se decima por debajo de 2 filas por píxel de ancho (una serie corta se dibuja entera)');
+  const fv = path.join(RAIZ, 'datos', 'biblioteca', 'fred_vixcls.csv');
+  if (fs.existsSync(fv)) {   // datos reales: la serie diaria del VIX (FRED, dominio público) con su máximo de marzo de 2020
+    const fil = fs.readFileSync(fv, 'utf8').trim().split('\n').slice(1).map((l) => l.split(',')), X = fil.map((f) => Date.parse(f[0] + 'T00:00:00Z')), Y = fil.map((f) => (f[1] === '' ? null : +f[1]));
+    const P = (xx) => 135 + ((xx - X[0]) / (X[X.length - 1] - X[0])) * 1650, ss = decimarPorColumna(X, Y, 0, X.length - 1, P), dd = ss.flat(), real = Math.max(...Y.filter((q) => q != null));
+    const paso = Math.max(1, Math.floor(X.length / (1760 * 2))); let viejo = -Infinity; for (let i = 0; i < X.length; i += paso) if (Y[i] != null) viejo = Math.max(viejo, Y[i]);
+    ok(Math.max(...dd.map((i) => Y[i])) === real, `VIX diario (${X.length} filas): la línea decimada llega al máximo real (${real.toFixed(2).replace('.', ',')}) con ${dd.length} puntos`);
+    ok(viejo < real, `control: el salto de filas a paso fijo que se usaba antes (paso ${paso}) dibujaba un máximo de ${viejo.toFixed(2).replace('.', ',')} y se perdía el real`);
+  } else console.log('  (falta fred_vixcls: se omite la comprobación con datos reales)');
+}
+
+// ── daltonismo de los colores de serie, con Okabe-Ito y Paul Tol como referencia (solo se usan sus valores públicos; ver docs/THIRD_PARTY_NOTICES.md)
+console.log('\n0d) Daltonismo: colores de serie de cada tema frente a las paletas de referencia');
+{
+  let cul = null; try { cul = await import('culori'); } catch { console.log('  (culori no está instalado: npm install; se omite)'); }
+  if (cul) {
+    const dE = cul.differenceCiede2000(), tipos = {deuteranopía: cul.filterDeficiencyDeuter, protanopía: cul.filterDeficiencyProt, tritanopía: cul.filterDeficiencyTrit};
+    const OKABE_ITO = ['#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7'];   // Okabe & Ito 2008 (sin el negro)
+    const TOL_BRIGHT = ['#4477AA', '#EE6677', '#228833', '#CCBB44', '#66CCEE', '#AA3377', '#BBBBBB'];     // Paul Tol, «bright» (SRON, 2021)
+    const minPar = (cols, f) => { let m = Infinity; for (let i = 0; i < cols.length; i++) for (let j = i + 1; j < cols.length; j++) m = Math.min(m, dE(f(1)(cols[i]), f(1)(cols[j]))); return m; };
+    const MIN = 8;   // ΔE2000 mínimo entre dos series: ~4× la diferencia apenas visible (≈ 2); las dos paletas de referencia llegan a 10-16
+    for (const [nom, f] of Object.entries(tipos)) {
+      const oi = minPar(OKABE_ITO, f), tol = minPar(TOL_BRIGHT, f);
+      const peores = TEMAS_DISPONIBLES.map((tema) => { aplicarTema(tema); const cols = TEMA.orden.map((k) => COLOR[k]); return {tema, m: minPar(cols, f)}; }); aplicarTema('oscuro');
+      const peor = peores.reduce((a, b) => (b.m < a.m ? b : a));
+      ok(peor.m >= MIN, `${nom}: los 4 colores de serie de los ${TEMAS_DISPONIBLES.length} temas se distinguen entre sí (peor par ΔE2000 = ${peor.m.toFixed(1).replace('.', ',')} en «${peor.tema}»; mínimo ${MIN}; Okabe-Ito ${oi.toFixed(1).replace('.', ',')} · Tol bright ${tol.toFixed(1).replace('.', ',')})`);
+    }
+    const malo = minPar(['#D2691E', '#6B8E23'], cul.filterDeficiencyDeuter);   // un naranja y un verde oliva de igual luminosidad: lo típico que NO se debe usar como dos series
+    ok(malo < MIN, `control: un par naranja/verde oliva no pasaría esta misma prueba (ΔE2000 = ${malo.toFixed(1).replace('.', ',')} en deuteranopía); además, retorno y caída llevan siempre signo (+/−) y no dependen solo del color`);
+  }
+}
+
 // ── barrido de los 16 modelos
 const srv = await iniciarServidor(0), nav = await lanzarNavegador();
 try {
   for (const formato of ['horizontal', 'vertical']) {
     if (soloFormato && soloFormato !== formato) continue;
     console.log(`\n${formato === 'vertical' ? '2' : '1'}) ${formato === 'vertical' ? 'Vertical 1080×1920 (reels)' : 'Horizontal 1920×1080'}`);
-    const modelos = (await construirModelos(formato)).filter((m) => ESCOGIDOS.includes(m.id));
+    const modelos = [...(await construirModelos(formato)), ...(await construirExtras(formato)).modelos].filter((m) => ESCOGIDOS.includes(m.id));
     for (const m of modelos) {
       let errs;
       try { errs = m.informe.errores?.length ? ['no compila: ' + m.informe.errores[0]] : await modeloFormato(nav, srv, m, formato); } catch (er) { errs = ['error al medir: ' + er.message.split('\n')[0]]; }
@@ -249,5 +299,5 @@ const bib = (...ids) => ids.map((id) => ({origen: 'biblioteca', id}));
   let solape = 0; for (let a = 0; a < ll.length; a++) for (let b = a + 1; b < ll.length; b++) if (ll[a].t[0] < ll[b].t[1] && ll[b].t[0] < ll[a].t[1]) solape++;
   ok(solape === 0, 'nunca hay dos tarjetas de anotación compitiendo a la vez');
 }
-console.log(fallos ? `\n✗ ${fallos} comprobación(es) fallaron` : '\n✓ calidad profesional: los 16 modelos × 2 formatos pasan');
+console.log(fallos ? `\n✗ ${fallos} comprobación(es) fallaron` : `\n✓ calidad profesional: los ${TODOS.length} modelos × 2 formatos pasan`);
 process.exit(fallos ? 1 : 0);

@@ -1,8 +1,8 @@
-// PRUEBA DE IDIOMA: renderiza los 27 modelos de gráfica en INGLÉS (spec.idioma = 'en') y FALLA si en el texto realmente dibujado
+// PRUEBA DE IDIOMA: renderiza los 28 modelos de gráfica en INGLÉS (spec.idioma = 'en') y FALLA si en el texto realmente dibujado
 // aparece un diacrítico español (á é í ó ú ñ ¿ ¡ ü) o una palabra vacía española (de, del, la, el, los, por, para, fuente, otros…).
 // Los textos se leen del lienzo real (se intercepta fillText en cada fotograma), así que se mide lo que verá el espectador.
-//   16 modelos de scripts/modelos-16.mjs  +  11 del visualizador universal (radar, apilada, velas, histograma, dumbbell, calendario,
-//   agrupadas, bullet, bandas, pictograma, ranking), en horizontal y en vertical.
+//   16 modelos de scripts/modelos-16.mjs  +  12 del visualizador universal (radar, apilada, velas, histograma, dumbbell, calendario,
+//   agrupadas, bullet, bandas, pictograma, ranking, dos_hitos), en horizontal y en vertical.
 // Además revisa las advertencias/métodos del compilador en inglés (fallo salvo con --sin-informe) y comprueba que 'es' sigue siendo el
 // idioma por defecto (las mismas piezas sin idioma se dibujan sin claves ni marcadores sueltos).
 // Uso: node scripts/prueba-idioma.mjs [modelo,modelo] [horizontal|vertical] [--sin-informe]
@@ -78,7 +78,7 @@ console.log('\n0) El español sigue siendo el idioma por defecto');
   ok(compilar({version: 1, capas: [{tipo: 'titulo', texto: 'x', t: [0, 1]}]}).spec.idioma === undefined, 'compilar sin idioma deja el plano sin campo «idioma»');
 }
 
-// ── 2) los 27 modelos en inglés ─────────────────────────────────────────────────────────────────────────────────────
+// ── 2) los 28 modelos en inglés ─────────────────────────────────────────────────────────────────────────────────────
 const srv = await iniciarServidor(0), nav = await lanzarNavegador();
 const informes = [];
 try {

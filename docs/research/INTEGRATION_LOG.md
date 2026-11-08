@@ -53,3 +53,39 @@ Rules kept in every item: permissive licenses only, vendored ES source with its 
 ## Not attempted (outside the requested six)
 
 Queue items 7 (min/max decimation), 9 (beeswarm / ridgeline / streamgraph) and 10 (supersampling, sub-frame blur, LOESS).
+
+---
+
+# 2026-11-08 — "Two milestones" model, min/max decimation, colour-blind test of the series colours
+
+Input: [REFERENCIA_NETSCAPE_CHATGPT.md](REFERENCIA_NETSCAPE_CHATGPT.md) (task A) and the top 3 of [GITHUB_REVIEW_2026-11-08.md](GITHUB_REVIEW_2026-11-08.md) (task B). Same rules as above: no value changed or interpolated, no `Math.random`, no paid API, nothing under `datos/` or `data/` touched by hand.
+
+## A. `dos_hitos` / `two_milestones` (model 28)  ·  done
+
+- **What it is**: one daily series seen from two milestone dates. Each milestone rebases the series to 100 at the close of its date; the two curves are aligned by **trading sessions since the milestone**, not by calendar date. Top panel: growth, base 100 (log axis by default when max/min > 5, linear otherwise, `escala` forces either). Bottom panel: drawdown from the running maximum. Tip labels with name + date, a session counter, peak and trough annotations, a shaded "no projection" block where the shorter series ends (translatable text), a live table (return, drawdown now, worst drawdown) that is swapped for two big figures at the end, and a configurable closing line ("Historical comparison, not a forecast").
+- **Where**: layer `dos_hitos` in `motor/capas_extra.js` (`calcularDosHitos` is the pure computation, exported and tested); template `dos_hitos` in `servidor/plantillas_extra.mjs` (alias `two_milestones`); texts via `registrar('ch', …)` in es and en; compiler messages translated in `servidor/mensajes_en.mjs`; new top-level spec key `pendiente` (compiler error `pieza pendiente: …`) for pieces that must fail with a clear reason.
+- **Every figure comes from the series**: the compiler report lists, per milestone, the row used, base value, sessions, return, current and worst drawdown, peak and dates (`informe.cifras`, type `hito`). `prueba-plantillas.mjs` recomputes them independently from the CSV and compares.
+- **Demonstration data**: `fred_dtwexbgs` (nominal broad US dollar index, Federal Reserve, public domain), milestones 2008-09-15 and 2020-03-11. **The dates and their names are claims to confirm against a primary source before publishing**; they are marked as such in `specs/ejemplo_dos_hitos_dolar.json` and in the template note. Example folder: `examples/two-milestones-dollar/`; gallery: `dos-hitos-h/v`.
+- **Netscape / ChatGPT**: `specs/ejemplo_dos_hitos_nasdaq.json` is saved with `pendiente: "pending open licence: …"` and fails with that message as its first error until an open daily Nasdaq-100 series exists. No Yahoo, no `fred_nasdaqcom`, none of the video's figures.
+- **Improvements over the reference video** (see the analysis): collision-free labels (audited), contrast ≥ 4.5:1 measured on pixels, a single locale layer for every number and date, an x-axis title, a source footer, and the tip/peak/trough annotations placed by scoring candidate positions against the real curves (`prueba-calidad` and the collision auditor pass in both formats).
+- **Vertical decision**: the 40 px name floor and the 72 % safe zone leave no right-hand gutter for tip labels (a 360 px plot would remain), so in 9:16 the names go in a two-row legend above the chart (colour dash + name + date) and the plot gets the full width. Horizontal keeps labels at the tip, in a gutter, joined to the head by a dotted guide.
+- **Mistake caught while building**: previews rendered at half scale hid layout collisions that exist at 1080 px (the design system's type floors do not scale with `u`). The decisions above were taken from full-scale frames and the auditor, which runs at full size.
+- **Limits**: needs a daily series (one row per session; the compiler refuses coarser data); the template is not in the studio's template list because it needs two named dates (queue in `ROADMAP.md`); it is a tool for the CLI, MCP and spec files.
+- **Tests**: `prueba-plantillas.mjs` §2c (es/en × horizontal/vertical, independent recomputation, log/linear rule, error cases, the pending spec, the dollar spec), `prueba-calidad.mjs` (model added: type floors, contrast, safe zone, collisions, reading time, both formats), `prueba-idioma.mjs` (no Spanish drawn in English; no unresolved keys in Spanish).
+
+## B1. Per-pixel-column min/max decimation in `linea`  ·  done
+
+- **Defect** (VIX daily from FRED, 9,311 rows, `before/n3-decimacion-vix-antes.png`): the old fixed stride (`bucket`) skipped rows, so the 2020 peak was drawn at **79.13** while the data's real maximum is **82.69**, and the 2008 peak lost its top. The axis already included 82.69, so the line stopped short of its own scale.
+- **Change**: `motor/decimar.js` `decimarPorColumna` (own code, uPlot idea, credited in the notices). From every pixel column it keeps the first, minimum, maximum and last REAL row, in chronological order; null rows split the line; nothing is interpolated. `linea` uses it when more than ~2 rows per pixel of plot width are visible and no `curva` is declared (`decimar: false` switches it off for A/B comparisons). VIX: 9,311 rows → 4,977 drawn points.
+- **Test** (`prueba-calidad.mjs` §0c): synthetic series with an isolated peak, trough and null gaps — drawn max and min equal the data's exactly, per-column min/max equal, ≤ 4 points per column, first/last row present, gaps split the line, only real rows; on the real VIX series the drawn maximum is 82.69 and the old stride's was 79.13 (control).
+- Images: `before/n3-decimacion-vix-antes.png` and `before/n3-decimacion-vix-despues.png`. The committed gallery does not change: `historia` (Fed balance sheet) has 1,248 weekly rows, below the threshold.
+
+## B2. Colour-blind check of the series colours (Okabe-Ito and Paul Tol as references)  ·  done
+
+- **Test** (`prueba-calidad.mjs` §0d): the four series colours of each of the three themes, pairwise CIEDE2000 under deuteranopia, protanopia and tritanopia (culori), minimum ΔE2000 = 8 (about four times the just-noticeable difference). The two reference palettes (Okabe-Ito without black, Tol "bright") are printed next to it: their weakest pairs are 12.6 / 11.3 (deuteranopia), 12.9 / 16.0 (protanopia), 11.0 / 10.7 (tritanopia).
+- **Result**: all themes pass. The weakest RTL pair is teal `#50B5A2` against stone `#CBC6BC` under protanopia, **ΔE2000 = 8.3**, below the references' 12.9: it passes the floor but with little margin. No colour was changed (the teal is the brand's; the stone is the neutral fourth series). Mitigation already in the designs: lines carry direct labels, and signed numbers (+/−) never rely on colour alone.
+- **Control**: an orange / olive-green pair at equal lightness scores 2.2 and fails the same test.
+
+## B3. 2-D label placement ("choices")  ·  not done (queued)
+
+`dos_hitos` contains a small private version (candidate positions scored against the curves and the other boxes); a shared `elegirPosicion` in `motor/etiquetas.js` for `bump`, `pendiente` and multi-series `linea` is in the queue (see `docs/ROADMAP.md`). The avoid-overlap repo has no licence; only its README's idea is used.

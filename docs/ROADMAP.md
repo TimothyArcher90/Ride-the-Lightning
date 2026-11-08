@@ -83,7 +83,7 @@ Source: [research/OPEN_SOURCE_SURVEY.md](research/OPEN_SOURCE_SURVEY.md) (permis
 - [x] 4. Sankey: d3-sankey layout (BSD-3) transposed for 9:16, labels outside the nodes; keep the current layout as fallback; update "Known issues". *Done 2026-11-04: vertical layout from d3-sankey transposed (top to bottom); horizontal untouched.*
 - [x] 5. Palettes: viridis/cividis + light-neutral diverging scale from d3-scale-chromatic (read its full NOTICE first); add culori (MIT) color-blind simulation to `scripts/prueba-calidad.mjs` (dev only); print extreme values on the calendar heatmap. *Done except printing extremes on the vertical calendar (cells are ~38 px wide; any legible number needs a font below the vertical floor). cividis intentionally not vendored (Battelle license): see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).*
 - [x] 6. Lines: `curveStep` for rate-like series and opt-in `monotoneX` for sparse series (d3-shape, ISC); always declared on screen. *Done 2026-11-04: `curva: "escalon"` (stepAfter) / `"monotono"`, opt-in per layer, default stays linear; tested for no overshoot.*
-- [ ] 7. Long lines: per-pixel-column min/max decimation (own code) keeping every extreme exactly.
+- [x] 7. Long lines: per-pixel-column min/max decimation (own code) keeping every extreme exactly. *Done 2026-11-08: `motor/decimar.js`, used by `linea` (see INTEGRATION_LOG, 2026-11-08).*
 - [x] 8. Treemap: d3-hierarchy `resquarify` (ISC) for quarter-to-quarter stability (also unblocks item 18 above) + semantic colors instead of one hue per cell. *Done 2026-11-04: color = share of the total (viridis), because category tables carry no cost/benefit semantics; `resquarify` is on by default when every row has `anterior` (mean displacement 16 px vs 142 px).*
 - [ ] 9. New models inspired by RAWGraphs (Apache-2.0): beeswarm (dodge), ridgeline, streamgraph.
 - [ ] 10. Spikes: 2x supersampled render, temporal sub-frame blur, declared LOESS trend (d3-regression, BSD-3).
@@ -104,4 +104,17 @@ Ordered; the Sunday scheduled task takes the first unchecked item after the open
 - [ ] **More ideas for single series** in step 2 (beyond country series): "compare with a related series", "show the biggest moves", suggested from the catalog category.
 - [ ] **Real OHLC for candlesticks** from an open source (Yahoo is personal-use only; look for CC BY/ public-domain daily OHLC).
 - [ ] **IMF permission**: send the licence request (copyright@imf.org) if debt/deficit series will be monetized at scale; until then keep them flagged *restricted*.
-- [ ] **Output language**: make the in-chart text language switchable (ES/EN) via a dictionary, so English channels can use the same pieces.
+- [x] **Output language**: make the in-chart text language switchable (ES/EN) via a dictionary, so English channels can use the same pieces. *Done 2026-11-08 (`spec.idioma`, `motor/idioma.js`).*
+
+## Queue — from the 2026-11-08 GitHub review and the two-milestones work
+
+Source: [research/GITHUB_REVIEW_2026-11-08.md](research/GITHUB_REVIEW_2026-11-08.md), [research/REFERENCIA_NETSCAPE_CHATGPT.md](research/REFERENCIA_NETSCAPE_CHATGPT.md), [research/INTEGRATION_LOG.md](research/INTEGRATION_LOG.md) (2026-11-08).
+
+- [ ] **Netscape / ChatGPT piece**: `specs/ejemplo_dos_hitos_nasdaq.json` is saved and fails on purpose ("pending open licence"). Needs an open-licence daily Nasdaq-100 series (none in the catalog; FRED `NASDAQ100` covers ~10 years and carries Nasdaq terms; Yahoo is personal use; `fred_nasdaqcom` terms not verified) and the two milestone dates confirmed against primary sources (SEC, OpenAI).
+- [ ] **Two milestones in the studio UI**: the template needs two named dates, so it is hidden from `/api/plantillas` (`soloSpec`) and only reachable from a spec, the CLI or the MCP. Add a "milestones" step (two date pickers + names) and the `TPL` entry in `web/i18n.js`.
+- [ ] **Two milestones, vertical**: the 40 px name floor leaves no right-hand gutter, so names go in a legend above the chart instead of at the line tip. Revisit if a tip label can be placed inside the plot without crossing a curve.
+- [ ] **2-D "choices" label placement** (kevinschaul/avoid-overlap idea; its repo has no licence, so re-derive from the README only): candidate positions (right, above, below, left) with leader lines for line-end labels and callouts. `dos_hitos` already uses a small private version for its peak/trough annotations; a shared `elegirPosicion` in `motor/etiquetas.js` would serve `bump`, `pendiente` and multi-series `linea`.
+- [ ] **Text measuring / line breaking** (chenglou/pretext, MIT): only if CJK or very long compound names appear; the `…` truncation policy is a separate pass.
+- [ ] **Contrast ramps for a light "paper" theme** (adobe/leonardo, Apache-2.0) when STYLE_REFERENCES P1.5 is built.
+- [ ] **Chart-to-chart morph** (Vizzu idea, Apache-2.0; STYLE_REFERENCES P2 item 8): read its keyframe rules; cannot reuse its clock.
+- [ ] **Alternating milestone stems** (d3-milestones idea, Apache-2.0) for several close events on one line (Fed balance sheet: 2008, 2020, 2022).

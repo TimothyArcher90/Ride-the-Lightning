@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "titulo": "The broad dollar after two shocks",
+  "idioma": "en",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 17.5,
+  "datos": {
+    "d": {
+      "archivo": "datos/biblioteca/fred_dtwexbgs.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "DTWEXBGS",
+          "nombre": "Índice amplio nominal del dólar (Reserva Federal)",
+          "color": "oro",
+          "unidad": "Índice ene-2006=100",
+          "decimales": "auto"
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "The broad dollar after two shocks",
+      "color": "oro",
+      "sub": "The same series from two dates",
+      "t": [
+        0.2,
+        17.4
+      ]
+    },
+    {
+      "tipo": "dos_hitos",
+      "datos": "d",
+      "id": "g1",
+      "t": [
+        0.9,
+        9.9
+      ],
+      "espera": 3.4,
+      "hitos": [
+        {
+          "fecha": "2008-09-15",
+          "nombre": "Lehman filing"
+        },
+        {
+          "fecha": "2020-03-11",
+          "nombre": "COVID pandemic"
+        }
+      ]
+    }
+  ],
+  "_nota": "EXAMPLE of the two_milestones template on an open-licence daily series (FRED DTWEXBGS, Federal Reserve, public domain). The two milestone dates (2008-09-15 and 2020-03-11) and their names are CLAIMS: confirm them against a primary source (Lehman Brothers Holdings Inc. Chapter 11 filing; WHO statement of 11 March 2020) before publishing. Every figure on screen is computed from the series."
+}

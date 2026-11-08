@@ -1,4 +1,4 @@
-// Gallery cases: one real-data case per chart model (27 models + 4 variants), shared by `generar-galeria.mjs`
+// Gallery cases: one real-data case per chart model (28 models + 4 variants), shared by `generar-galeria.mjs`
 // (docs/gallery + examples/) and by the docs. Every case builds a `generar()` input for a given format, so the
 // result is the same spec a user would get from the studio: nothing is typed by hand, every figure comes from a file.
 //
@@ -92,7 +92,7 @@ function dumbbellIngresos(dir) {
 }
 
 /**
- * Each case: id (stable file stem), modelo (one of the 27 model ids, or the variant it belongs to), nombre (English), plantilla,
+ * Each case: id (stable file stem), modelo (one of the 28 model ids, or the variant it belongs to), nombre (English), plantilla,
  * fuente/licencia (English, for the docs), `faltan()` (names of data files missing on this machine), `entrada(formato, dir)` →
  * input for generar(). `ejemplo` makes the case a shipped example. `restringido` means: spec only, no image, no data copy.
  */
@@ -177,6 +177,9 @@ export const CASOS = [
   {id: 'ranking', modelo: 'ranking', nombre: 'Ranking with codes', plantilla: 'ranking_pais', fuente: 'World Bank WDI: GDP per capita, latest value of 45 countries', licencia: 'CC BY 4.0', faltan: () => (fs.existsSync(path.join(RAIZ, 'datos', 'paises-ultimos.json')) ? [] : ['datos/paises-ultimos.json']),
     entrada: (f, dir) => ({plantilla: 'ranking_pais', series: [rankingPib(dir)], resalta: 'COL', titulo: 'PIB por habitante'}),
     ejemplo: {slug: 'gdp-per-capita-ranking', que: 'GDP per capita of 45 countries, ranked, with Colombia highlighted (it appears with its real rank even when it is not in the top).', video: 'v'}},
+  {id: 'dos-hitos', modelo: 'dos_hitos', nombre: 'Two milestones (same series from two dates)', plantilla: 'dos_hitos', fuente: 'Federal Reserve via FRED: nominal broad US dollar index (DTWEXBGS), daily', licencia: 'Public domain (US government). The two milestone dates and names are claims to confirm against a primary source before publishing.', faltan: () => (hay('fred_dtwexbgs') ? [] : ['fred_dtwexbgs']),
+    entrada: () => ({plantilla: 'dos_hitos', series: bib('fred_dtwexbgs'), titulo: 'El dólar tras dos choques', hitos: [{fecha: '2008-09-15', nombre: 'Quiebra de Lehman'}, {fecha: '2020-03-11', nombre: 'Pandemia de COVID'}]}),
+    ejemplo: {slug: 'two-milestones-dollar', que: 'The broad dollar index seen from two milestone dates: each rebased to 100 at its close and aligned by trading sessions since the milestone, with the drawdown from the running peak, a live table and two final figures. The younger series ends first and the screen says so (no projection). The Netscape/ChatGPT version of this piece is saved as `specs/ejemplo_dos_hitos_nasdaq.json` and fails on purpose until an open-licence Nasdaq-100 series exists.'}},
 ];
 
 /** Examples that are published as spec only (restricted data licences): no preview image, no data copy. */

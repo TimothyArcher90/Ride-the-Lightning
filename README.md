@@ -1,7 +1,7 @@
 # ⚡ Ride the Lightning
 
 **A universal, local studio that turns real, sourced data into broadcast-quality animated charts — for YouTube, Reels, Shorts and Premiere.**
-Every number on screen comes from a verifiable row of data. 27 chart models · 72 countries · SEC filings for US-listed companies · 4,400+ ready-to-use series.
+Every number on screen comes from a verifiable row of data. 28 chart models · 72 countries · SEC filings for US-listed companies · 4,400+ ready-to-use series.
 
 <p align="center"><img src="examples/video/README.gif" alt="Ride the Lightning sample animation" width="720"></p>
 
@@ -87,11 +87,11 @@ Highlights
 
 ## Chart models
 
-27 models (29 ids counting variants such as stacked 100 % and returns histogram) in four groups — see [docs/MODELS.md](docs/MODELS.md) for inputs, selection rules, honesty notes and images of each.
+28 models (30 ids counting variants such as stacked 100 % and returns histogram) in four groups — see [docs/MODELS.md](docs/MODELS.md) for inputs, selection rules, honesty notes and images of each.
 
 | Group | Models (id) |
 |---|---|
-| **Time series** | story of one figure (`historia`), one against the rest (`comparar`), small multiples (`panel`), bars (`barras`), bar-chart race (`carrera`), stacked area absolute / 100 % (`apilada`, `apilada100`), grouped bars (`agrupadas`), bump / rank over time (`bump`), candlesticks (`velas`), histogram of values / of returns (`histograma`, `retornos`), calendar heat map (`calendario`), this year vs. historical range (`bandas`), bullet / gauge vs. history (`bullet`) |
+| **Time series** | story of one figure (`historia`), one against the rest (`comparar`), small multiples (`panel`), bars (`barras`), bar-chart race (`carrera`), stacked area absolute / 100 % (`apilada`, `apilada100`), grouped bars (`agrupadas`), bump / rank over time (`bump`), candlesticks (`velas`), histogram of values / of returns (`histograma`, `retornos`), calendar heat map (`calendario`), one series from two milestone dates (`dos_hitos`), this year vs. historical range (`bandas`), bullet / gauge vs. history (`bullet`) |
 | **Several series, different units** | slope chart (`pendiente`), diverging bars of % change (`divergente`), correlation heat map (`correlacion`), scatter with OLS + R² (`dispersion`), radar profile of a country or entity (`radar`) |
 | **Parts of a total** | donut (`donut`), treemap (`treemap`), waffle — "each square = 1 %" (`waffle`), lollipop (`lollipop`), pictogram (`pictograma`), ranking with country codes (`ranking`) |
 | **Flows and bridges** | Sankey for company income statements (`sankey`), waterfall (`cascada`), dumbbell before/after (`dumbbell`) |
@@ -166,7 +166,7 @@ Enforced by the compiler, not by good intentions.
 
 ## Professional output
 
-A single design system ([`motor/diseno.js`](motor/diseno.js)) drives all 27 models in both formats:
+A single design system ([`motor/diseno.js`](motor/diseno.js)) drives all 28 models in both formats:
 
 - **Type scale with enforced minimums** (vertical 1080 px wide: labels ≥ 40 px, axes/units ≥ 32, footer ≥ 28), WCAG contrast ≥ 4.5:1.
 - **Mandatory source footer** on every piece: *"Source: <name> · <date of last data point> · RTL"*.
@@ -174,7 +174,7 @@ A single design system ([`motor/diseno.js`](motor/diseno.js)) drives all 27 mode
 - **Motion:** Material easing curves (never linear UI motion), 40 ms stagger, annotation cards stay ≥ 3 s, one protagonist per shot.
 - **Deliverables:** reference MP4 (`libx264 -crf 17 -preset slow -yuv420p`) **and** ProRes 4444 with alpha for Premiere. No burned-in subtitles.
 
-An automated checklist (`node scripts/prueba-calidad.mjs`) measures the real canvas text and verifies all of this for 27 models × 2 formats.
+An automated checklist (`node scripts/prueba-calidad.mjs`) measures the real canvas text and verifies all of this for 17 models × 2 formats (the 16 base ones plus `dos_hitos`; the other extras are covered by `prueba-universal`).
 
 ---
 
@@ -209,7 +209,7 @@ npm run gallery
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Using the studio, step by step |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layers, directory map, tests |
 | [docs/SPEC_REFERENCE.md](docs/SPEC_REFERENCE.md) | The spec format and every layer |
-| [docs/MODELS.md](docs/MODELS.md) | The 27 chart models with images and rules |
+| [docs/MODELS.md](docs/MODELS.md) | The 28 chart models with images and rules |
 | [docs/EXAMPLES.md](docs/EXAMPLES.md) | The 15 examples and how to regenerate them |
 | [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) · [DATA_FORMAT.md](docs/DATA_FORMAT.md) · [COUNTRIES.md](docs/COUNTRIES.md) · [data-verification.md](docs/data-verification.md) | Sources, formats, country coverage, verification |
 | [docs/QUARTERLY_REPORTS.md](docs/QUARTERLY_REPORTS.md) | SEC company library and the filing watcher |
@@ -226,7 +226,7 @@ node scripts/prueba-tablas.mjs        # table recognition (flows / categories / 
 node scripts/prueba-plantillas.mjs    # templates against the catalog
 node scripts/prueba-visualizador.mjs  # visualizer options are distinct and pass the audit
 node scripts/prueba-universal.mjs     # the 11 newer models
-node scripts/prueba-calidad.mjs       # professional-quality checklist, 27 models × 2 formats
+node scripts/prueba-calidad.mjs       # professional-quality checklist, 17 models × 2 formats + pixel decimation and colour-blind palette tests
 node scripts/prueba-conectores.mjs    # connectors vs. live APIs (network)
 node scripts/prueba-paises.mjs        # country cards and comparisons (network)
 ```

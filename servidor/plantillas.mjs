@@ -235,12 +235,14 @@ function correlacion({titulo}) {
  * Genera la spec de una pieza. `entrada`: {plantilla, series:[…], momentos:[{ancla, etiqueta, tipo}], camara, formato, titulo, escala, vivo}
  * Devuelve {spec, informe, notas}. La spec es la misma que un experto escribiría a mano (se puede abrir y editar en «Modo experto»).
  */
+const ALIAS_PLANTILLA = {two_milestones: 'dos_hitos'};
 export function generar(entrada) {
   const previo = idiomaActual();   // el idioma de la pieza no se filtra a quien llame después
   try { return generarEn(entrada); } finally { fijarIdioma(previo); }
 }
 function generarEn(entrada) {
-  const {plantilla = 'historia', series = [], camara = 'documental', formato = 'horizontal', escala = 'auto', vivo = null} = entrada;
+  const {series = [], camara = 'documental', formato = 'horizontal', escala = 'auto', vivo = null} = entrada;
+  const plantilla = ALIAS_PLANTILLA[entrada.plantilla] ?? entrada.plantilla ?? 'historia';   // «two_milestones» = «dos_hitos»
   const idioma = fijarIdioma(entrada.idioma);   // 'es' por defecto; 'en' fija TODO el texto dibujado y las notas de la pieza
   const def = PLANTILLAS.find((p) => p.id === plantilla); if (!def) throw new Error(t('pl.e_plantilla', {p: plantilla}));
   const nombreP = idioma === 'en' ? (def.nombre_en ?? def.nombre) : def.nombre;

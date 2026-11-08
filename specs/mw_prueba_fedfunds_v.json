@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "titulo": "Tasa de los fondos federales",
+  "formato": "vertical",
+  "fps": 30,
+  "duracion": 16,
+  "datos": {
+    "d": {
+      "archivo": "datos/biblioteca/fred_fedfunds.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "FEDFUNDS",
+          "nombre": "Tasa de los fondos federales (mensual)",
+          "color": "oro",
+          "sufijo": " %",
+          "unidad": "% anual",
+          "decimales": 2
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Tasa de los fondos federales",
+      "color": "oro",
+      "t": [
+        0.2,
+        15.9
+      ],
+      "sub": "% anual · {desde}–{hasta}"
+    },
+    {
+      "tipo": "linea",
+      "id": "g1",
+      "datos": "d",
+      "area": true,
+      "escala": "log",
+      "t": [
+        0.6,
+        5.1
+      ],
+      "camara": [
+        {
+          "t": 0,
+          "x": "auto",
+          "y": "auto"
+        },
+        {
+          "t": 6.5,
+          "x": [
+            223395840000,
+            497007360000
+          ],
+          "y": "ajustar",
+          "mov": 0.9
+        },
+        {
+          "t": 10.8,
+          "x": [
+            1517201280000,
+            1790812800000
+          ],
+          "y": "ajustar",
+          "mov": 0.9
+        },
+        {
+          "t": 15.1,
+          "x": "auto",
+          "y": "auto",
+          "mov": 0.9
+        }
+      ]
+    },
+    {
+      "tipo": "contador",
+      "capa": "g1",
+      "serie": 0,
+      "t": [
+        0,
+        15.9
+      ]
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g1",
+      "serie": 0,
+      "ancla": {
+        "max": true
+      },
+      "t": [
+        6.65,
+        9.65
+      ],
+      "texto": "Máximo",
+      "color": "oro"
+    },
+    {
+      "tipo": "llamada",
+      "capa": "g1",
+      "serie": 0,
+      "ancla": {
+        "ultimo": true
+      },
+      "t": [
+        10.95,
+        13.95
+      ],
+      "texto": "Último dato",
+      "color": "oro"
+    }
+  ]
+}

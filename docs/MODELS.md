@@ -1,6 +1,6 @@
 # Chart model catalogue
 
-Ride the Lightning ships **27 chart models** (plus a few variants). Every image below is a real final frame rendered from real data with `npm run gallery` (see [EXAMPLES.md](EXAMPLES.md)); horizontal is 16:9, vertical is 9:16 for reels (with the platform safe zone respected).
+Ride the Lightning ships **28 chart models** (plus a few variants). Every image below is a real final frame rendered from real data with `npm run gallery` (see [EXAMPLES.md](EXAMPLES.md)); horizontal is 16:9, vertical is 9:16 for reels (with the platform safe zone respected).
 
 > **Language note.** The text *inside* the charts (titles, notes, source line) is Spanish: that is the output language of the engine and of the channel it was built for. The repository, the docs and the code comments are English.
 
@@ -9,6 +9,7 @@ Ride the Lightning ships **27 chart models** (plus a few variants). Every image 
 | Your data looks like… | Use |
 |---|---|
 | One series over time | `historia`, `bandas`, `histograma`, `velas`, `calendario` |
+| One daily series seen from **two dates** (two events, same index) | `dos_hitos` (alias `two_milestones`) |
 | Several series, **same unit**, over time | `comparar`, `apilada`, `carrera`, `agrupadas`, `bump` |
 | Several series, **different units** | `comparar` (indexed to 100, declared), `pendiente`, `divergente`, `panel`, `correlacion`, `radar`, `bullet` |
 | Parts of a total at one moment (a table) | `donut`, `treemap`, `waffle`, `lollipop`, `pictograma` |
@@ -147,6 +148,15 @@ When: “is this year normal?” for monthly data. Needs: 1 series with ≥ 5 ye
 | Horizontal | Vertical |
 |---|---|
 | ![](gallery/bandas-h.png) | ![](gallery/bandas-v.png) |
+
+### `dos_hitos` — one series, two milestones (alias `two_milestones`)
+When: "what did the same index do after event A versus after event B?". Needs: **1 daily series** and `hitos`: two `AAAA-MM-DD` dates with a name each (the template refuses to run without them, so it is not in the studio's template list: use a spec, the CLI or the MCP). Declares: each milestone rebases the series to 100 at the close of its date; the two curves are aligned by trading sessions since the milestone (not by calendar date); log axis when max/min > 5 (`escala` forces `lineal` or `log`); where the shorter series ends the screen shades "no projection". Shows: tip labels (name + date), session counter, peak and trough annotations, drawdown from the running maximum, a live table (return, drawdown now, worst drawdown) and two final figures. Every figure is computed from the series and listed in the compiler report; the milestone dates and names are **claims to confirm against a primary source**. In 9:16 the names sit in a legend above the chart (the 40 px name floor leaves no gutter at the line tip).
+
+| Horizontal | Vertical |
+|---|---|
+| ![](gallery/dos-hitos-h.png) | ![](gallery/dos-hitos-v.png) |
+
+Example: [two-milestones-dollar](../examples/two-milestones-dollar/) (nominal broad dollar index, Federal Reserve, public domain). The Netscape / ChatGPT version, [`specs/ejemplo_dos_hitos_nasdaq.json`](../specs/ejemplo_dos_hitos_nasdaq.json), fails on purpose with "pending open licence" until an open daily Nasdaq-100 series exists.
 
 ### `bullet` — gauge against history
 When: where the last value sits in its own history. Needs: 1–5 series. Declares: three bands (min–P25, P25–P75, P75–max), the target line = median (computed) unless you pass a hand-written target **with a verified source**; scale starts at 0.

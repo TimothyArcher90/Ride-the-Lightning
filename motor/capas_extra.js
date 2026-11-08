@@ -4,9 +4,9 @@
 // las filas de los datos o es una cuenta exacta sobre ellas, y la escala de cada gráfica se DECLARA en pantalla (nota arriba).
 // Tipografía: tamaños base de 1080 px de lado corto que pasan por el piso del sistema de diseño (motor/diseno.js).
 import {colorDivergente} from './escalas.js';
-import {PALETA, COLOR, TEMA, clamp, lerp, ease, prog, colorDe, mezcla, rgba, fmtNum, fmtSigno, fmtFecha, ticksNum, ticksFecha, etiquetaTick} from './nucleo.js';
-import {escalarFuente, fuenteCss, margenes, envolver, contraste, entrada as entradaDiseno} from './diseno.js';
-import {envolverEntero} from './etiquetas.js';
+import {PALETA, COLOR, TEMA, clamp, lerp, ease, prog, colorDe, mezcla, rgba, fmtNum, fmtSigno, fmtPct, fmtFecha, ticksNum, ticksFecha, etiquetaTick} from './nucleo.js';
+import {escalarFuente, fuenteCss, margenes, envolver, contraste, legible, entrada as entradaDiseno} from './diseno.js';
+import {envolverEntero, relajar1D} from './etiquetas.js';
 import {t as tr, registrar, idioma, MESES_CORTO} from './idioma.js';   // «tr»: en las capas «t» es el tiempo
 
 // Textos dibujados por los modelos del visualizador universal (es = original, en = versión inglesa). Se leen con tr('ce.clave', {vars}).
@@ -48,11 +48,30 @@ registrar('ce', {
   ranking_cero: {es: ' Y ARRANCA EN 0', en: ' AND STARTS AT 0'},
   ranking_om: {es: ' SE MUESTRAN {n} DE {m}.', en: ' SHOWING {n} OF {m}.'},
 });
+// Textos del modelo «dos hitos» (dos_hitos). Todo lo que se dibuja pasa por tr('ch.clave', {vars}).
+registrar('ch', {
+  nota: {es: 'CADA HITO REBASA LA SERIE A BASE 100 EN EL CIERRE DE SU FECHA Y LAS DOS SE ALINEAN POR SESIONES DESDE EL HITO.{log}', en: 'EACH MILESTONE REBASES THE SERIES TO 100 AT THE CLOSE OF ITS DATE, AND BOTH ARE ALIGNED BY SESSIONS SINCE THE MILESTONE.{log}'},
+  nota_log: {es: ' ESCALA LOGARÍTMICA.', en: ' LOGARITHMIC SCALE.'},
+  panel_crec: {es: 'CRECIMIENTO, BASE 100', en: 'GROWTH, BASE 100'},
+  panel_caida: {es: 'CAÍDA DESDE EL MÁXIMO', en: 'DRAWDOWN FROM PEAK'},
+  sesion: {es: 'SESIÓN', en: 'SESSION'},
+  eje_x: {es: 'SESIONES DESDE EL HITO', en: 'SESSIONS SINCE THE MILESTONE'},
+  sin_proy: {es: '{nombre} TERMINA EN LA SESIÓN {n}. SIN PROYECCIÓN.', en: '{nombre} ENDS AT SESSION {n}. NO PROJECTION.'},
+  sin_proy_corto: {es: 'SIN PROYECCIÓN', en: 'NO PROJECTION'},
+  pico: {es: 'MÁXIMO {v}', en: 'PEAK {v}'},
+  suelo: {es: 'SUELO {v}', en: 'TROUGH {v}'},
+  retorno: {es: 'Retorno', en: 'Return'},
+  caida_hoy: {es: 'Caída hoy', en: 'Drawdown now'},
+  peor_caida: {es: 'Peor caída', en: 'Worst drawdown'},
+  kpi_peor: {es: 'PEOR CAÍDA {v}', en: 'WORST DRAWDOWN {v}'},
+  aviso: {es: 'COMPARACIÓN HISTÓRICA, NO UNA PROYECCIÓN.', en: 'HISTORICAL COMPARISON, NOT A FORECAST.'},
+  hito_n: {es: 'Hito {n}', en: 'Milestone {n}'},
+});
 const mes3 = () => MESES_CORTO[idioma()];
 
-export const TIPOS_EXTRA = ['radar', 'apilada', 'velas', 'histograma', 'dumbbell', 'calendario', 'agrupadas', 'bullet', 'bandas', 'pictograma', 'ranking'];
+export const TIPOS_EXTRA = ['radar', 'apilada', 'velas', 'histograma', 'dumbbell', 'calendario', 'agrupadas', 'bullet', 'bandas', 'pictograma', 'ranking', 'dos_hitos'];
 /** Qué clase de dato consume cada capa: serie de tiempo, tabla de categorías, o ambas. */
-export const EXTRA_CLASE = {radar: 'ambas', apilada: 'serie', velas: 'serie', histograma: 'serie', dumbbell: 'ambas', calendario: 'serie', agrupadas: 'serie', bullet: 'serie', bandas: 'serie', pictograma: 'categorias', ranking: 'categorias'};
+export const EXTRA_CLASE = {radar: 'ambas', apilada: 'serie', velas: 'serie', histograma: 'serie', dumbbell: 'ambas', calendario: 'serie', agrupadas: 'serie', bullet: 'serie', bandas: 'serie', pictograma: 'categorias', ranking: 'categorias', dos_hitos: 'serie'};
 
 // ── utilidades ─────────────────────────────────────────────────────────────────────────────────────────────────
 /** fmtNum que escribe el cero como «0» (con 'auto' daba «0,000000») y no deja que un valor casi nulo salga como «−0,0». */
@@ -641,7 +660,265 @@ function ranking(env, capa) {
   ctx.restore();
 }
 
-export const CAPAS_EXTRA = {radar, apilada, velas, histograma, dumbbell, calendario, agrupadas, bullet, bandas, pictograma, ranking};
+// ═══ 12. DOS HITOS (una serie diaria, dos fechas-hito) ═══════════════════════════════════════════════════════════
+// Cada hito rebasa la MISMA serie a base 100 en el cierre de su fecha; las dos curvas se alinean por SESIONES desde el hito (no por fecha).
+// Panel superior: crecimiento base 100 (eje logarítmico por defecto si máx/mín > 5). Panel inferior: caída desde el máximo acumulado.
+// Etiquetas en la punta (nombre + fecha), contador de sesión, anotaciones de máximo y suelo, sombreado «sin proyección» donde una serie termina,
+// tabla viva (retorno, caída hoy, peor caída) que al final se cambia por dos KPI. NINGUNA cifra se teclea: todo sale de la serie (calcularDosHitos).
+const msIso = (f) => { if (typeof f === 'number') return f; const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(f ?? '')); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : NaN; };
+const isoDe = (ms) => new Date(ms).toISOString().slice(0, 10);
+
+/**
+ * Cálculo puro (sin dibujar) del modelo: devuelve {errores, avisos, hitos:[{nombre, fecha, base, n, v[], dd[], ddMin[], pico, suelo, ret, ddFin, peor}], nMax, lo, hi, escala, corto}.
+ * v = valor rebasado (valor ÷ valor del hito × 100); dd = % de caída respecto al máximo acumulado (≤ 0); sesiones = filas con dato desde el hito.
+ */
+export function calcularDosHitos(capa, tab) {
+  const r = {errores: [], avisos: [], hitos: [], nMax: 0, lo: null, hi: null, escala: 'lineal', corto: null};
+  const si = capa.series?.[0] ?? 0, S = tab.series?.[si];
+  if (!S) { r.errores.push(`serie ${si} no existe (hay ${tab.series?.length ?? 0}).`); return r; }
+  const hs = capa.hitos;
+  if (!Array.isArray(hs) || hs.length !== 2) { r.errores.push(`dos_hitos necesita exactamente 2 hitos en "hitos":[{"fecha":"AAAA-MM-DD","nombre":"…"},…] (hay ${Array.isArray(hs) ? hs.length : 0}).`); return r; }
+  const X = [], Y = [];
+  tab.x.forEach((x, i) => { if (S.y[i] != null) { X.push(x); Y.push(S.y[i]); } });
+  if (X.length < 60) { r.errores.push(`dos_hitos necesita una serie diaria con muchos datos (hay ${X.length}).`); return r; }
+  if (pasoMediano(X) > 5 * DIA) { r.errores.push(`dos_hitos necesita una serie diaria (hay un dato cada ${Math.round(pasoMediano(X) / DIA)} días): las sesiones se cuentan por fila con dato.`); return r; }
+  hs.forEach((h, k) => {
+    const nombre = String(h?.nombre ?? '').trim() || tr('ch.hito_n', {n: k + 1}), ms = msIso(h?.fecha);
+    if (!Number.isFinite(ms)) { r.errores.push(`el hito ${k + 1} no tiene una fecha AAAA-MM-DD válida.`); return; }
+    if (ms < X[0]) { r.errores.push(`el hito «${nombre}» (${isoDe(ms)}) cae antes del primer dato (${isoDe(X[0])}).`); return; }
+    let j = -1; for (let q = 0; q < X.length && X[q] <= ms; q++) j = q;
+    if (ms - X[j] > 5 * DIA) { r.errores.push(`el hito «${nombre}» (${isoDe(ms)}) no tiene una sesión a menos de 5 días (la anterior es ${isoDe(X[j])}).`); return; }
+    if (X[j] !== ms) r.avisos.push(`la fecha del hito «${nombre}» (${isoDe(ms)}) no es una sesión con dato; se usa la sesión anterior (${isoDe(X[j])}).`);
+    const n = X.length - j, base = Y[j];
+    if (!(base > 0)) { r.errores.push(`en el hito «${nombre}» el valor base no es positivo.`); return; }
+    if (n < 30) { r.errores.push(`desde el hito «${nombre}» quedan solo ${n} sesiones; hacen falta al menos 30.`); return; }
+    const v = new Array(n), dd = new Array(n), ddMin = new Array(n);
+    let mx = -Infinity, pk = 0, peor = 0, sPeor = 0;
+    for (let s = 0; s < n; s++) {
+      v[s] = (Y[j + s] / base) * 100;
+      if (v[s] > mx) mx = v[s];
+      if (v[s] > v[pk]) pk = s;
+      dd[s] = (v[s] / mx - 1) * 100;
+      if (dd[s] < peor) { peor = dd[s]; sPeor = s; }
+      ddMin[s] = peor;
+    }
+    r.hitos.push({nombre, pedida: ms, fila: j, fecha: X[j], exacta: X[j] === ms, base, n, v, dd, ddMin, x: X.slice(j), pico: {s: pk, v: v[pk], x: X[j + pk]}, suelo: peor < 0 ? {s: sPeor, dd: peor, x: X[j + sPeor]} : null, ret: v[n - 1] - 100, ddFin: dd[n - 1], peor});
+  });
+  if (r.errores.length) return r;
+  if (r.hitos[0].fila === r.hitos[1].fila) { r.errores.push(`los dos hitos caen en la misma sesión (${isoDe(r.hitos[0].fecha)}); no hay nada que comparar.`); return r; }
+  const todos = r.hitos.flatMap((h) => [h.pico.v, Math.min(...h.v)]);
+  r.lo = Math.min(...todos, 100); r.hi = Math.max(...todos, 100);
+  r.nMax = Math.max(...r.hitos.map((h) => h.n)) - 1;
+  const quiere = capa.escala ?? 'auto';
+  if (quiere === 'log') { if (r.lo > 0) r.escala = 'log'; else r.errores.push('la escala logarítmica necesita valores positivos.'); }
+  else if (quiere === 'auto' && r.lo > 0 && r.hi / r.lo > 5) r.escala = 'log';
+  else if (quiere !== 'auto' && quiere !== 'lineal') r.errores.push(`escala debe ser auto, lineal o log (no «${quiere}»).`);
+  const [a, b] = r.hitos;
+  if (a.n !== b.n) r.corto = a.n < b.n ? 0 : 1;
+  return r;
+}
+
+/** Marcas del eje de crecimiento (base 100). En log: 100·2ᵏ; si no salen 3–7, décadas o 1-2-5; si tampoco, marcas lineales sobre el eje log. */
+function ticksHitos(lo, hi, log) {
+  if (!log) return ticksNum(lo - (hi - lo) * 0.05, hi + (hi - lo) * 0.05, 5);
+  const dentro = (v) => v >= lo / 1.0001 && v <= hi * 1.0001, pot2 = [], dec = [];
+  for (let k = -14; k <= 14; k++) { const v = 100 * Math.pow(2, k); if (dentro(v)) pot2.push(v); const w = 100 * Math.pow(10, k); if (dentro(w)) dec.push(w); }
+  if (pot2.length >= 3 && pot2.length <= 7) return pot2;
+  if (dec.length >= 3) return dec;
+  const c125 = ticksLog10(lo, hi).filter(dentro);
+  if (c125.length >= 3) return c125;
+  return ticksNum(lo, hi, 5).filter((v) => v > 0);
+}
+
+function dosHitos(env, capa) {
+  const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
+  const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.9, 8.9], ap = aparece(env, capa, t0); if (ap <= 0) return;
+  const L = (capa._dh ??= calcularDosHitos(capa, tab)); if (L.errores.length) return;
+  const id = capa.id ?? 'dos_hitos', S = tam(env, 18), N = tam(env, 26), lhS = S * 1.3, lhN = N * 1.15, lhA = S * 1.25;
+  const col = [0, 1].map((k) => colorDe(capa.colores?.[k], k)), colT = col.map((c) => legible(c, PALETA.fondo)), nM = L.nMax, hs = L.hitos;
+  const sCur = prog(t, t0, t1, ease.io2) * nM, tSwap = t1 + (capa.espera ?? 3.4);
+  const log = L.escala === 'log', fx = log ? Math.log : (v) => v;
+  const rojo = legible(COLOR.rojo, PALETA.fondo), verde = legible(COLOR.verde, PALETA.fondo);
+  const colSigno = (v) => (v > 0.0005 ? verde : v < -0.0005 ? rojo : PALETA.blanco);
+  // ── textos que hacen falta ya para repartir el espacio
+  const nombres = hs.map((h) => h.nombre), fechas = hs.map((h) => fmtFecha(h.fecha, 'dia'));
+  const capNom = vert ? B.w - Math.max(...fechas.map((s) => med(env, s, 18, 700, true))) - 40 * u : 0.2 * (B.w - Math.min(B.w * 0.3, 540 * u) - 36 * u);
+  const lnom = nombres.map((s) => nombreEnLineas(env, s, capNom, 26, 800, vert ? 1 : 2));
+  const wG = vert ? 12 * u : Math.max(...lnom.flatMap((ls) => ls.map((s) => med(env, s, 26, 800))), ...fechas.map((s) => med(env, s, 18, 700, true))) + 22 * u, hLeyenda = vert ? 2 * lhN + 10 * u : 0;   // vertical: nombres en una leyenda sobre la gráfica (el piso de 40 px no deja cuneta)
+  // ── regiones: gráfica (izquierda o arriba) y tabla/KPI (derecha o abajo)
+  const gapB = 36 * u, wTab = vert ? B.w : Math.min(B.w * 0.3, 540 * u), rowH = S * 1.75, bw = vert ? (B.w - 24 * u) / 2 : wTab;
+  const txtPeor = hs.map((h) => tr('ch.kpi_peor', {v: fmtPct(h.peor, 1)})), lnPeor = txtPeor.map((s) => (med(env, s, 18, 700, true) <= bw - 24 * u ? [s] : [])), lnAviso = lineasDe(env, capa.aviso ?? tr('ch.aviso'), vert ? B.w : wTab, 18, 600, 2);
+  const lnomK = nombres.map((s) => nombreEnLineas(env, s, bw - 24 * u, 26, 800, 2)), hBloque = Math.max(...lnomK.map((ls) => ls.length * lhN)) + lhS * 2 + tam(env, 64) * 1.15 + Math.max(...lnPeor.map((ls) => ls.length * lhS)) + 12 * u;
+  const hAviso = lnAviso.length * lhS + 8 * u, hTabV = Math.max(hBloque + hAviso + 12 * u, rowH * 4 + 8 * u);
+  const area = vert ? {x: B.x, y: B.y, w: B.w, h: B.h - hTabV - gapB} : {x: B.x, y: B.y, w: B.w - wTab - gapB, h: B.h};
+  const tabB = vert ? {x: B.x, y: B.y + B.h - hTabV, w: B.w, h: hTabV} : {x: B.x + B.w - wTab, y: B.y, w: wTab, h: B.h};
+  // ── ejes
+  const tkG = ticksHitos(L.lo, L.hi, log), a = Math.min(L.lo, tkG[0]) / (log ? 1.03 : 1), b = Math.max(L.hi, tkG[tkG.length - 1]) * (log ? 1.03 : 1);
+  const decG = tkG.every((v) => Math.abs(v - Math.round(v)) < 1e-9) ? 0 : 1, etG = (v) => fN(v, {decimales: decG});
+  const peorTodos = Math.min(...hs.map((h) => h.peor)), aD = Math.min(peorTodos, -1), tkD = ticksNum(aD, 0, vert ? 3 : 4), aDd = Math.min(aD, tkD[0]);
+  const etD = (v) => fmtPct(v, 0), wEje = Math.max(...tkG.map((v) => med(env, etG(v), 18, 500, true)), ...tkD.map((v) => med(env, etD(v), 18, 500, true))) + 14 * u;
+  const x0 = area.x + wEje, x1 = area.x + area.w - wG, px = (s) => x0 + (s / nM) * (x1 - x0);
+  // ── alto de los dos paneles
+  const rowT = S * 1.6, gapV = 14 * u, axisH = lhS * 2.35, flex = Math.max(120 * u, area.h - 2 * rowT - hLeyenda - gapV - axisH), hG = flex * 0.6, hD = flex - hG;
+  const yG0 = area.y + rowT + hLeyenda, yG1 = yG0 + hG, yD0 = yG1 + gapV + rowT, yD1 = yD0 + hD;
+  // anotaciones: una línea si cabe, si no dos (valor / fecha); el panel reserva ese alto
+  const wOne = (s) => med(env, s, 18, 800, true), ancho = (x1 - x0) * 0.9;
+  const txP = hs.map((h) => tr('ch.pico', {v: fN(h.pico.v, {decimales: 1})})), fP = hs.map((h) => fmtFecha(h.pico.x, 'dia'));
+  const txS = hs.map((h) => (h.suelo ? tr('ch.suelo', {v: fmtPct(h.suelo.dd, 1)}) : '')), fS = hs.map((h) => (h.suelo ? fmtFecha(h.suelo.x, 'dia') : ''));
+  const unaP = hs.map((_, k) => wOne(`${txP[k]} · ${fP[k]}`) <= ancho), unaS = hs.map((_, k) => !hs[k].suelo || wOne(`${txS[k]} · ${fS[k]}`) <= ancho);
+  const padTop = Math.max(...unaP.map((o) => (o ? 1 : 2) * lhA)) + 16 * u, padBot = Math.max(...unaS.map((o) => (o ? 1 : 2) * lhA)) + 16 * u;
+  const py = (v) => yG1 - 3 * u - ((fx(v) - fx(a)) / (fx(b) - fx(a))) * (yG1 - 3 * u - (yG0 + padTop));
+  const pyD = (v) => yD0 + 3 * u + (v / aDd) * (yD1 - padBot - (yD0 + 3 * u));
+  const cab = (k) => Math.min(sCur, hs[k].n - 1), fila = (k) => Math.floor(cab(k) + 1e-9);
+
+  nota(env, B, capa.nota ?? tr('ch.nota', {log: log ? tr('ch.nota_log') : ''}), id, ap);
+  ctx.save(); ctx.globalAlpha *= ap;
+  // ── títulos de panel y contador de sesión
+  rot(env, tr('ch.panel_crec'), area.x, area.y + S * 1.05, 18, 700, PALETA.piedraClara, 'left', `${id}:tg`, {mono: true});
+  const nTxt = fN(Math.floor(sCur + 1e-9), {decimales: 0}), wNum = med(env, fN(nM, {decimales: 0}), 18, 800, true);   // el rótulo «SESIÓN» queda quieto y solo corre el número
+  rot(env, nTxt, area.x + area.w, area.y + S * 1.05, 18, 800, PALETA.blanco, 'right', `${id}:sesion`, {mono: true});
+  rot(env, tr('ch.sesion'), area.x + area.w - wNum - 12 * u, area.y + S * 1.05, 18, 700, PALETA.piedraClara, 'right', `${id}:sesion_l`, {mono: true});
+  rot(env, tr('ch.panel_caida'), area.x, yG1 + gapV + S * 1.05, 18, 700, PALETA.piedraClara, 'left', `${id}:td`, {mono: true});
+  // ── rejillas y marcas de los dos ejes Y
+  ctx.lineWidth = 1 * u;
+  tkG.forEach((v) => { const y = py(v); ctx.strokeStyle = rgba(PALETA.piedra, 0.08); ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); rot(env, etG(v), x0 - 10 * u, y + S * 0.35, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'right', `${id}:g${v}`, {mono: true, tipo: 'eje-y'}); });
+  tkD.forEach((v) => { const y = pyD(v); ctx.strokeStyle = rgba(PALETA.piedra, v === 0 ? 0.3 : 0.08); ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); rot(env, etD(v), x0 - 10 * u, y + S * 0.35, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'right', `${id}:d${v}`, {mono: true, tipo: 'eje-y'}); });
+  ctx.strokeStyle = rgba(PALETA.piedraClara, 0.45); ctx.lineWidth = 1.5 * u; ctx.setLineDash([6 * u, 6 * u]); ctx.beginPath(); ctx.moveTo(x0, py(100)); ctx.lineTo(x1, py(100)); ctx.stroke(); ctx.setLineDash([]);
+  // ── sesiones (eje X compartido)
+  const tkX = ticksNum(0, nM, vert ? 4 : 6).filter((v) => Number.isInteger(v)), yAx = yD1 + lhS * 0.95;
+  tkX.forEach((v) => rot(env, fN(v, {decimales: 0}), px(v), yAx, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'center', `${id}:x${v}`, {mono: true, tipo: 'eje-x', lim: [area.x, area.x + area.w]}));
+  rot(env, tr('ch.eje_x'), (x0 + x1) / 2, yAx + lhS * 1.2, 18, 600, PALETA.piedraClara, 'center', `${id}:ejex`, {mono: true});
+  // ── geometría estática (de la serie completa): obstáculos para colocar los rótulos sin que pisen las curvas ni otros rótulos
+  const vG = (k, s) => py(hs[k].v[s]), vD = (k, s) => pyD(hs[k].dd[s]);
+  const muestra = (k, val) => { const h = hs[k], paso = Math.max(1, Math.floor(h.n / 240)), o = []; for (let s = 0; s < h.n; s += paso) o.push([px(s), val(k, s)]); o.push([px(h.n - 1), val(k, h.n - 1)]); return o; };
+  const ptsG = [0, 1].flatMap((k) => muestra(k, vG)), ptsD = [0, 1].flatMap((k) => muestra(k, vD));
+  const dentro = (pts, c, m = 3 * u) => { let q = 0; for (const [x, y] of pts) if (x > c[0] - m && x < c[2] + m && y > c[1] - m && y < c[3] + m) q++; return q; };
+  const cruza = (c, o, m = 5 * u) => c[0] < o[2] + m && c[2] > o[0] - m && c[1] < o[3] + m && c[3] > o[1] - m;
+  const cajaPunto = (X, Y) => [X - 11 * u, Y - 11 * u, X + 11 * u, Y + 11 * u];
+  // máximo (panel de crecimiento) y suelo (panel de caída): punto + rótulo de 1 o 2 líneas, en el sitio con menos choques
+  const anots = [];
+  hs.forEach((h, k) => anots.push({k, tipo: 'pico', s: h.pico.s, X: px(h.pico.s), Y: py(h.pico.v), lin: unaP[k] ? [`${txP[k]} · ${fP[k]}`] : [txP[k], fP[k]], panel: 'G'}));
+  hs.forEach((h, k) => { if (h.suelo) anots.push({k, tipo: 'suelo', s: h.suelo.s, X: px(h.suelo.s), Y: pyD(h.suelo.dd), lin: unaS[k] ? [`${txS[k]} · ${fS[k]}`] : [txS[k], fS[k]], panel: 'D'}); });
+  const ocupadas = {G: [], D: []};
+  anots.forEach((q) => { q.punto = cajaPunto(q.X, q.Y); ocupadas[q.panel].push(q.punto); });
+  const ORD = {pico: ['arriba', 'arribaI', 'arribaD', 'abajo', 'abajoI', 'abajoD', 'izq', 'der'], suelo: ['abajo', 'abajoI', 'abajoD', 'arriba', 'arribaI', 'arribaD', 'izq', 'der']};
+  anots.forEach((q) => {
+    const wB = Math.max(...q.lin.map(wOne)), hB2 = q.lin.length * lhA, g = 14 * u, cl = (xl) => clamp(xl, x0 + 2 * u, x1 - wB - 2 * u);
+    const C = {arriba: [cl(q.X - wB / 2), q.Y - g - hB2], abajo: [cl(q.X - wB / 2), q.Y + g], arribaD: [cl(q.X - 12 * u), q.Y - g - hB2], arribaI: [cl(q.X + 12 * u - wB), q.Y - g - hB2], abajoD: [cl(q.X - 12 * u), q.Y + g], abajoI: [cl(q.X + 12 * u - wB), q.Y + g], izq: [cl(q.X - 16 * u - wB), q.Y - hB2 / 2], der: [cl(q.X + 16 * u), q.Y - hB2 / 2]};
+    const [y0p, y1p] = q.panel === 'G' ? [yG0, yG1] : [yD0, yD1], pts = q.panel === 'G' ? ptsG : ptsD; let mejor = null;
+    ORD[q.tipo].forEach((nm, i) => {
+      const [xl, yt] = C[nm], c = [xl, yt, xl + wB, yt + hB2];
+      const sc = dentro(pts, c) + ocupadas[q.panel].reduce((r, o) => r + (o !== q.punto && cruza(c, o) ? 400 : 0), 0) + (cruza(c, q.punto, 0) ? 4000 : 0) + (yt < y0p + 2 * u || yt + hB2 > y1p - 2 * u ? 4000 : 0) + i * 0.5;
+      if (!mejor || sc < mejor.sc) mejor = {sc, c};
+    });
+    q.caja = mejor.c; ocupadas[q.panel].push(mejor.c);
+  });
+  // rótulos de la punta (nombre + fecha): van en la cuneta de la derecha, a la altura de la cabeza de su curva (separados entre sí) y unidos a ella por un hilo punteado
+  const hB = lnom.map((ls) => ls.length * lhN + lhS), wL = [0, 1].map((k) => Math.max(...lnom[k].map((s) => med(env, s, 26, 800)), med(env, fechas[k], 18, 700, true)));
+  // sombreado «sin proyección» donde una serie ya terminó, con su rótulo en el hueco más libre (texto completo; si no cabe sin tocar una curva, el corto)
+  let cajaProy = null, xeCorto = null;
+  if (L.corto != null) {
+    const kc = L.corto, sEnd = hs[kc].n - 1, xe = px(sEnd), wr = x1 - xe - 20 * u;
+    xeCorto = xe;
+    const variantes = [tr('ch.sin_proy', {nombre: nombres[kc].toUpperCase(), n: fN(sEnd, {decimales: 0})}), tr('ch.sin_proy_corto')];
+    if (wr > 100 * u) for (const txt of variantes) {
+      ctx.save(); ctx.font = F(env, 600, 18, true);
+      const ls = envolverEntero(ctx, txt, wr, 4); ctx.restore();
+      if (!ls) continue;
+      const hCaja = ls.length * lhA + 6 * u, wCaja = Math.max(...ls.map((s2) => med(env, s2, 18, 600, true))); let mejor = null;
+      for (const xl of [xe + 10 * u, x1 - 8 * u - wCaja]) for (let q = 0; q < 10; q++) {
+        const yt = yG0 + 3 * u + ((yG1 - 3 * u - hCaja) - (yG0 + 3 * u)) * (q / 9), c = [xl, yt, xl + wCaja, yt + hCaja];
+        const sc = dentro(ptsG, c) + ocupadas.G.reduce((r, o) => r + (cruza(c, o) ? 400 : 0), 0) + q * 0.01;
+        if (!mejor || sc < mejor.sc) mejor = {sc, y: yt, x: xl};
+      }
+      if (!cajaProy || mejor.sc < cajaProy.sc - 1e-9) cajaProy = {sc: mejor.sc, y: mejor.y, ls, x: mejor.x};
+      if (mejor.sc < 2) break;
+    }
+  }
+  const fa = L.corto != null ? prog(sCur, hs[L.corto].n - 1, hs[L.corto].n - 1 + nM * 0.03, ease.out3) : 0;
+  if (fa > 0.02) {
+    ctx.save(); ctx.globalAlpha *= fa;
+    ctx.fillStyle = rgba(PALETA.piedra, 0.1); ctx.fillRect(xeCorto, yG0, x1 - xeCorto, hG); ctx.fillRect(xeCorto, yD0, x1 - xeCorto, hD);
+    ctx.strokeStyle = rgba(PALETA.piedraClara, 0.6); ctx.lineWidth = 1.5 * u; ctx.setLineDash([4 * u, 5 * u]);
+    ctx.beginPath(); ctx.moveTo(xeCorto, yG0); ctx.lineTo(xeCorto, yG1); ctx.moveTo(xeCorto, yD0); ctx.lineTo(xeCorto, yD1); ctx.stroke(); ctx.setLineDash([]);
+    ctx.restore();
+  }
+  if (cajaProy) cajaProy.ls.forEach((s, i) => rot(env, s, cajaProy.x, cajaProy.y + (i + 0.85) * lhA, 18, 600, rgba(PALETA.piedraClara, 0.95), 'left', `${id}:proy${i}`, {mono: true, alpha: fa}));
+  // ── las curvas
+  const traza = (k, y0c, y1c, val) => {
+    const h = hs[k], hd = cab(k), n0 = Math.floor(hd + 1e-9);
+    ctx.save(); ctx.beginPath(); ctx.rect(x0 - 2 * u, y0c, x1 - x0 + 4 * u, y1c - y0c); ctx.clip();
+    ctx.strokeStyle = col[k]; ctx.lineWidth = 4 * u; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.beginPath();
+    for (let s = 0; s <= n0; s++) { const X = px(s), Y = val(k, s); s ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }
+    if (n0 < h.n - 1 && hd > n0) { const f = hd - n0; ctx.lineTo(lerp(px(n0), px(n0 + 1), f), lerp(val(k, n0), val(k, n0 + 1), f)); }
+    ctx.stroke(); ctx.restore();
+  };
+  [1, 0].forEach((k) => { traza(k, yG0 - 4 * u, yG1 + 4 * u, vG); traza(k, yD0 - 4 * u, yD1 + 4 * u, vD); });
+  // cabezas de las curvas (punto con aro del color del fondo)
+  const cabeza = (k, val) => { const hd = cab(k), n0 = Math.floor(hd + 1e-9), f = hd - n0, Xh = n0 < hs[k].n - 1 ? lerp(px(n0), px(n0 + 1), f) : px(n0), Yh = n0 < hs[k].n - 1 ? lerp(val(k, n0), val(k, n0 + 1), f) : val(k, n0); ctx.fillStyle = PALETA.fondo; ctx.beginPath(); ctx.arc(Xh, Yh, 8 * u, 0, 7); ctx.fill(); ctx.fillStyle = col[k]; ctx.beginPath(); ctx.arc(Xh, Yh, 5.5 * u, 0, 7); ctx.fill(); return [Xh, Yh]; };
+  const puntas = [0, 1].map((k) => { cabeza(k, vD); return cabeza(k, vG); });
+  // ── rótulos de la punta: nombre + fecha, en la cuneta, a la altura de cada cabeza; si dos se pisan se separan en vertical
+  const gE = ent(env, t0 + 0.3), lx = x1 + 16 * u, cyL = relajar1D(puntas.map((p, k) => ({x: p[1], w: hB[k]})), {min: yG0, max: yG1 + 2 * u, gap: 8 * u});
+  if (vert) [0, 1].forEach((k) => {   // vertical: leyenda sobre la gráfica (trazo del color + nombre + fecha); el piso de 40 px no deja cuneta a la derecha
+    const yy = area.y + rowT + k * lhN, wn = med(env, lnom[k][0], 26, 800);
+    ctx.fillStyle = col[k]; ctx.fillRect(area.x, yy + lhN * 0.5 - 2.5 * u, 30 * u, 5 * u);
+    rot(env, lnom[k][0], area.x + 44 * u, yy + lhN * 0.78, 26, 800, colT[k], 'left', `${id}:n${k}.0`, {alpha: gE});
+    rot(env, fechas[k], area.x + 44 * u + wn + 18 * u, yy + lhN * 0.78, 18, 700, PALETA.piedraClara, 'left', `${id}:f${k}`, {mono: true, alpha: gE});
+  });
+  else [0, 1].forEach((k) => {
+    const top = cyL[k] - hB[k] / 2, xh = puntas[k][0], yh = puntas[k][1];
+    ctx.save(); ctx.globalAlpha *= gE * 0.75; ctx.strokeStyle = col[k]; ctx.lineWidth = 1.5 * u; ctx.setLineDash([3 * u, 4 * u]); ctx.beginPath();
+    ctx.moveTo(xh + 9 * u, yh); ctx.lineTo(x1 + 4 * u, yh); if (Math.abs(cyL[k] - yh) > 2 * u) ctx.lineTo(lx - 5 * u, cyL[k]); else ctx.lineTo(lx - 5 * u, yh);
+    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+    lnom[k].forEach((s, i) => rot(env, s, lx, top + (i + 0.8) * lhN, 26, 800, colT[k], 'left', `${id}:n${k}.${i}`, {alpha: gE}));
+    rot(env, fechas[k], lx, top + lnom[k].length * lhN + lhS * 0.75, 18, 700, PALETA.piedraClara, 'left', `${id}:f${k}`, {mono: true, alpha: gE});
+  });
+  // ── máximo y suelo: punto + rótulo, cuando la curva llega a él
+  anots.forEach((q) => {
+    const al = prog(sCur, q.s, q.s + nM * 0.02, ease.out3); if (al <= 0.02) return;
+    ctx.save(); ctx.globalAlpha *= al;
+    ctx.fillStyle = PALETA.fondo; ctx.beginPath(); ctx.arc(q.X, q.Y, 9 * u, 0, 7); ctx.fill(); ctx.fillStyle = col[q.k]; ctx.beginPath(); ctx.arc(q.X, q.Y, 6.5 * u, 0, 7); ctx.fill();
+    ctx.strokeStyle = PALETA.blanco; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.arc(q.X, q.Y, 9 * u, 0, 7); ctx.stroke();
+    ctx.restore();
+    const xc = (q.caja[0] + q.caja[2]) / 2;
+    q.lin.forEach((s2, i) => rot(env, s2, xc, q.caja[1] + (i + 0.82) * lhA, 18, 800, i ? PALETA.piedraClara : colT[q.k], 'center', `${id}:${q.tipo}${q.k}.${i}`, {mono: true, alpha: al}));
+  });
+  // ── tabla viva (retorno, caída hoy, peor caída) → al final, dos KPI grandes
+  const aTab = ent(env, t0 + 0.4) * (1 - prog(t, tSwap, tSwap + 0.35, ease.out3)), aKpi = prog(t, tSwap + 0.45, tSwap + 0.95, ease.out3);
+  const act = hs.map((h, k) => { const i = fila(k); return {ret: h.v[i] - 100, dd: h.dd[i], peor: h.ddMin[i]}; });
+  if (aTab > 0.03) {
+    const lab = [tr('ch.retorno'), tr('ch.caida_hoy'), tr('ch.peor_caida')], wl = Math.max(...lab.map((s) => med(env, s, 18, 600))) + 14 * u, wv = (tabB.w - wl) / 2;
+    const largo = Math.max(...fechas.map((s) => med(env, s, 18, 700, true))) < wv - 6 * u, cabT = hs.map((h) => fmtFecha(h.fecha, largo ? 'dia' : 'mes'));
+    const yT = tabB.y + Math.max(0, (tabB.h - rowH * 4) / 2);
+    ctx.save(); ctx.globalAlpha *= aTab;
+    [0, 1].forEach((k) => rot(env, cabT[k], tabB.x + wl + wv * (k + 1), yT + rowH * 0.7, 18, 800, colT[k], 'right', `${id}:th${k}`, {mono: true}));
+    for (let r = 0; r < 3; r++) {
+      const yb = yT + rowH * (r + 1); ctx.strokeStyle = rgba(PALETA.piedra, 0.18); ctx.lineWidth = 1 * u; ctx.beginPath(); ctx.moveTo(tabB.x, yb + 2 * u); ctx.lineTo(tabB.x + tabB.w, yb + 2 * u); ctx.stroke();
+      rot(env, lab[r], tabB.x, yb + rowH * 0.74, 18, 600, PALETA.piedraClara, 'left', `${id}:tl${r}`);
+      [0, 1].forEach((k) => { const v = r === 0 ? act[k].ret : r === 1 ? act[k].dd : act[k].peor; rot(env, fmtPct(v, 1), tabB.x + wl + wv * (k + 1), yb + rowH * 0.74, 18, 800, colSigno(v), 'right', `${id}:tv${r}.${k}`, {mono: true}); });
+    }
+    ctx.restore();
+  }
+  if (aKpi > 0.03) {
+    ctx.save(); ctx.globalAlpha *= aKpi;
+    const hb = vert ? hBloque : (tabB.h - hAviso - 24 * u) / 2;
+    [0, 1].forEach((k) => {
+      const bx = vert ? tabB.x + k * (bw + 24 * u) : tabB.x, by = vert ? tabB.y : tabB.y + k * (hb + 12 * u);
+      ctx.fillStyle = col[k]; ctx.fillRect(bx, by, 4 * u, hb - 6 * u);
+      let yy = by; const xx = bx + 16 * u;
+      lnomK[k].forEach((s, i) => rot(env, s, xx, yy + (i + 0.8) * lhN, 26, 800, colT[k], 'left', `${id}:kn${k}.${i}`)); yy += lnomK[k].length * lhN;
+      rot(env, fechas[k], xx, yy + lhS * 0.75, 18, 700, PALETA.piedraClara, 'left', `${id}:kf${k}`, {mono: true}); yy += lhS;
+      rot(env, tr('ch.retorno').toUpperCase(), xx, yy + lhS * 0.75, 18, 600, PALETA.piedraClara, 'left', `${id}:kl${k}`); yy += lhS;
+      rot(env, fmtPct(hs[k].ret, 1), xx, yy + tam(env, 64) * 0.9, 64, 800, colSigno(hs[k].ret), 'left', `${id}:kv${k}`, {mono: true}); yy += tam(env, 64) * 1.15;
+      lnPeor[k].forEach((s, i) => rot(env, s, xx, yy + (i + 0.8) * lhS, 18, 700, colSigno(hs[k].peor), 'left', `${id}:kp${k}.${i}`, {mono: true}));
+    });
+    lnAviso.forEach((s, i) => rot(env, s, tabB.x, tabB.y + tabB.h - hAviso + (i + 0.85) * lhS, 18, 600, rgba(PALETA.piedraClara, 0.95), 'left', `${id}:aviso${i}`, {halo: false}));
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+export const CAPAS_EXTRA = {radar, apilada, velas, histograma, dumbbell, calendario, agrupadas, bullet, bandas, pictograma, ranking, dos_hitos: dosHitos};
 
 // ═══ VALIDACIÓN (la usa compilar.mjs): errores = no se dibuja; avisos y métodos = salen en el informe ═════════════
 /** Devuelve {errores[], avisos[], metodos[], cifras[]}. Se evalúa sobre la tabla ya cargada; nunca inventa nada. */
@@ -741,6 +1018,15 @@ export function validarExtra(capa, tab, donde) {
       if (tab.items.some((i) => i.valor < 0)) e.push(`${donde}: el ranking de barras no admite valores negativos (usa «divergente» o «dumbbell»).`);
       if (capa.resalta && !tab.items.some((i) => i.nombre === capa.resalta || String(i.nombre).startsWith(capa.resalta + ' · '))) a.push(`${donde}: «${capa.resalta}» no está en los datos; no se resalta nada.`);
       m.push(`${donde}: ordenado de mayor a menor; barras proporcionales al valor. El código (ISO o ticker) sale del texto anterior a « · » en el concepto; no se dibujan banderas.`);
+      break;
+    }
+    case 'dos_hitos': {
+      if (idx.length !== 1) a.push(`${donde}: dos_hitos usa una sola serie; se usa la primera.`);
+      const R = calcularDosHitos(capa, tab); R.errores.forEach((x) => e.push(`${donde}: ${x}`)); R.avisos.forEach((x) => a.push(`${donde}: ${x}`));
+      if (R.errores.length) break;
+      R.hitos.forEach((h) => cifra({tipo: 'hito', hito: h.nombre, fecha: fmtFecha(h.fecha, 'dia'), base: h.base, sesiones: h.n - 1, retorno_pct: +h.ret.toFixed(4), caida_actual_pct: +h.ddFin.toFixed(4), peor_caida_pct: +h.peor.toFixed(4), fecha_peor_caida: h.suelo ? fmtFecha(h.suelo.x, 'dia') : null, maximo_base100: +h.pico.v.toFixed(4), fecha_maximo: fmtFecha(h.pico.x, 'dia')}));
+      if (R.corto != null) a.push(`${donde}: «${R.hitos[R.corto].nombre}» termina en la sesión ${R.hitos[R.corto].n - 1} y «${R.hitos[1 - R.corto].nombre}» sigue hasta la ${R.hitos[1 - R.corto].n - 1}; la parte sin la serie corta se sombrea «sin proyección» y no se proyecta nada.`);
+      m.push(`${donde}: cada hito rebasa la serie a base 100 en el cierre de su fecha (valor ÷ valor del hito × 100) y las dos curvas se alinean por sesiones (filas con dato) desde el hito, no por fecha. Caída = valor ÷ máximo acumulado desde el hito − 1; retorno = valor ÷ valor del hito − 1. Eje de crecimiento ${R.escala === 'log' ? 'LOGARÍTMICO (máximo/mínimo > 5)' : 'lineal'}. Se calcula todo de la serie; no se proyecta nada.`);
       break;
     }
     default: break;

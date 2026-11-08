@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "titulo": "El dólar tras dos choques",
+  "formato": "vertical",
+  "fps": 30,
+  "duracion": 15,
+  "datos": {
+    "d": {
+      "archivo": "datos/biblioteca/fred_dtwexbgs.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "DTWEXBGS",
+          "nombre": "Índice amplio nominal del dólar (Reserva Federal)",
+          "color": "oro",
+          "unidad": "Índice ene-2006=100",
+          "decimales": "auto"
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "El dólar tras dos choques",
+      "color": "oro",
+      "sub": "La misma serie desde dos fechas",
+      "t": [
+        0.2,
+        14.9
+      ]
+    },
+    {
+      "tipo": "dos_hitos",
+      "datos": "d",
+      "id": "g1",
+      "t": [
+        0.9,
+        7.4
+      ],
+      "espera": 3.4,
+      "hitos": [
+        {
+          "fecha": "2008-09-15",
+          "nombre": "Quiebra de Lehman"
+        },
+        {
+          "fecha": "2020-03-11",
+          "nombre": "Pandemia de COVID"
+        }
+      ]
+    }
+  ]
+}

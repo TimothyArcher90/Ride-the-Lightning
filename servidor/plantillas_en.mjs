@@ -31,6 +31,7 @@ export const PLANTILLAS_EN = {
   bandas: ['This year against the historical range', 'For each month, a band with the min–max and the 25th–75th percentiles of previous years, and the line of the year on top. No projections.', 'Pick 1 monthly (or daily) series with at least 5 years.'],
   pictograma: ['Each square = one quantity', 'Rows of squares where each square is worth a stated quantity; incomplete ones are exact fractions. For a concrete sense of "how much is this".', 'Needs a categories table (concept, value).'],
   ranking_pais: ['Ranking with codes (countries or companies)', 'Bars sorted from largest to smallest with the ISO code or ticker on a tag (no flags). If you highlight one that is not among the first, it appears below with its real rank.', 'Needs a categories table; write the concept as "COL · Colombia" to show the code.'],
+  dos_hitos: ['Two milestones, one series', 'A daily series seen from two milestone dates: each milestone rebases the series to 100 at its close and the two curves are aligned by sessions since the milestone. With drawdown from the peak, a live table and two final figures. Needs "hitos" (two named dates).', 'Pick 1 daily series and write the 2 milestone dates in "hitos" (from a spec, the MCP or the CLI only).'],
 };
 export const CAMARAS_EN = {
   cinematico: ['Cinematic', 'Slow stroke and smooth zooms at every moment. For long videos and documentaries.'],

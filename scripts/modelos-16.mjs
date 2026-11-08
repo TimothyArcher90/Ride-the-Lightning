@@ -52,7 +52,7 @@ function dispersion(formato, idioma = 'es') {
 const NOMBRES_EN = {
   bm_gold: 'Gold', bm_copper: 'Copper', bm_crude_oil_wti: 'WTI crude oil', bm_wheat_us_hrw: 'US HRW wheat', fred_dgs10: '10-year Treasury yield',
   fred_unrate: 'US unemployment rate', fred_fedfunds: 'Federal funds rate', fred_vixcls: 'VIX volatility index', fred_umcsent: 'Consumer sentiment', fred_mortgage30us: '30-year mortgage rate',
-  yf_gspc: 'Stock market index', pais_COL_urbanizacion: 'Colombia: urban population',
+  yf_gspc: 'Stock market index', fred_dtwexbgs: 'Broad dollar index', pais_COL_urbanizacion: 'Colombia: urban population',
   ow_global_energy_substitution_coal_twh: 'Coal', ow_global_energy_substitution_oil_twh: 'Oil', ow_global_energy_substitution_gas_twh: 'Gas', ow_global_energy_substitution_hydro_twh: 'Hydro', ow_global_energy_substitution_nuclear_twh: 'Nuclear',
 };
 /** Items de la biblioteca; en inglés llevan su nombre en inglés (pisa el del catálogo). */
@@ -88,13 +88,13 @@ export async function construirModelos(formato = 'vertical', {camara = 'dinamico
   return out;
 }
 
-// ── los 11 modelos del visualizador universal (radar, apilada, velas, histograma, dumbbell, calendario, agrupadas, bullet, bandas, pictograma, ranking) ──
-export const MODELOS_EXTRA = ['radar', 'apilada', 'velas', 'histograma', 'dumbbell', 'calendario', 'agrupadas', 'bullet', 'bandas', 'pictograma', 'ranking'];
+// ── los 12 modelos del visualizador universal (radar, apilada, velas, histograma, dumbbell, calendario, agrupadas, bullet, bandas, pictograma, ranking, dos_hitos) ──
+export const MODELOS_EXTRA = ['radar', 'apilada', 'velas', 'histograma', 'dumbbell', 'calendario', 'agrupadas', 'bullet', 'bandas', 'pictograma', 'ranking', 'dos_hitos'];
 const ENERGIA = ['coal', 'oil', 'gas', 'hydro', 'nuclear'].map((k) => `ow_global_energy_substitution_${k}_twh`);
 const sec = (tk) => { const f = path.join(RAIZ, 'datos', 'trimestres', tk, 'serie.csv'); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').trim().split('\n').slice(1).map((l) => l.split(',')) : null; };
 
 /**
- * Los 11 modelos extra con datos reales de la biblioteca (misma receta que scripts/prueba-universal.mjs). Devuelve la misma forma que construirModelos.
+ * Los 12 modelos extra con datos reales de la biblioteca (misma receta que scripts/prueba-universal.mjs). Devuelve la misma forma que construirModelos.
  * Los que no tienen datos descargados en este equipo se omiten (y se listan en `omitidos`).
  */
 export async function construirExtras(formato = 'vertical', {idioma = 'es'} = {}) {
@@ -163,5 +163,9 @@ export async function construirExtras(formato = 'vertical', {idioma = 'es'} = {}
     const it = itemCsv('ranking_pib_pc', 'concepto,valor\n' + filas.join('\n'), fuente, {prefijo: 'US$ ', decimales: 0, unidad: T('US$ corrientes por habitante', 'current US$ per capita')});
     G('ranking', 'Ranking', {plantilla: 'ranking_pais', series: [it], resalta: 'COL', titulo: T('PIB por habitante', 'GDP per capita')});
   } catch (e) { omitidos.push('ranking: ' + e.message); }
+  // 12. dos hitos: el índice amplio del dólar (Fed, dominio público) visto desde dos fechas-hito. Las fechas son afirmaciones: confirmarlas con una fuente primaria antes de publicar.
+  if (hay('fred_dtwexbgs')) G('dos_hitos', 'Dos hitos', {plantilla: 'dos_hitos', series: bib('fred_dtwexbgs'), titulo: T('El dólar tras dos choques', 'The broad dollar after two shocks'), hitos: HITOS_DOLAR(en)}); else omitidos.push('dos_hitos: falta fred_dtwexbgs');
   return {modelos: out, omitidos};
 }
+/** Hitos del ejemplo del dólar (15-sep-2008 y 11-mar-2020): fechas a CONFIRMAR con fuente primaria; los nombres son rótulos, no cifras. */
+export const HITOS_DOLAR = (en) => [{fecha: '2008-09-15', nombre: en ? 'Lehman filing' : 'Quiebra de Lehman'}, {fecha: '2020-03-11', nombre: en ? 'COVID pandemic' : 'Pandemia de COVID'}];

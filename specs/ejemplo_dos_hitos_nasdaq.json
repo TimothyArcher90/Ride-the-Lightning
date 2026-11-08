@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "idioma": "en",
+  "pendiente": "pending open licence: there is no open-licence daily Nasdaq-100 series in the catalog (FRED NASDAQ100 covers about ten years and carries Nasdaq terms; Yahoo is personal use only; fred_nasdaqcom was not verified as redistributable). This piece does not compile until an open Nasdaq-100 daily series exists. See docs/research/REFERENCIA_NETSCAPE_CHATGPT.md.",
+  "_nota": "Netscape / ChatGPT two-milestone piece. Milestone dates are public facts but were NOT copied from the reference video: confirm 1995-08-09 (Netscape IPO) against SEC filings and 2022-11-30 (ChatGPT public launch) against OpenAI primary sources before publishing. No figure of the original video is used.",
+  "titulo": "Two launches, one index",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 17.5,
+  "datos": {
+    "d": {
+      "archivo": "datos/biblioteca/nasdaq100_open_licence_PENDING.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "columnas": [
+        {
+          "col": "NASDAQ100",
+          "nombre": "Nasdaq-100",
+          "unidad": "Index",
+          "decimales": 0
+        }
+      ],
+      "fuente": {
+        "nombre": "PENDING open licence (no open-licence Nasdaq-100 daily series available)",
+        "url": "",
+        "obtenido": "2026-11-08"
+      }
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "texto": "Two launches, one index",
+      "color": "oro",
+      "sub": "The same series from two dates",
+      "t": [
+        0.2,
+        17.4
+      ]
+    },
+    {
+      "tipo": "dos_hitos",
+      "datos": "d",
+      "id": "g1",
+      "t": [
+        0.9,
+        9.9
+      ],
+      "espera": 3.4,
+      "hitos": [
+        {
+          "fecha": "1995-08-09",
+          "nombre": "Netscape IPO"
+        },
+        {
+          "fecha": "2022-11-30",
+          "nombre": "ChatGPT launch"
+        }
+      ]
+    }
+  ]
+}
