@@ -34,6 +34,15 @@ import {escalarFuente, fuenteCss, tipo, ZONA, margenes, envolver, textoPie, MOV,
 // TODA fuente pasa por el sistema de diseño (motor/diseno.js): nunca baja del piso de legibilidad de su banda y formato.
 const fnt = (peso, px, mono = false) => fuenteCss(peso, escalarFuente(px), mono);
 
+/** Nombre de una cabeza en 1 o 2 líneas: en vertical un nombre largo de varias palabras se parte en dos (el corte que mejor equilibra) para que quepa junto a su línea. */
+function lineasCabeza(ctx, nombre, vert, W) {
+  const pal = String(nombre).split(' ').filter(Boolean);
+  if (!vert || pal.length < 2 || ctx.measureText(nombre).width <= 0.1 * W) return [nombre];
+  let mejor = [nombre], ancho = Infinity;
+  for (let k = 1; k < pal.length; k++) { const a = pal.slice(0, k).join(' '), b = pal.slice(k).join(' '), w = Math.max(ctx.measureText(a).width, ctx.measureText(b).width); if (w < ancho) { ancho = w; mejor = [a, b]; } }
+  return mejor;
+}
+
 export const Z = {imagen: 5, zona: 8, sankey: 10, donut: 10, cascada: 10, pendiente: 10, bump: 10, treemap: 10, waffle: 10, lollipop: 10, divergente: 10, linea: 10, barras: 10, carrera: 10, dispersion: 10, calor: 10, llamada: 20, contador: 25, titulo: 30, cortina: 40, sello: 50};
 
 function caja(env, capa, def) {
@@ -153,12 +162,12 @@ function linea(env, capa) {
   const der = new Set(capa.ejeDer ?? []);
   const izq = idxs.filter((i) => !der.has(i));
   // Canal derecho para los nombres de las cabezas: con el cuadro por defecto, si el nombre más largo no cabe entre el final de la gráfica y el borde útil,
-  // la gráfica se estrecha lo justo (tope: 22 % del ancho en horizontal, 15 % en vertical) para que cada nombre quede junto a su línea y no encima de otra curva.
+  // la gráfica se estrecha lo justo (tope: 22 % del ancho en horizontal, 19 % en vertical) para que cada nombre quede junto a su línea y no encima de otra curva.
   if (!capa.caja && capa.etiquetas !== false && idxs.length > 1) {
     const vertL = env.H > env.W, limL = vertL ? ZONA.x * env.W - 6 : env.W - 40 * u;
     ctx.font = fnt(700, 24 * u);
-    const wmax = Math.max(...idxs.map((si) => ctx.measureText(tab.series[si].nombre).width)) + 4 * u, falta = B.x + B.w + 16 * u + wmax - limL;
-    if (falta > 0) B.w -= Math.min(falta, (vertL ? 0.15 : 0.22) * env.W);
+    const wmax = Math.max(...idxs.map((si) => Math.max(...lineasCabeza(ctx, tab.series[si].nombre, vertL, env.W).map((l) => ctx.measureText(l).width)))) + 4 * u, falta = B.x + B.w + 16 * u + wmax - limL;
+    if (falta > 0) B.w -= Math.min(falta, (vertL ? 0.19 : 0.22) * env.W);
   }
   const reveal = prog(t, t0, t1, CURVA.trazo);
   const xmin = tab.x[0], xmax = tab.x[n - 1], xh = lerp(xmin, xmax, reveal);
@@ -309,7 +318,7 @@ function linea(env, capa) {
   const pos2 = new Map();
   if (capa.etiquetas !== false && visibles.length && (idxs.length > 1 || visibles.some((h) => h.mudo))) {
     const {W, H} = env, lim = H > W ? ZONA.x * W - 6 : W - 40 * u, hh = escalarFuente(24 * u) * 1.2;
-    const its = visibles.filter((h) => h.mudo || idxs.length > 1).map((h) => { ctx.font = fnt(h.mudo ? 500 : 700, 24 * u); return {cab: h, x: h.x, y: yEt.get(h) ?? h.y, w: ctx.measureText(h.nombre).width + 4 * u, h: hh, r: 9 * u, pref: ['der', 'arr', 'aba', 'izq', 'arrDer', 'abaDer', 'arrIzq', 'abaIzq']}; });
+    const its = visibles.filter((h) => h.mudo || idxs.length > 1).map((h) => { ctx.font = fnt(h.mudo ? 500 : 700, 24 * u); h.lineas = lineasCabeza(ctx, h.nombre, H > W, W); return {cab: h, x: h.x, y: yEt.get(h) ?? h.y, w: Math.max(...h.lineas.map((l) => ctx.measureText(l).width)) + 4 * u, h: hh * h.lineas.length, r: 9 * u, pref: ['der', 'arr', 'aba', 'izq', 'arrDer', 'abaDer', 'arrIzq', 'abaIzq']}; });
     const sp = colocar2D(its, {caja: [B.x, B.y - hh, lim, B.y + B.h + hh], puntos: muestras, gap: 7 * u});
     its.forEach((q, k) => pos2.set(q.cab, {p: sp[k], q}));
   }
@@ -318,7 +327,8 @@ function linea(env, capa) {
     const {p, q} = e;
     const [x1, y1, x2, y2] = hiloEtiqueta({x: h.x, y: h.y, r: 10 * u}, p);
     if (Math.hypot(x2 - x1, y2 - y1) > 12 * u) { ctx.strokeStyle = rgba(h.color, 0.7); ctx.lineWidth = 1.5 * u; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
-    texto(ctx, h.nombre, p.x, p.y + q.h / 2 + mid(24 * u), fnt(peso, 24 * u), h.color, 'left');
+    const ln = h.lineas ?? [h.nombre], hl = q.h / ln.length;
+    ln.forEach((l, k) => texto(ctx, l, p.x, p.y + hl * (k + 0.5) + mid(24 * u), fnt(peso, 24 * u), h.color, 'left'));
   };
   for (const h of cabezas) {
     if (reveal <= 0 || h.x < B.x - 4 || h.x > B.x + B.w + 4) continue;
