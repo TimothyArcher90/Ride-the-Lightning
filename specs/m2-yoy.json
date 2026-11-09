@@ -4,7 +4,7 @@
   "titulo": "US M2 money supply, year over year",
   "formato": "horizontal",
   "fps": 30,
-  "duracion": 24,
+  "duracion": 28,
   "datos": {
     "d": {
       "archivo": "datos/m2/m2_yoy.csv",
@@ -29,7 +29,7 @@
         },
         {
           "col": "mensual_24m",
-          "nombre": "Last 24 months (monthly)",
+          "nombre": "Last two years, monthly",
           "color": "oro",
           "prefijo": "",
           "sufijo": "%",
@@ -38,7 +38,7 @@
         },
         {
           "col": "semanal",
-          "nombre": "Weekly M2, YoY (not adjusted)",
+          "nombre": "Weekly",
           "color": "oro",
           "prefijo": "",
           "sufijo": "%",
@@ -54,9 +54,10 @@
       "id": "ti",
       "texto": "M2 growth nears 6%, its fastest pace since 2022",
       "t": [
-        0.2,
-        23.5
+        0.3,
+        27.4
       ],
+      "sub": "White: monthly, seasonally adjusted. Gold: the latest two years; thin gold is weekly, not adjusted. Grey bands: NBER recessions.",
       "verificada": {
         "fuente": "FRED M2SL/WM2NS: 5,71 % mensual (sep 2026) y 5,98 % semanal (5 oct 2026); último valor mayor: mayo 2022 (mensual 6,07 %; semanal 6,14 %)"
       }
@@ -70,9 +71,19 @@
         1,
         2
       ],
+      "sinCabeza": [
+        0,
+        1
+      ],
+      "caja": [
+        0.07,
+        0.27,
+        0.74,
+        0.58
+      ],
       "t": [
-        1,
-        16
+        1.2,
+        19
       ]
     },
     {
@@ -85,8 +96,8 @@
       "estilo": "banda",
       "color": "piedra",
       "t": [
-        0.6,
-        23.9
+        1.13,
+        27.5
       ]
     },
     {
@@ -99,8 +110,8 @@
       "estilo": "banda",
       "color": "piedra",
       "t": [
-        0.6,
-        23.9
+        3.31,
+        27.5
       ]
     },
     {
@@ -113,8 +124,8 @@
       "estilo": "banda",
       "color": "piedra",
       "t": [
-        0.6,
-        23.9
+        3.88,
+        27.5
       ]
     },
     {
@@ -127,8 +138,8 @@
       "estilo": "banda",
       "color": "piedra",
       "t": [
-        0.6,
-        23.9
+        4.65,
+        27.5
       ]
     },
     {
@@ -141,8 +152,8 @@
       "estilo": "banda",
       "color": "piedra",
       "t": [
-        0.6,
-        23.9
+        4.83,
+        27.5
       ]
     },
     {
@@ -155,8 +166,8 @@
       "estilo": "banda",
       "color": "piedra",
       "t": [
-        0.6,
-        23.9
+        5.89,
+        27.5
       ]
     },
     {
@@ -169,8 +180,8 @@
       "estilo": "banda",
       "color": "piedra",
       "t": [
-        0.6,
-        23.9
+        7.32,
+        27.5
       ]
     },
     {
@@ -183,8 +194,8 @@
       "estilo": "banda",
       "color": "piedra",
       "t": [
-        0.6,
-        23.9
+        8.48,
+        27.5
       ]
     },
     {
@@ -197,8 +208,8 @@
       "estilo": "banda",
       "color": "piedra",
       "t": [
-        0.6,
-        23.9
+        11.91,
+        27.5
       ]
     },
     {
@@ -212,8 +223,8 @@
       },
       "texto": "Series high",
       "t": [
-        13.5,
-        16.2
+        19.6,
+        22.4
       ]
     },
     {
@@ -227,8 +238,8 @@
       },
       "texto": "Series low",
       "t": [
-        16.2,
-        19
+        22.9,
+        25.7
       ]
     },
     {
@@ -242,8 +253,8 @@
       },
       "texto": "Latest, weekly",
       "t": [
-        19,
-        23.5
+        26.2,
+        27.5
       ]
     }
   ]

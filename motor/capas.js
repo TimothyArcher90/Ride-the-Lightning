@@ -168,7 +168,7 @@ function linea(env, capa) {
   if (!capa.caja && capa.etiquetas !== false && idxs.length > 1) {
     const vertL = env.H > env.W, limL = vertL ? ZONA.x * env.W - 6 : env.W - 40 * u;
     ctx.font = fnt(700, 24 * u);
-    const wmax = Math.max(...idxs.map((si) => Math.max(...lineasCabeza(ctx, tab.series[si].nombre, vertL, env.W).map((l) => ctx.measureText(l).width)))) + 4 * u, falta = B.x + B.w + 16 * u + wmax - limL;
+    const wmax = Math.max(...idxs.filter((si) => !(capa.sinCabeza ?? []).includes(si)).map((si) => Math.max(...lineasCabeza(ctx, tab.series[si].nombre, vertL, env.W).map((l) => ctx.measureText(l).width)))) + 4 * u, falta = B.x + B.w + 16 * u + wmax - limL;
     if (falta > 0) B.w -= Math.min(falta, (vertL ? 0.19 : 0.22) * env.W);
   }
   const reveal = prog(t, t0, t1, CURVA.trazo);
@@ -231,10 +231,13 @@ function linea(env, capa) {
   if (tab.tipoX === 'fecha') {
     const tf = ticksFecha(cam.x[0], cam.x[1], Math.max(2, Math.floor(B.w / (260 * u))));
     const enCurso = reveal > 0.001 && reveal < 0.999 && capa.marcaAnio !== false && hx >= B.x && hx <= B.x + B.w;
+    let caja0 = 1e9, caja1 = -1e9;
+    if (enCurso) { const largo0 = cam.x[1] - cam.x[0] > 3 * 365.25 * 86400000; ctx.font = fnt(800, 26 * u, true); const w0 = ctx.measureText(fmtFecha(xh, largo0 ? 'anio' : 'mes')).width + 30 * u; caja0 = clamp(hx - w0 / 2, B.x, B.x + B.w - w0); caja1 = caja0 + w0; }
     for (const tk of tf.ticks) {
       const x = px(tk);
       if (x < B.x - 2 || x > B.x + B.w + 2) continue;
       if (enCurso && Math.abs(x - hx) < 120 * u) continue;
+      if (enCurso && x + 34 * u > caja0 && x - 34 * u < caja1) continue;   // ninguna marca del eje puede quedar debajo de la caja del año en curso (que se desplaza al llegar al borde)
       marcaX(env, etiquetaTick(tk, tf.unidad), x, B.y + B.h + 40 * u, fnt(500, 20 * u, true), PALETA.piedraOscura);
     }
     if (enCurso) {
@@ -308,7 +311,7 @@ function linea(env, capa) {
       ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 22 * u; ctx.strokeStyle = rgba(color, 0.55); ctx.lineWidth = 7 * u; ctx.stroke(P); ctx.restore();
       ctx.strokeStyle = color; ctx.lineWidth = 3.4 * u; ctx.stroke(P);
     }
-    if (yh != null) cabezas.push({si, color, x: px(xh), y: py(yh), valor: yo, nombre: s.nombre, fmt: s.fmt, s, mudo});
+    if (yh != null && !(capa.sinCabeza ?? []).includes(si)) cabezas.push({si, color, x: px(xh), y: py(yh), valor: yo, nombre: s.nombre, fmt: s.fmt, s, mudo});
   });
   ctx.restore();
 
