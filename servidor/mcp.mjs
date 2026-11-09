@@ -106,7 +106,7 @@ server.tool('vista_previa', 'Renderiza fotogramas PNG en los instantes pedidos (
   {spec: z.any().optional(), ruta: z.string().optional(), tiempos: z.array(z.number()).min(1).max(8), completa: z.boolean().default(false)}, async ({spec, ruta, tiempos, completa}) => {
     const {spec: p, informe} = compilar(leerSpec(spec, ruta));
     if (!informe.ok) return texto(resumen(informe));
-    const files = await vistaPrevia(p, tiempos, {dir: path.join(RAIZ, '.tmp', 'vistas'), nombre: 'mcp_' + crypto.randomBytes(2).toString('hex'), escala: completa ? 1 : 0.5});
+    const files = await vistaPrevia(p, tiempos, {dir: path.join(RAIZ, '.tmp', 'vistas'), nombre: 'mcp_' + crypto.randomBytes(2).toString('hex'), escala: completa ? 1 : 0.5, informe});
     return {content: [{type: 'text', text: `${T('srv_mcp_vistas')} ${files.join(' | ')}\n${JSON.stringify(resumen(informe).avisos)}`}, ...files.map((f) => ({type: 'image', data: fs.readFileSync(f).toString('base64'), mimeType: 'image/png'}))]};
   });
 

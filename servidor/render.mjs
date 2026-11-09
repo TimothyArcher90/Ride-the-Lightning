@@ -8,6 +8,7 @@ import {chromium} from 'playwright-core';
 import {iniciarServidor} from './web.mjs';
 import {RAIZ} from './compilar.mjs';
 import {t as tx, registrar, conIdioma, idioma} from '../motor/idioma.js';
+import {escribirAccesibilidad} from './accesibilidad.mjs';
 
 const CANDIDATOS = [
   ['channel', 'msedge'], ['channel', 'chrome'],
@@ -35,7 +36,7 @@ async function abrirPagina(spec, ancho, alto, puerto, navegador) {
 const datosPng = (url) => Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
 
 /** Vista previa: PNGs de los instantes pedidos (segundos). Con fondo, tal como se verá en el MP4. */
-export async function vistaPrevia(spec, tiempos, {dir, nombre = 'vista', escala = 0.5, sinFondo = false} = {}) {
+export async function vistaPrevia(spec, tiempos, {dir, nombre = 'vista', escala = 0.5, sinFondo = false, informe = null} = {}) {
   const srv = await iniciarServidor(0), nav = await lanzarNavegador();
   try {
     const ancho = Math.round((spec.ancho * escala) / 2) * 2, alto = Math.round((spec.alto * escala) / 2) * 2;
@@ -47,6 +48,8 @@ export async function vistaPrevia(spec, tiempos, {dir, nombre = 'vista', escala 
       const f = path.join(dir, `${nombre}_t${String(t).replace('.', '_')}.png`);
       fs.writeFileSync(f, datosPng(url)); out.push(f);
     }
+    // Texto alternativo + proveniencia junto a la vista previa (aparte de `out`, que sigue siendo solo la lista de PNG).
+    escribirAccesibilidad(path.join(dir, nombre), spec, informe, {calidad: 'vista_previa', escala, tiempos});
     return out;
   } finally { await nav.close(); await srv.cerrar(); }
 }
@@ -176,6 +179,9 @@ export async function renderizar(spec, informe, {nombre, calidad = 'final', alfa
   if (fs.existsSync(contacto)) salidas.contacto = contacto;
   fs.writeFileSync(`${pref}.json`, JSON.stringify({generado: new Date().toISOString(), calidad, spec_compilada_titulo: spec.titulo, informe}, null, 2));
   salidas.informe = `${pref}.json`;
+  // Accesibilidad y proveniencia: descripción alternativa y huellas de los datos, generadas por código desde el spec compilado.
+  const acc = escribirAccesibilidad(pref, spec, informe, {calidad, alfa, escala});
+  salidas.alt = acc.alt; salidas.proveniencia = acc.proveniencia;
   const verif = {mp4: sonda(salidas.mp4), alfa: salidas.alfa ? sonda(salidas.alfa) : null};
   return {salidas, version: v, segundos: Math.round((Date.now() - t0) / 1000), verificacion: verif, cuadros: Math.round(spec.duracion * spec.fps)};
 }

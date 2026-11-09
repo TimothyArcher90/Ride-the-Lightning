@@ -83,5 +83,31 @@ for (const [nombre, capa] of casos) {
   const f = await vistaPrevia(spec, [nombre === 'carrera' ? 4 : 5], {dir: path.join(dir, 'vistas'), nombre, escala: 0.5});
   ok(fs.statSync(f[0]).size > 15000, `${nombre}: compila y se dibuja (${path.relative(RAIZ, f[0])})`);
 }
+// ── (4) texto alternativo y proveniencia: generados por código desde el spec compilado, deterministas ──
+console.log('\n4) Texto alternativo y proveniencia');
+{
+  const {descripcionAccesible, proveniencia, escribirAccesibilidad} = await import('../servidor/accesibilidad.mjs');
+  const {fmtNum} = await import('../motor/nucleo.js');
+  const base = {...spec5, capas: [{tipo: 'titulo', texto: 'Acceso', t: [0, 5]}, {tipo: 'carrera', datos: 'c', top: 6, t: [0.3, 6], formatoX: 'anio'}]};
+  const {spec, informe} = compilar(base);
+  const alt = descripcionAccesible(spec, informe), alt2 = descripcionAccesible(spec, informe);
+  const s0 = Object.values(spec.tablas)[0].series[0], v = s0.y.filter((x) => x != null);
+  ok(alt === alt2, 'alt.txt determinista (dos llamadas, mismo texto)');
+  ok(alt.includes(`máximo ${fmtNum(Math.max(...v), s0.fmt)}`) && alt.includes(`mínimo ${fmtNum(Math.min(...v), s0.fmt)}`), 'alt.txt: máximo y mínimo salen de los datos compilados');
+  ok(alt.includes(`empieza en ${fmtNum(v[0], s0.fmt)}`) && alt.includes(`termina en ${fmtNum(v[v.length - 1], s0.fmt)}`), 'alt.txt: valor inicial y final salen de los datos compilados');
+  ok(alt.includes('desde 1 ene 2000 hasta 1 ene 2020'), 'alt.txt: rango de fechas');
+  const {spec: spEn, informe: infEn} = compilar({...base, idioma: 'en'});
+  const altEn = descripcionAccesible(spEn, infEn);
+  ok(/Animated chart/.test(altEn) && /maximum/.test(altEn) && !/máximo|Gráfica/.test(altEn), 'alt.txt en inglés con spec.idioma = en');
+  const p = proveniencia(spec, informe, {calidad: 'borrador'}), p2 = proveniencia(spec, informe, {calidad: 'borrador'});
+  ok(JSON.stringify(p) === JSON.stringify(p2), 'proveniencia determinista');
+  ok(p.datos.length === informe.datos.length && p.datos.every((d, i) => d.sha256 === informe.datos[i].sha256 && /^[0-9a-f]{64}$/.test(d.sha256)), 'proveniencia: sha256 de cada dato = el del compilador');
+  ok(p.datos[0].fuente && p.datos[0].fecha_acceso === (informe.datos[0].fuente.obtenido ?? null) && p.datos[0].licencia === (informe.datos[0].fuente.licencia ?? null) && p.datos[0].series.length > 0, 'proveniencia: fuente, fecha de acceso, licencia y series');
+  ok(p.motor && 'git' in p.motor && 'paquete' in p.motor && /^[0-9a-f]{64}$/.test(p.spec_sha256) && p.parametros.fps === spec.fps, 'proveniencia: versión del motor, hash del spec y parámetros');
+  const out = escribirAccesibilidad(path.join(dir, 'acc', 'x'), spec, informe);
+  ok(fs.readFileSync(out.alt, 'utf8') === alt && JSON.parse(fs.readFileSync(out.proveniencia, 'utf8')).esquema === 'rtl-proveniencia/1', 'escribirAccesibilidad: .alt.txt y .proveniencia.json en disco');
+  await vistaPrevia(spec, [3], {dir: path.join(dir, 'vp'), nombre: 'acc', escala: 0.5, informe});
+  ok(fs.existsSync(path.join(dir, 'vp', 'acc.alt.txt')) && fs.existsSync(path.join(dir, 'vp', 'acc.proveniencia.json')), 'la vista previa también deja .alt.txt y .proveniencia.json');
+}
 console.log(fallos ? `\n✗ ${fallos} prueba(s) fallaron` : '\n✓ todas las pruebas pasaron');
 process.exit(fallos ? 1 : 0);

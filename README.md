@@ -174,6 +174,7 @@ A single design system ([`motor/diseno.js`](motor/diseno.js)) drives all 31 mode
 - **Reel safe zone** (nothing at `x ≥ 72.2 %` and `y ≥ 43.75 %` in 9:16).
 - **Motion:** Material easing curves (never linear UI motion), 40 ms stagger, annotation cards stay ≥ 3 s, one protagonist per shot.
 - **Deliverables:** reference MP4 (`libx264 -crf 17 -preset slow -yuv420p`) **and** ProRes 4444 with alpha for Premiere. No burned-in subtitles.
+- **Accessibility and provenance (every export and preview):** `<name>.alt.txt` (accessible description generated from the compiled spec: date range, start/end/max/min per series; Spanish or English per `spec.idioma`) and `<name>.proveniencia.json` (sha256 of each dataset, access date, source and licence per series, engine version/git hash, parameters). Deterministic: same spec + data = same content. Code: `servidor/accesibilidad.mjs`; test: `node scripts/prueba.mjs` §4.
 
 An automated checklist (`node scripts/prueba-calidad.mjs`) measures the real canvas text and verifies all of this for 17 models × 2 formats (the 16 base ones plus `dos_hitos`; the other extras are covered by `prueba-universal`).
 

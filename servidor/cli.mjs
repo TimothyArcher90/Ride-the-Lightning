@@ -28,7 +28,7 @@ try {
   else if (cmd === 'vista') {
     const {spec, informe} = compilar(leerSpec(pos[0])); mostrar(informe); if (!informe.ok) process.exit(1);
     const t = (pos[1] ?? '1,4,8').split(',').map(Number);
-    const out = await vistaPrevia(spec, t, {dir: path.join(RAIZ, '.tmp', 'vistas'), nombre: path.basename(pos[0], '.json'), escala: flags.has('--completa') ? 1 : 0.5});
+    const out = await vistaPrevia(spec, t, {dir: path.join(RAIZ, '.tmp', 'vistas'), nombre: path.basename(pos[0], '.json'), escala: flags.has('--completa') ? 1 : 0.5, informe});
     console.log(out.join('\n'));
   } else if (cmd === 'auditar') {
     const {spec, informe} = compilar(leerSpec(pos[0])); mostrar(informe); if (!informe.ok) process.exit(1);
