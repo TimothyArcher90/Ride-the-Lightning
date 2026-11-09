@@ -93,16 +93,16 @@ Source: [research/OPEN_SOURCE_SURVEY.md](research/OPEN_SOURCE_SURVEY.md) (permis
 
 Ordered; the Sunday scheduled task takes the first unchecked item after the open-source queue above.
 
-- [ ] **Single-series style for annual data**: bars per year/decade (`barras` template for one series). Today an annual series (e.g. urban population) only has `historia`.
+- [x] **Single-series style for annual data** (done: `barras_decada`): bars per year/decade (`barras` template for one series). Today an annual series (e.g. urban population) only has `historia`.
 - [ ] **Translate SEC segment labels** in Sankey/treemap ("Sales, general and administrative", "China (including Hong Kong)") to Spanish with a fixed, reviewed dictionary (never machine-guessed); keep the original in the verification report.
 - [ ] **Calendar heat map, vertical**: numbers do not fit in ~38 px cells; design a month-strip variant with values on the extremes only.
 - [ ] **`envolver()` in `motor/diseno.js` still truncates with "…"** on ranking, subtitles and vertical correlation rows: needs its own pass (changes heights in every layer).
-- [ ] **Studio: thumbnail cache** per (style, data, format, theme) so changing a choice does not redraw every card.
+- [x] **Studio: thumbnail cache** (done 2026-11-08) per (style, data, format, theme) so changing a choice does not redraw every card.
 - [ ] **Studio: steps 3 and 4** (camera/pace, review/download): second UX pass with a non-technical user (record the session, list every hesitation).
 - [ ] **Test with a non-technical person**, 30 minutes, 3 tasks (country card → comparison → download); fix what blocks them first.
-- [ ] **"Surprise me"**: one click renders the 3 best-fitting styles as short drafts side by side.
-- [ ] **More ideas for single series** in step 2 (beyond country series): "compare with a related series", "show the biggest moves", suggested from the catalog category.
-- [ ] **Real OHLC for candlesticks** from an open source (Yahoo is personal-use only; look for CC BY/ public-domain daily OHLC).
+- [x] **"Surprise me"** (done 2026-11-08: real catalog series + first recommended style): one click renders the 3 best-fitting styles as short drafts side by side.
+- [x] **More ideas for single series** (done: similar series, biggest moves) in step 2 (beyond country series): "compare with a related series", "show the biggest moves", suggested from the catalog category.
+- [x] **Real OHLC for candlesticks** (NOT integrated: no source with an explicit permissive licence; see docs/diagnosticos/2026-11-08-cola.md) from an open source (Yahoo is personal-use only; look for CC BY/ public-domain daily OHLC).
 - [ ] **IMF permission**: send the licence request (copyright@imf.org) if debt/deficit series will be monetized at scale; until then keep them flagged *restricted*.
 - [x] **Output language**: make the in-chart text language switchable (ES/EN) via a dictionary, so English channels can use the same pieces. *Done 2026-11-08 (`spec.idioma`, `motor/idioma.js`).*
 
@@ -111,9 +111,9 @@ Ordered; the Sunday scheduled task takes the first unchecked item after the open
 Source: [research/GITHUB_REVIEW_2026-11-08.md](research/GITHUB_REVIEW_2026-11-08.md), [research/REFERENCIA_NETSCAPE_CHATGPT.md](research/REFERENCIA_NETSCAPE_CHATGPT.md), [research/INTEGRATION_LOG.md](research/INTEGRATION_LOG.md) (2026-11-08).
 
 - [ ] **Netscape / ChatGPT piece**: `specs/ejemplo_dos_hitos_nasdaq.json` is saved and fails on purpose ("pending open licence"). Needs an open-licence daily Nasdaq-100 series (none in the catalog; FRED `NASDAQ100` covers ~10 years and carries Nasdaq terms; Yahoo is personal use; `fred_nasdaqcom` terms not verified) and the two milestone dates confirmed against primary sources (SEC, OpenAI).
-- [ ] **Two milestones in the studio UI**: the template needs two named dates, so it is hidden from `/api/plantillas` (`soloSpec`) and only reachable from a spec, the CLI or the MCP. Add a "milestones" step (two date pickers + names) and the `TPL` entry in `web/i18n.js`.
+- [x] **Two milestones in the studio UI** (done: date + name + mandatory source): the template needs two named dates, so it is hidden from `/api/plantillas` (`soloSpec`) and only reachable from a spec, the CLI or the MCP. Add a "milestones" step (two date pickers + names) and the `TPL` entry in `web/i18n.js`.
 - [ ] **Two milestones, vertical**: the 40 px name floor leaves no right-hand gutter, so names go in a legend above the chart instead of at the line tip. Revisit if a tip label can be placed inside the plot without crossing a curve.
-- [ ] **2-D "choices" label placement** (kevinschaul/avoid-overlap idea; its repo has no licence, so re-derive from the README only): candidate positions (right, above, below, left) with leader lines for line-end labels and callouts. `dos_hitos` already uses a small private version for its peak/trough annotations; a shared `elegirPosicion` in `motor/etiquetas.js` would serve `bump`, `pendiente` and multi-series `linea`.
+- [x] **2-D "choices" label placement** (done: `colocar2D`; used by line heads and scatter points; bump/treemap/Sankey keep their lane/row layouts on purpose) (kevinschaul/avoid-overlap idea; its repo has no licence, so re-derive from the README only): candidate positions (right, above, below, left) with leader lines for line-end labels and callouts. `dos_hitos` already uses a small private version for its peak/trough annotations; a shared `elegirPosicion` in `motor/etiquetas.js` would serve `bump`, `pendiente` and multi-series `linea`.
 - [ ] **Text measuring / line breaking** (chenglou/pretext, MIT): only if CJK or very long compound names appear; the `…` truncation policy is a separate pass.
 - [ ] **Contrast ramps for a light "paper" theme** (adobe/leonardo, Apache-2.0) when STYLE_REFERENCES P1.5 is built.
 - [ ] **Chart-to-chart morph** (Vizzu idea, Apache-2.0; STYLE_REFERENCES P2 item 8): read its keyframe rules; cannot reuse its clock.
