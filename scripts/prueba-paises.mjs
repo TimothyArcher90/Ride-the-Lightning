@@ -192,6 +192,16 @@ console.log('\nPuerta de licencias integrada en el compilador');
   ok(!ingles.informe.ok && ingles.informe.errores.some((e) => /restricted license/.test(e)), 'el error también sale en inglés con idioma «en»');
   const libre = compilar(spec({comercial: true}, 'Dominio público (prueba)'));
   ok(libre.informe.ok, 'comercial con fuente de dominio público compila');
+  // conexión: generar() (estudio y MCP) reenvía comercial/permisos a la spec y la puerta actúa con series reales de la biblioteca
+  const {generar} = await import('../servidor/plantillas.mjs'), {hayEnBiblioteca} = await import('../servidor/datos.mjs');
+  const restr = leerCatalogo().find((e) => /no redistribuir/i.test(e.licencia ?? '') && hayEnBiblioteca(e.id));
+  if (restr) {
+    const g = (extra) => generar({plantilla: 'historia', series: [{origen: 'biblioteca', id: restr.id}], ...extra});
+    const a = g({}), b = g({comercial: true}), c = g({comercial: true, permisos: {d: 'carta del titular, 2026-11-09'}});
+    ok(a.informe.ok && a.spec.comercial === undefined, 'generar sin `comercial`: compila y no marca la spec');
+    ok(!b.informe.ok && b.spec.comercial === true && b.informe.errores.some((e) => /licencia restringida/.test(e)), 'generar con `comercial: true` y serie restringida: la puerta bloquea');
+    ok(c.informe.ok && c.spec.permisos?.d, 'generar con `permisos` documentados: compila y los conserva en la spec');
+  } else console.log('  (sin serie restringida en la biblioteca local: se omite la prueba de generar)');
   fs.rmSync(dir, {recursive: true, force: true});
 }
 

@@ -608,12 +608,14 @@ function paso3() {
     <h3>${T('aspecto_h')}</h3>${botonesTema()}
     <details class="det" ${S.vivo ? 'open' : ''}><summary>${T('vivo_sum')}</summary>
     <label class="conmuta" style="margin-top:8px"><input type="checkbox" id="vivo" ${S.vivo ? 'checked' : ''}><span><strong>${T('vivo_t')}</strong><br><span class="ayuda" style="margin:0">${T('vivo_a')}</span></span></label></details>
+    <label class="conmuta" style="margin-top:12px"><input type="checkbox" id="comercial" ${S.comercial ? 'checked' : ''}><span><strong>${T('comercial_t')}</strong><br><span class="ayuda" style="margin:0">${T('comercial_a')}</span></span></label>
     ${S.plano ? `<p class="ayuda" style="margin-top:16px">${T('duracion_v', {s: `<strong>${S.plano.duracion.toFixed(1)} ${T('segundos')}</strong>`})}</p>` : ''}
     ${barraNav(true, true, T('sig_revisar'))}`;
   $('#paso').querySelectorAll('.carta').forEach((b) => (b.onclick = () => { S.camara = b.dataset.id; guardar(); paso3(); regenerar(); }));
   $('#paso').querySelectorAll('[data-em]').forEach((b) => (b.onclick = () => { S.estiloMomento = b.dataset.em; guardar(); paso3(); regenerar(); }));
   $('#paso').querySelectorAll('[data-tema]').forEach((b) => (b.onclick = () => { S.tema = b.dataset.tema; guardar(); paso3(); regenerar(); }));
   $('#vivo').onchange = (e) => { S.vivo = e.target.checked; guardar(); regenerar(); };
+  $('#comercial').onchange = (e) => { S.comercial = e.target.checked; guardar(); regenerar(); };
   enlazarNav(2);
 }
 
@@ -679,7 +681,7 @@ async function regenerar() {
     if (S.plantilla === 'historia' && S.series.length === 1 && !S.analisis) { S.analisis = await post('/api/analizar', {series: S.series.map(limpio)}); if (S.analisis.ok && !S.sel) S.sel = Object.fromEntries(S.analisis.momentos.map((m) => [m.id, m.seleccionado])); }
     const momentos = (S.analisis?.momentos ?? []).filter((m) => S.sel?.[m.id]).map((m) => ({tipo: m.tipo, ancla: m.ancla, etiqueta: (S.etiquetas[m.id] || m.etiqueta).slice(0, 30)}));
     if (S.plantilla === 'dos_hitos' && !hitosListos()) { S.error = T('hitos_faltan'); S.spec = S.plano = null; S.informe = {errores: [], avisos: [], datos: [], cifras: []}; S.generando = false; $('#carga').hidden = true; mostrarVista(); pintarEstadoPasos(); return; }
-    const r = await post('/api/generar', {...extraHitos(), plantilla: S.plantilla, series: S.series.map(limpio), momentos, camara: S.camara, formato: S.formato, titulo: S.tituloEditado ? S.titulo : '', foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, resalta: S.resalta, vivo: S.vivo ? {render: 'final', alfa: true, minEntreRendersMin: 360} : null});
+    const r = await post('/api/generar', {...extraHitos(), plantilla: S.plantilla, series: S.series.map(limpio), momentos, camara: S.camara, formato: S.formato, titulo: S.tituloEditado ? S.titulo : '', foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, resalta: S.resalta, comercial: !!S.comercial, vivo: S.vivo ? {render: 'final', alfa: true, minEntreRendersMin: 360} : null});
     if (seq !== genSeq) return;
     if (r.spec) r.spec.idioma = L();
     Object.assign(S, {spec: r.spec, plano: conI(r.plano ?? null, r.spec), informe: r.informe, notas: r.notas ?? []});
