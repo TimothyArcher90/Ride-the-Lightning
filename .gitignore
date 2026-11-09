@@ -16,3 +16,6 @@ specs/_chat_actual.json
 
 # cierre de marca (videos): activo de MacroWise, no se publica en el repo abierto; se regenera con scripts/construir-cierre.mjs
 marca/cierre/*.mp4
+
+# destino de outputs de este equipo (disco externo)
+marca/salidas.json

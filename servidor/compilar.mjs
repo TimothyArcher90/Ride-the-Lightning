@@ -226,12 +226,11 @@ function resolverAncla(capa, tab, si, informe, donde) {
   return i;
 }
 
-/** Cierre de marca determinista (marca/cierre.json): a TODA pieza se le añade al final `hold` s con la gráfica final quieta; el render anexa después el video de cierre
- *  de MacroWise (servidor/render.mjs::anexarCierre). Las capas que duraban hasta el final se prolongan para que la imagen final no se apague. No toca la spec original.
- *  Se apaga con spec.cierre=false. */
+/** Cierre de marca OPT-IN y determinista (marca/cierre.json): SOLO si la spec pide `cierre: true` (video individual de MacroWise) se añade al final `hold` s con la gráfica final quieta y el render anexa
+ *  el video de cierre (servidor/render.mjs::anexarCierre). SIN ese flag la gráfica no lleva logo ni espera: sirve como componente de otro video o para otros agentes. Ver directives/cierre_de_marca.md. */
 export function configCierre(raiz = RAIZ) { try { const c = JSON.parse(fs.readFileSync(path.join(raiz, 'marca', 'cierre.json'), 'utf8')); return c.activo ? c : null; } catch { return null; } }
 function conCierre(spec, raiz) {
-  if (spec.cierre === false || process.env.RTL_SIN_CIERRE === '1' || spec._cierreAplicado) return spec;
+  if (!spec.cierre || process.env.RTL_SIN_CIERRE === '1' || spec._cierreAplicado) return spec;   // OPT-IN: sin spec.cierre (o con false) la pieza NO lleva logo ni hold
   const cfg = configCierre(raiz); if (!cfg) return spec;
   const d0 = spec.duracion ?? 15, hold = cfg.hold ?? 5;
   const capas = (spec.capas ?? []).map((k) => (Array.isArray(k.t) && k.t[1] >= d0 - 1 ? {...k, t: [k.t[0], k.t[1] + hold]} : k));
@@ -395,7 +394,7 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
   }
 
   const plano = {
-    version: 1, titulo: spec.titulo ?? '', ...(spec.idioma && spec.idioma !== 'es' ? {idioma: spec.idioma} : {}), ancho, alto, fps, duracion, formato, ...(spec.cierre === false ? {cierre: false} : {}), ...(spec._cierreAplicado ? {_cierreAplicado: true} : {}), fondo: spec.fondo ?? {}, tema: spec.tema ?? 'oscuro',
+    version: 1, titulo: spec.titulo ?? '', ...(spec.idioma && spec.idioma !== 'es' ? {idioma: spec.idioma} : {}), ancho, alto, fps, duracion, formato, ...(spec.cierre ? {cierre: true} : {}), ...(spec._cierreAplicado ? {_cierreAplicado: true} : {}), fondo: spec.fondo ?? {}, tema: spec.tema ?? 'oscuro',
     tablas: Object.fromEntries(Object.entries(tablas).map(([k, t]) => [k, t.tipoX === 'flujos' || t.tipoX === 'categorias' ? {tipoX: t.tipoX, x: [], series: [], nodos: t.nodos, enlaces: t.enlaces, items: t.items, total: t.total, fmt: t.fmt, baseNodo: t.baseNodo} : {tipoX: t.tipoX, x: t.x, series: t.series.map((s) => ({nombre: s.nombre, y: s.y, color: colorDe(s.color, 0) && s.color, fmt: s.fmt}))}])),
     capas, imagenes: [...imagenes],
   };

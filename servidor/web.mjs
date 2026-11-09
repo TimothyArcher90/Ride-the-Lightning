@@ -4,6 +4,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import {RAIZ} from './compilar.mjs';
+import {salidaBase} from './salidas.mjs';
 
 const MIME = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.ttf': 'font/ttf', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
@@ -20,7 +21,7 @@ export function servirEstatico(req, res) {
   const base = Object.keys(RAICES).find((p) => ruta.startsWith(p));
   if (!base) return false;
   const rel = ruta.slice(base.length);
-  const dir = path.resolve(RAIZ, RAICES[base]);
+  const dir = base === '/salidas/' ? path.resolve(salidaBase()) : path.resolve(RAIZ, RAICES[base]);
   const abs = path.resolve(dir, rel);
   if (!abs.startsWith(dir + path.sep)) { res.writeHead(403).end('Prohibido'); return true; }
   if (base === '/archivos/' && !PERMITIDO_ARCHIVOS.includes(rel.split('/')[0])) { res.writeHead(403).end('Prohibido'); return true; }

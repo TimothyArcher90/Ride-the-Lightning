@@ -5,6 +5,7 @@ import {spawn, execSync} from 'node:child_process';
 import crypto from 'node:crypto';
 import {iniciarServidor} from './web.mjs';
 import {compilar, RAIZ, rutaSegura} from './compilar.mjs';
+import {salidaBase} from './salidas.mjs';
 import {renderizar} from './render.mjs';
 import {buscar, descargar, leerCatalogo, coincideBusqueda} from './catalogo.mjs';
 import {inspeccionar, FORMATOS, metaSerie} from './datos.mjs';
@@ -146,7 +147,7 @@ async function api(req, res) {
       case '/api/generar': { const ent = await delCuerpo(); if (!IDIOMAS.includes(ent.idioma)) ent.idioma = lang; await asegurar(ent.series); const r = generar(ent); return json(res, {...r, spec: r.spec}); }
       case '/api/abrir': {
         const {ruta} = await delCuerpo(), abs = path.resolve(ruta);
-        if (!abs.startsWith(path.join(RAIZ, 'salidas'))) return json(res, {error: tr('srv_solo_salidas', null, lang)}, 400);
+        if (!abs.startsWith(salidaBase())) return json(res, {error: tr('srv_solo_salidas', null, lang)}, 400);
         spawn('explorer.exe', [fs.existsSync(abs) && fs.statSync(abs).isFile() ? `/select,${abs}` : abs], {detached: true, stdio: 'ignore'}).unref(); return json(res, {ok: true});
       }
       case '/api/trabajo': return json(res, trabajos.get(q.get('id')) ?? {estado: 'desconocido'});

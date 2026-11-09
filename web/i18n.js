@@ -310,6 +310,8 @@ D('tema_oscuro', 'MacroWise (oscuro cálido)', 'MacroWise (warm dark)');
 D('tema_harris', 'Negro y rosa-rojo', 'Black and pink-red');
 D('tema_carbon', 'Gris carbón y teal', 'Charcoal grey and teal');
 D('vivo_sum', 'Opción avanzada: rehacer el video solo cuando salgan datos nuevos', 'Advanced option: remake the video only when new data comes out');
+D('cierre_t', 'Cierre con el logo de MacroWise (video individual)', 'MacroWise logo closing (standalone video)');
+D('cierre_a', 'Déjalo apagado si la gráfica va dentro de otro video. Encendido: la gráfica final se queda 5 s y entra el logo animado.', 'Leave it off if the chart goes inside another video. On: the final chart holds 5 s and the animated logo comes in.');
 D('comercial_t', 'Pieza comercial (monetizada)', 'Commercial (monetized) piece');
 D('comercial_a', 'Activa la puerta de licencias: bloquea la pieza si una fuente restringida o sin verificar no lleva su aviso o permiso.', 'Turns on the license gate: blocks the piece if a restricted or unverified source has no notice or permission.');
 D('vivo_t','Crear una versión nueva (v2, v3…) cuando la fuente publique datos', 'Create a new version (v2, v3…) when the source publishes data');

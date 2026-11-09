@@ -7,6 +7,7 @@ import {spawn, spawnSync} from 'node:child_process';
 import {chromium} from 'playwright-core';
 import {iniciarServidor} from './web.mjs';
 import {RAIZ, configCierre} from './compilar.mjs';
+import {salidaBase, indexar} from './salidas.mjs';
 import {t as tx, registrar, conIdioma, idioma} from '../motor/idioma.js';
 import {escribirAccesibilidad} from './accesibilidad.mjs';
 
@@ -158,7 +159,7 @@ registrar('cierre', {
 });
 export function anexarCierre(mp4, spec, calidad = 'final') {
   const cfg = configCierre();
-  if (!cfg || spec.cierre === false || process.env.RTL_SIN_CIERRE === '1') return {anexado: false};
+  if (!cfg || !spec.cierre || process.env.RTL_SIN_CIERRE === '1') return {anexado: false};   // OPT-IN: solo si la pieza pidió cierre
   const vertical = spec.alto > spec.ancho, clip = path.join(RAIZ, vertical ? cfg.v : cfg.h);
   if (!fs.existsSync(clip)) throw new Error(tx('cierre.falta', {f: path.relative(RAIZ, clip)}));
   const s = sonda(mp4); if (!s) throw new Error(tx('cierre.sin_mp4'));
@@ -178,7 +179,7 @@ export function anexarCierre(mp4, spec, calidad = 'final') {
  * calidad 'final' (1920×1080 o 1080×1920, 4 subfotogramas de desenfoque, crf 17 slow) | 'borrador' (mitad de tamaño, rápido).
  * alfa: además del MP4, un .mov ProRes 4444 sin fondo para montar en Premiere.
  */
-export async function renderizar(spec, informe, {nombre, calidad = 'final', alfa = true, salidaDir = path.join(RAIZ, 'salidas'), onProgreso, forzar = false} = {}) {
+export async function renderizar(spec, informe, {nombre, calidad = 'final', alfa = true, salidaDir = salidaBase(), onProgreso, forzar = false} = {}) {
   const aud = await auditarColisiones(spec);
   if (!aud.ok && !forzar) throw new Error(conIdioma(spec.idioma, () => tx('aud.forzar', {l: aud.problemas.slice(0, 4).map((p) => p.mensaje).join(' ')})));
   const base = (nombre ?? spec.titulo ?? 'grafica').replace(/[^\w.-]+/g, '_').slice(0, 60) || 'grafica';
@@ -212,6 +213,7 @@ export async function renderizar(spec, informe, {nombre, calidad = 'final', alfa
   // Accesibilidad y proveniencia: descripción alternativa y huellas de los datos, generadas por código desde el spec compilado.
   const acc = escribirAccesibilidad(pref, spec, informe, {calidad, alfa, escala});
   salidas.alt = acc.alt; salidas.proveniencia = acc.proveniencia;
+  try { indexar(salidaDir, {pieza: base, version: v, formato: spec.alto > spec.ancho ? 'vertical' : 'horizontal', duracion: durTotal, cierre: cierre.anexado, archivos: [salidas.mp4, salidas.alfa, salidas.alt, salidas.proveniencia, salidas.informe]}); } catch { /* el índice nunca debe tumbar un render */ }
   const verif = {mp4: sonda(salidas.mp4), alfa: salidas.alfa ? sonda(salidas.alfa) : null};
   return {salidas, cierre, version: v, segundos: Math.round((Date.now() - t0) / 1000), verificacion: verif, cuadros: Math.round(spec.duracion * spec.fps)};
 }

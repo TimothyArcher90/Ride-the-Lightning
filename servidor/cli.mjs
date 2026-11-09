@@ -36,7 +36,8 @@ try {
     a.problemas.forEach((p) => console.log(T('srv_cli_problema', {t: p.tipo, ab: p.a + (p.b ? ' × ' + p.b : ''), d: p.desde, h: p.hasta})));
     console.log(a.ok ? T('srv_cli_nada_pisa', {n: a.instantes}) : T('srv_cli_n_problemas', {n: a.problemas.length})); process.exit(a.ok ? 0 : 1);
   } else if (cmd === 'render') {
-    const {spec, informe} = compilar(leerSpec(pos[0])); mostrar(informe); if (!informe.ok) process.exit(1);
+    const spec0 = leerSpec(pos[0]); if (flags.has('--cierre')) spec0.cierre = true;   // --cierre: video individual de MacroWise (hold 5 s + cierre con logo)
+    const {spec, informe} = compilar(spec0); mostrar(informe); if (!informe.ok) process.exit(1);
     let ult = 0;
     const r = await renderizar(spec, informe, {nombre: path.basename(pos[0], '.json'), calidad: flags.has('--borrador') ? 'borrador' : 'final', alfa: !flags.has('--sin-alfa'),
       onProgreso: (p) => { if (Date.now() - ult > 4000 || p.cuadro === p.total) { ult = Date.now(); process.stdout.write(`\r${p.tipo} ${p.cuadro}/${p.total}   `); } }});

@@ -1,8 +1,9 @@
 {
-  "_nota": "Cierre de marca DETERMINISTA de todo video de Ride the Lightning (MP4): la gráfica final queda quieta `hold` s, hace un fundido a negro de `fundido` s y entra el cierre aprobado de MacroWise (marca/cierre/*.mp4: horizontal = el original de David; vertical = el mismo, encajado en la zona segura de reels). El ProRes con alfa no lleva cierre (se monta en el editor). Se apaga con spec.cierre=false o RTL_SIN_CIERRE=1 (solo pruebas).",
+  "_nota": "Cierre de marca OPT-IN: solo se aplica a piezas que lo piden (spec.cierre=true; casilla «Cierre con el logo de MacroWise» en el estudio; --cierre en la CLI; cierre:true en el MCP). Por defecto NINGUNA gráfica lleva logo: se usan como componentes de otros videos o por otros agentes. Al pedirlo: la gráfica final queda quieta `hold` s, fundido a negro de `fundido` s y entra el cierre aprobado de MacroWise (marca/cierre/*.mp4: horizontal = el original de David sobre negro mate; vertical = el mismo, encajado en la zona segura de reels). El ProRes con alfa nunca lo lleva. Ver directives/cierre_de_marca.md.",
   "activo": true,
   "hold": 5,
   "fundido": 0.8,
   "h": "marca/cierre/macrowise-cierre-h.mp4",
-  "v": "marca/cierre/macrowise-cierre-v.mp4"
+  "v": "marca/cierre/macrowise-cierre-v.mp4",
+  "porDefecto": false
 }
