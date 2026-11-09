@@ -201,13 +201,13 @@ function radar(env, capa) {
   // polígonos
   const poli = (fr, estilo) => {
     ctx.beginPath();
-    for (let i = 0; i < N; i++) { const r = R * clamp(fr(i)) * ease.out3(p), x = cx + r * Math.cos(ang(i)), y = cy + r * Math.sin(ang(i)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    for (let i = 0; i < N; i++) { const r = R * clamp(fr(i)) * p, x = cx + r * Math.cos(ang(i)), y = cy + r * Math.sin(ang(i)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
     ctx.closePath(); estilo();
   };
   const acento = colorDe(capa.color ?? 'oro', 0);
   if (L.tabla && L.conAnt) poli((i) => L.ejes[i].fracAnt ?? 0, () => { ctx.setLineDash([10 * u, 8 * u]); ctx.strokeStyle = rgba(PALETA.piedraClara, 0.85); ctx.lineWidth = 3 * u; ctx.stroke(); ctx.setLineDash([]); });
   poli((i) => L.ejes[i].frac, () => { ctx.fillStyle = rgba(acento, 0.24); ctx.fill(); ctx.strokeStyle = acento; ctx.lineWidth = 4 * u; ctx.lineJoin = 'round'; ctx.stroke(); });
-  L.ejes.forEach((e, i) => { const r = R * clamp(e.frac) * ease.out3(p); ctx.fillStyle = acento; ctx.beginPath(); ctx.arc(cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i)), 8 * u, 0, 7); ctx.fill(); });
+  L.ejes.forEach((e, i) => { const r = R * clamp(e.frac) * p; ctx.fillStyle = acento; ctx.beginPath(); ctx.arc(cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i)), 8 * u, 0, 7); ctx.fill(); });
   // rótulos: nombre (hasta 2 líneas) y valor, hacia afuera de cada eje (en vertical: número en la punta y lista debajo)
   if (vert) L.ejes.forEach((e, i) => {
     const a = ang(i), g = ent(env, t0 + 0.4, i, N), qx = cx + (R + 34 * u) * Math.cos(a), qy = cy + (R + 34 * u) * Math.sin(a), rr = tam(env, 18) * 0.62, y = cy + R + 118 * u + i * fila + offY[i];

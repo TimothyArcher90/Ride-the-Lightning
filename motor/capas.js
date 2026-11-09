@@ -1084,7 +1084,7 @@ function sankey(env, capa) {
   const L = (capa._lay ??= vert ? disenarSankeyV(env, capa, tab, B) : disenarSankey(env, capa, tab, B));
   const p = prog(t, t0, t1, CURVA.trazo);
   if (L.vertical) { ctx.save(); ctx.globalAlpha *= ap; dibujarSankeyV(env, capa, tab, B, L, p); ctx.restore(); return; }
-  const rx = lerp(B.x, B.x + B.w, p), k = L.k;
+  const xr0 = (n) => Math.min(n.x, n.lab ? n.lab.caja[0] : n.x), xIni = Math.min(B.x, ...L.nodos.map(xr0)), rx = lerp(xIni, B.x + B.w, p), k = L.k;   // el borde arranca donde está lo primero dibujado (la etiqueta de la 1.ª columna cae a la izquierda del nodo): sin tiempo muerto
   ctx.save(); ctx.globalAlpha *= ap;
   if (vert) {   // la unidad de todas las cifras, una sola vez y siempre visible
     const un = `${tab.fmt.prefijo ?? ''}${tab.fmt.sufijo ?? ''}`.trim() || tab.fmt.unidad || '', cap = `CIFRAS EN ${un}`.toUpperCase();
@@ -1102,10 +1102,10 @@ function sankey(env, capa) {
   ctx.restore();
   // nodos y rótulos: aparecen cuando el borde llega a ellos
   for (const n of L.nodos) {
-    const a = clamp((rx - n.x) / (34 * u)); if (a <= 0) continue;
+    const a = clamp((rx - xr0(n)) / (34 * u)); if (a <= 0) continue;
     const col = colorTipo(n.tipo), hh = n.h * ease.out3(a), cx = n.x + L.nw / 2, ccy = n.y + n.h / 2;
     ctx.fillStyle = col; ctx.fillRect(n.x, ccy - hh / 2, L.nw, Math.max(hh, 1.5 * u));
-    const la = clamp((rx - n.x - 14 * u) / (70 * u)); if (la <= 0 || !n.lab) continue;
+    const la = clamp((rx - xr0(n) - 14 * u) / (70 * u)); if (la <= 0 || !n.lab) continue;
     ctx.save(); ctx.globalAlpha *= la;
     const f1 = fnt(700, 23 * u * k), f2 = fnt(500, 19 * u * k, true), f3 = fnt(600, 17 * u * k, true), {x, aling: al, yTop, al: alto, caja} = n.lab;
     const [lh1, lh2, lh3] = L.lhs;
