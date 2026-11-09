@@ -133,7 +133,7 @@ console.log('\n3) Avisos, métodos y notas (compilador y plantillas) en inglés'
   const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const idiomaMod = await import('../motor/idioma.js');
   const {auditarColisiones} = await import('../servidor/render.mjs');
-  await import('../servidor/catalogo.mjs'); await import('../servidor/datos.mjs'); await import('../servidor/trimestres.mjs'); await import('../servidor/xbrl.mjs');
+  await import('../servidor/catalogo.mjs'); await import('../servidor/licencias.mjs'); await import('../servidor/datos.mjs'); await import('../servidor/trimestres.mjs'); await import('../servidor/xbrl.mjs');
   const {leerTabla, indiceColumna} = await import('../servidor/datos.mjs');
   const marc = (s) => [...String(s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
   // a) cada clave de servidor tiene su par inglés, distinto del español, con los mismos {marcadores}, y sin español
@@ -162,7 +162,7 @@ console.log('\n3) Avisos, métodos y notas (compilador y plantillas) en inglés'
   ok(/^No existe el archivo/.test(errEs[0] ?? ''), 'errores de datos en español por defecto sin cambios');
   // d) barrido de código: ningún `new Error('texto en español')` ni `.describe('texto en español')` fijo en los módulos de servidor
   const fugas = [];
-  for (const arch of ['servidor/datos.mjs', 'servidor/catalogo.mjs', 'servidor/trimestres.mjs', 'servidor/xbrl.mjs', 'servidor/render.mjs', 'servidor/mcp.mjs', 'servidor/fuentes_extra.mjs']) {
+  for (const arch of ['servidor/datos.mjs', 'servidor/catalogo.mjs', 'servidor/trimestres.mjs', 'servidor/xbrl.mjs', 'servidor/render.mjs', 'servidor/mcp.mjs', 'servidor/fuentes_extra.mjs', 'servidor/datos_abiertos.mjs', 'servidor/esquemas.mjs', 'servidor/licencias.mjs']) {
     const src = fs.readFileSync(path.join(RAIZ, arch), 'utf8');
     for (const m of src.matchAll(/(?:new Error|\.describe)\(\s*(['`])((?:(?!\1)[^\\\n]|\\.)*)\1/g)) {
       const lit = m[2].replace(/\$\{[^}]*\}/g, ''); const linea = src.slice(0, m.index).split('\n').length;

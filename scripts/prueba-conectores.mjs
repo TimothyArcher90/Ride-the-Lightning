@@ -101,7 +101,48 @@ console.log('\nColombia · TRM (datos.gov.co)');
   ok(total === filas.length, `todas las filas de la fuente (${total}) están en el CSV (${filas.length}); nada omitido ni inventado`);
 }
 
-for (const id of ['prueba_wb_gdp_mex', 'prueba_imf_ngdp_usa', 'prueba_eu_hicp_es', 'prueba_ust_deuda', 'prueba_co_trm'])
+// ── BIS y BCE (SDMX/CSV): se baja por el catálogo y se contrasta con una consulta independiente (otra petición, otros parámetros) ──
+console.log('\nBIS · tasa de política de la zona euro (WS_CBPOL, M.XM)');
+const {leerCatalogo} = await import('../servidor/catalogo.mjs');
+const enCat = (id) => ({...leerCatalogo().find((e) => e.id === id), id: `prueba_${id}`});
+const csvIndep = async (u) => { const t = (await (await fetch(u, {headers: UA})).text()).trim().split('\n'); return t.slice(1).map((l) => l.split(',')); };
+{
+  const m = await descargar(enCat('bis_cbpol_xm'));
+  const {filas, meta} = forma(m);
+  const ult = (await csvIndep('https://stats.bis.org/api/v2/data/dataflow/BIS/WS_CBPOL/1.0/M.XM?format=csv&detail=dataonly&lastNObservations=1'))[0], pri = (await csvIndep('https://stats.bis.org/api/v2/data/dataflow/BIS/WS_CBPOL/1.0/M.XM?format=csv&detail=dataonly&firstNObservations=1'))[0];
+  ok(`${ult.at(-2)}-01` === filas.at(-1)[0] && ult.at(-1) === filas.at(-1)[1], `último (${ult.at(-2)}: ${ult.at(-1)}) coincide con la fuente, cadena exacta`);
+  ok(`${pri.at(-2)}-01` === filas[0][0] && pri.at(-1) === filas[0][1], `primero (${pri.at(-2)}: ${pri.at(-1)}) coincide con la fuente, cadena exacta`);
+  ok(meta.fuente.licencia_estado === 'atribucion' && meta.fuente.cita.startsWith('Fuente: BIS') && meta.validacion?.esquema?.frecuencia === 'M', 'el .meta.json guarda licencia verificada, cita y esquema');
+}
+console.log('\nBIS · crédito al sector privado / PIB de EE. UU. (WS_CREDIT_GAP, Q.US.P.A.A)');
+{
+  const m = await descargar(enCat('bis_credito_pib_us'));
+  const {filas} = forma(m);
+  const ult = (await csvIndep('https://stats.bis.org/api/v2/data/dataflow/BIS/WS_CREDIT_GAP/1.0/Q.US.P.A.A?format=csv&detail=dataonly&lastNObservations=1'))[0];
+  const f = ult.at(-2).replace(/^(\d{4})-Q([1-4])$/, (_, y, q) => `${y}-${String((+q - 1) * 3 + 1).padStart(2, '0')}-01`);
+  ok(f === filas.at(-1)[0] && ult.at(-1) === filas.at(-1)[1], `último (${ult.at(-2)}: ${ult.at(-1)}) coincide con la fuente, cadena exacta`);
+  ok(filas.every((r) => /^\d{4}-(01|04|07|10)-01$/.test(r[0])), 'todas las fechas son inicio de trimestre');
+}
+console.log('\nBCE · tipo de cambio de referencia USD por EUR (EXR, mensual)');
+{
+  const m = await descargar(enCat('bce_eur_usd_m'));
+  const {filas, meta} = forma(m);
+  const ult = (await csvIndep('https://data-api.ecb.europa.eu/service/data/EXR/M.USD.EUR.SP00.A?format=csvdata&detail=dataonly&lastNObservations=1'))[0];
+  ok(`${ult.at(-2)}-01` === filas.at(-1)[0] && ult.at(-1) === filas.at(-1)[1], `último (${ult.at(-2)}: ${ult.at(-1)}) coincide con la fuente, cadena exacta (sin modificar, como exige el BCE)`);
+  ok(meta.fuente.cita === 'Source: ECB statistics' && /ECB statistics/.test(meta.fuente.corto), 'cita literal «Source: ECB statistics» y el pie «Fuente» la lleva');
+}
+console.log('\nBCE · curva de rendimientos AAA a 10 años (YC)');
+{
+  const m = await descargar(enCat('bce_curva_aaa_10y'));
+  const {filas} = forma(m);
+  const ult = (await csvIndep('https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y?format=csvdata&detail=dataonly&lastNObservations=1'))[0];
+  ok(ult.at(-2) === filas.at(-1)[0] && ult.at(-1) === filas.at(-1)[1], `último (${ult.at(-2)}: ${ult.at(-1)}) coincide con la fuente, cadena exacta`);
+}
+await rechaza('BIS clave inexistente', () => ADAPTADORES.bis({flujo: 'WS_CBPOL', clave: 'M.ZZ'}), /HTTP 404|no es un CSV SDMX|no trajo ningún valor/);
+await rechaza('BIS clave con varias series', () => ADAPTADORES.bis({flujo: 'WS_CBPOL', clave: 'M.*'}), /series distintas/);
+await rechaza('BCE flujo inexistente', () => ADAPTADORES.bce({flujo: 'NOEXISTE', clave: 'A.B'}), /no es un CSV SDMX|HTTP 4/);
+
+for (const id of ['prueba_wb_gdp_mex', 'prueba_imf_ngdp_usa', 'prueba_eu_hicp_es', 'prueba_ust_deuda', 'prueba_co_trm', 'prueba_bis_cbpol_xm', 'prueba_bis_credito_pib_us', 'prueba_bce_eur_usd_m', 'prueba_bce_curva_aaa_10y'])
   for (const ext of ['.csv', '.csv.meta.json']) fs.rmSync(new URL(`../datos/biblioteca/${id}${ext}`, import.meta.url), {force: true});
 // la prueba no debe dejar rastro en catalogo/verificado.json
 const rutaVer = new URL('../catalogo/verificado.json', import.meta.url), ver = JSON.parse(fs.readFileSync(rutaVer, 'utf8'));

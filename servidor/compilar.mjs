@@ -15,6 +15,7 @@ import {cargarFlujos, cargarCategorias} from './tablas.mjs';
 import {TIPOS_EXTRA, EXTRA_CLASE, validarExtra} from '../motor/capas_extra.js';
 import {fijarIdioma, traducir, t as tr, registrar} from '../motor/idioma.js';
 import {traducirInforme} from './mensajes_en.mjs';
+import {revisarLicencias} from './licencias.mjs';
 
 registrar('m', {indice_unidad: {es: 'Índice (100 = {base})', en: 'Index (100 = {base})'}});
 
@@ -372,6 +373,8 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
   if (spec.fondo?.imagen) { try { if (!fs.existsSync(rutaSegura(spec.fondo.imagen, raiz))) E(`fondo: no existe ${spec.fondo.imagen}`); else imagenes.add(spec.fondo.imagen); } catch (e) { E(`fondo: ${e.message}`); } }
 
   if (spec.tema && !TEMAS_DISPONIBLES.includes(spec.tema)) E(`tema "${spec.tema}" no existe. Disponibles: ${TEMAS_DISPONIBLES.join(', ')}.`);
+  // puerta de licencias: una pieza `comercial: true` no compila con fuentes restringidas o sin verificar que no lleven su aviso (servidor/licencias.mjs)
+  if (spec.comercial === true) for (const p of revisarLicencias(informe.datos, spec).problemas) E(p.mensaje);
   // sello de fuente automático (todas las fuentes distintas)
   if (spec.sello !== false && informe.datos.length) {
     const f = [...new Set(informe.datos.map((d) => `${traducir(d.fuente.corto ?? d.fuente.nombre)}${d.fuente.obtenido ? ` (obtenido ${d.fuente.obtenido})` : ''}`))].join(' · ');

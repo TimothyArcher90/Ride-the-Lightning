@@ -8,6 +8,8 @@ import crypto from 'node:crypto';
 import {RAIZ} from './compilar.mjs';
 import {leerTabla, columnaFechas, columnaNumeros} from './datos.mjs';
 import {instalar as instalarExtra} from './fuentes_extra.mjs';
+import {instalar as instalarAbiertos} from './datos_abiertos.mjs';
+import {exigirEsquema} from './esquemas.mjs';
 import {t as tx, registrar} from '../motor/idioma.js';
 
 // Textos de errores y de procedencia (nota de fuente) de los adaptadores: siguen el idioma activo (es por defecto).
@@ -279,6 +281,7 @@ export const ADAPTADORES = {
 };
 
 instalarExtra(ADAPTADORES, pedir);   // Tesoro (FiscalData genérico), NASA GISTEMP, NOAA, USGS, datos.gov.co (servidor/fuentes_extra.mjs)
+instalarAbiertos(ADAPTADORES, pedir);   // BIS y BCE por SDMX/CSV (servidor/datos_abiertos.mjs)
 
 export const rutaCatalogo = path.join(RAIZ, 'catalogo', 'series.json');
 export const rutaVerificado = path.join(RAIZ, 'catalogo', 'verificado.json');
@@ -347,14 +350,18 @@ export async function descargar(entrada) {
   const archivo = path.join(dir, `${entrada.id}.csv`);
   const filas = r.filas.filter((f) => f[0] && f[1] !== '' && f[1] !== '.' && f[1] != null);
   if (!filas.length) throw new Error(tx('cat.e_sin_filas', {id: entrada.id}));
+  // esquema por serie (unidad, frecuencia, rango plausible): si la entrada lo declara y la descarga no lo cumple, NO se escribe nada
+  const validacion = entrada.esquema ? {esquema: entrada.esquema, avisos: exigirEsquema(filas, entrada.esquema, {id: entrada.id, unidadCatalogo: entrada.unidad})} : null;
   const csv = [r.columnas.join(','), ...filas.map((f) => f.join(','))].join('\n') + '\n';
   fs.writeFileSync(archivo, csv);
   const sha = crypto.createHash('sha256').update(csv).digest('hex');
   const hoy = new Date().toISOString().slice(0, 10);
   const meta = {
     id: entrada.id, sha256: sha, descargado: hoy,
-    fuente: {corto: entrada.fuente_corto ?? null, nombre: entrada.fuente_original + (entrada.titulo_fuente ? ` — ${entrada.titulo_fuente}` : ''), url: r.url, urlDatos: r.urlDatos, obtenido: hoy, licencia: entrada.licencia ?? null, unidad: entrada.unidad ?? r.unidad ?? null, frecuencia: entrada.frecuencia, notaFuente: r.notaFuente ?? null},
-    filas: filas.length, inicio: filas[0][0], fin: filas[filas.length - 1][0], nota: entrada.nota ?? null,
+    fuente: {corto: entrada.fuente_corto ?? null, nombre: entrada.fuente_original + (entrada.titulo_fuente ? ` — ${entrada.titulo_fuente}` : ''), url: r.url, urlDatos: r.urlDatos, obtenido: hoy, licencia: entrada.licencia ?? null, unidad: entrada.unidad ?? r.unidad ?? null, frecuencia: entrada.frecuencia, notaFuente: r.notaFuente ?? null,
+      // licencia verificada y condición de cita (puerta de licencias: servidor/licencias.mjs); solo si la entrada las declara
+      ...Object.fromEntries(['cita', 'cita_pie', 'requiere_aviso', 'licencia_estado', 'licencia_verificada', 'licencia_url'].filter((k) => entrada[k] != null).map((k) => [k, entrada[k]]))},
+    filas: filas.length, inicio: filas[0][0], fin: filas[filas.length - 1][0], nota: entrada.nota ?? null, ...(validacion ? {validacion} : {}),
   };
   fs.writeFileSync(archivo + '.meta.json', JSON.stringify(meta, null, 2));
   const ver = leerVerificado();

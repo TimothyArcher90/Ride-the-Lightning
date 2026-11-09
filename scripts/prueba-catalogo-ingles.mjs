@@ -185,6 +185,20 @@ console.log('\nservidor/paises.mjs with idioma');
   if (!ya) fs.rmSync(new URL('../datos/derivados/ranking_pib_en.csv', import.meta.url), {force: true});   // regenerable cache: leave no trace
 }
 
+console.log('\nBIS and ECB series (open data adapters)');
+{
+  const ab = original.filter((e) => e.abierta), enAb = en.filter((e) => e.abierta);
+  ok(ab.length === 25 && enAb.length === 25, '25 BIS/ECB series in both languages');
+  ok(enAb.every((e) => e.cita && e.licencia && e.fuente_corto && e.unidad_vis && e.nota), 'every one has an English citation, license, short source, unit and note');
+  ok(enAb.every((e) => !['licencia_estado', 'licencia_verificada', 'licencia_url', 'cita_pie', 'esquema', 'abierta'].some((k) => k in crudo.series[e.id])), 'the overlay carries visible text only (verification flags and schema stay in series.json)');
+  ok(enAb.every((e) => e.fuente_corto.includes(e.cita_pie)), 'the English footer text (fuente_corto) still carries the citation token');
+  ok(enAb.filter((e) => e.adaptador === 'bce').every((e) => e.cita === 'Source: ECB statistics' && /WITHOUT modifying/.test(e.licencia)), 'ECB: exact citation «Source: ECB statistics» and the no-modification condition, in English');
+  ok(enAb.filter((e) => e.adaptador === 'bis').every((e) => /^Source: BIS/.test(e.cita) && /no additional charge/.test(e.licencia)), 'BIS: citation to the BIS and the no-extra-charge condition, in English');
+  const u = new Map(enAb.map((e) => [e.id, e.unidad_vis]));
+  ok(u.get('bis_cbpol_us') === '% per year' && u.get('bis_credito_pib_us') === '% of GDP' && u.get('bce_eur_usd_d') === 'USD per 1 EUR', 'units in English; the original `unidad` stays in Spanish');
+  ok(ab.filter((e) => e.adaptador === 'bce').every((e) => e.cita === 'Source: ECB statistics'), 'the ECB citation is the same literal wording in both languages (it is the wording of the ECB policy)');
+}
+
 console.log('\nOverlay cache');
 {
   const a = leerOverlayEn(), b = leerOverlayEn(); ok(a === b && Object.keys(a).length === original.length, 'the overlay is read once and cached by modification time');

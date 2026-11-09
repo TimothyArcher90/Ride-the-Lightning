@@ -130821,5 +130821,965 @@
     "licencia": "CC BY-SA 4.0 (datos.gov.co); atribución: Agencia Nacional de Hidrocarburos",
     "nota": "Suma de todos los campos y operadores por mes (centésimas enteras, sin error de coma flotante); desde 2014. Licencia con compartir igual: no entra a la instantánea data/.",
     "ampliacion": "2026-11-04"
+  },
+  {
+    "id": "bis_cbpol_us",
+    "nombre": "Tasa de política monetaria — EE. UU. (BIS)",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "bis",
+      "tasa de política",
+      "banco central",
+      "tasas",
+      "us",
+      "ee. uu."
+    ],
+    "frecuencia": "Mensual (fin de mes)",
+    "fuente_original": "BIS — Central bank policy rates (WS_CBPOL)",
+    "fuente_corto": "BIS · tasas de política · EE. UU.",
+    "nota": "Tasa de política del banco central de la zona o país, al cierre de cada mes, tal como la publica el BIS. Las definiciones y los cambios de instrumento por país están en los metadatos del BIS (COMPILATION).",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CBPOL",
+      "clave": "M.US"
+    },
+    "unidad": "% anual",
+    "esquema": {
+      "unidad": "% anual",
+      "frecuencia": "M",
+      "min": -2,
+      "max": 100,
+      "saltoMax": 30
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_cbpol_xm",
+    "nombre": "Tasa de política monetaria — Zona euro (BIS)",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "bis",
+      "tasa de política",
+      "banco central",
+      "tasas",
+      "xm",
+      "zona euro"
+    ],
+    "frecuencia": "Mensual (fin de mes)",
+    "fuente_original": "BIS — Central bank policy rates (WS_CBPOL)",
+    "fuente_corto": "BIS · tasas de política · Zona euro",
+    "nota": "Tasa de política del banco central de la zona o país, al cierre de cada mes, tal como la publica el BIS. Las definiciones y los cambios de instrumento por país están en los metadatos del BIS (COMPILATION).",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CBPOL",
+      "clave": "M.XM"
+    },
+    "unidad": "% anual",
+    "esquema": {
+      "unidad": "% anual",
+      "frecuencia": "M",
+      "min": -2,
+      "max": 100,
+      "saltoMax": 30
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_cbpol_jp",
+    "nombre": "Tasa de política monetaria — Japón (BIS)",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "bis",
+      "tasa de política",
+      "banco central",
+      "tasas",
+      "jp",
+      "japón"
+    ],
+    "frecuencia": "Mensual (fin de mes)",
+    "fuente_original": "BIS — Central bank policy rates (WS_CBPOL)",
+    "fuente_corto": "BIS · tasas de política · Japón",
+    "nota": "Tasa de política del banco central de la zona o país, al cierre de cada mes, tal como la publica el BIS. Las definiciones y los cambios de instrumento por país están en los metadatos del BIS (COMPILATION).",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CBPOL",
+      "clave": "M.JP"
+    },
+    "unidad": "% anual",
+    "esquema": {
+      "unidad": "% anual",
+      "frecuencia": "M",
+      "min": -2,
+      "max": 100,
+      "saltoMax": 30
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_cbpol_gb",
+    "nombre": "Tasa de política monetaria — Reino Unido (BIS)",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "bis",
+      "tasa de política",
+      "banco central",
+      "tasas",
+      "gb",
+      "reino unido"
+    ],
+    "frecuencia": "Mensual (fin de mes)",
+    "fuente_original": "BIS — Central bank policy rates (WS_CBPOL)",
+    "fuente_corto": "BIS · tasas de política · Reino Unido",
+    "nota": "Tasa de política del banco central de la zona o país, al cierre de cada mes, tal como la publica el BIS. Las definiciones y los cambios de instrumento por país están en los metadatos del BIS (COMPILATION).",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CBPOL",
+      "clave": "M.GB"
+    },
+    "unidad": "% anual",
+    "esquema": {
+      "unidad": "% anual",
+      "frecuencia": "M",
+      "min": -2,
+      "max": 100,
+      "saltoMax": 30
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_cbpol_co",
+    "nombre": "Tasa de política monetaria — Colombia (BIS)",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "bis",
+      "tasa de política",
+      "banco central",
+      "tasas",
+      "co",
+      "colombia"
+    ],
+    "frecuencia": "Mensual (fin de mes)",
+    "fuente_original": "BIS — Central bank policy rates (WS_CBPOL)",
+    "fuente_corto": "BIS · tasas de política · Colombia",
+    "nota": "Tasa de política del banco central de la zona o país, al cierre de cada mes, tal como la publica el BIS. Las definiciones y los cambios de instrumento por país están en los metadatos del BIS (COMPILATION).",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CBPOL",
+      "clave": "M.CO"
+    },
+    "unidad": "% anual",
+    "esquema": {
+      "unidad": "% anual",
+      "frecuencia": "M",
+      "min": -2,
+      "max": 100,
+      "saltoMax": 30
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_cbpol_mx",
+    "nombre": "Tasa de política monetaria — México (BIS)",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "bis",
+      "tasa de política",
+      "banco central",
+      "tasas",
+      "mx",
+      "méxico"
+    ],
+    "frecuencia": "Mensual (fin de mes)",
+    "fuente_original": "BIS — Central bank policy rates (WS_CBPOL)",
+    "fuente_corto": "BIS · tasas de política · México",
+    "nota": "Tasa de política del banco central de la zona o país, al cierre de cada mes, tal como la publica el BIS. Las definiciones y los cambios de instrumento por país están en los metadatos del BIS (COMPILATION).",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CBPOL",
+      "clave": "M.MX"
+    },
+    "unidad": "% anual",
+    "esquema": {
+      "unidad": "% anual",
+      "frecuencia": "M",
+      "min": -2,
+      "max": 100,
+      "saltoMax": 30
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_cbpol_br",
+    "nombre": "Tasa de política monetaria — Brasil (BIS)",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "bis",
+      "tasa de política",
+      "banco central",
+      "tasas",
+      "br",
+      "brasil"
+    ],
+    "frecuencia": "Mensual (fin de mes)",
+    "fuente_original": "BIS — Central bank policy rates (WS_CBPOL)",
+    "fuente_corto": "BIS · tasas de política · Brasil",
+    "nota": "Tasa de política del banco central de la zona o país, al cierre de cada mes, tal como la publica el BIS. Las definiciones y los cambios de instrumento por país están en los metadatos del BIS (COMPILATION). Brasil: entre 1986 y 1994 la tasa anualizada llega a miles de por ciento (hiperinflación; máx. 355.085 % en feb-1990), así que en una gráfica con la historia completa solo se verá esa época; para comparar con hoy, acota el inicio y dilo en pantalla (p. ej. desde el Plan Real, jul-1994).",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CBPOL",
+      "clave": "M.BR"
+    },
+    "unidad": "% anual",
+    "esquema": {
+      "unidad": "% anual",
+      "frecuencia": "M",
+      "min": -2,
+      "max": 400000
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_cbpol_cl",
+    "nombre": "Tasa de política monetaria — Chile (BIS)",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "bis",
+      "tasa de política",
+      "banco central",
+      "tasas",
+      "cl",
+      "chile"
+    ],
+    "frecuencia": "Mensual (fin de mes)",
+    "fuente_original": "BIS — Central bank policy rates (WS_CBPOL)",
+    "fuente_corto": "BIS · tasas de política · Chile",
+    "nota": "Tasa de política del banco central de la zona o país, al cierre de cada mes, tal como la publica el BIS. Las definiciones y los cambios de instrumento por país están en los metadatos del BIS (COMPILATION).",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CBPOL",
+      "clave": "M.CL"
+    },
+    "unidad": "% anual",
+    "esquema": {
+      "unidad": "% anual",
+      "frecuencia": "M",
+      "min": -2,
+      "max": 100,
+      "saltoMax": 30
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_cbpol_cn",
+    "nombre": "Tasa de política monetaria — China (BIS)",
+    "categoria": "Banca central",
+    "etiquetas": [
+      "bis",
+      "tasa de política",
+      "banco central",
+      "tasas",
+      "cn",
+      "china"
+    ],
+    "frecuencia": "Mensual (fin de mes)",
+    "fuente_original": "BIS — Central bank policy rates (WS_CBPOL)",
+    "fuente_corto": "BIS · tasas de política · China",
+    "nota": "Tasa de política del banco central de la zona o país, al cierre de cada mes, tal como la publica el BIS. Las definiciones y los cambios de instrumento por país están en los metadatos del BIS (COMPILATION).",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CBPOL",
+      "clave": "M.CN"
+    },
+    "unidad": "% anual",
+    "esquema": {
+      "unidad": "% anual",
+      "frecuencia": "M",
+      "min": -2,
+      "max": 100,
+      "saltoMax": 30
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_credito_pib_us",
+    "nombre": "Crédito al sector privado no financiero / PIB — EE. UU. (BIS)",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "bis",
+      "credito",
+      "sector privado",
+      "deuda",
+      "pib",
+      "us",
+      "ee. uu."
+    ],
+    "frecuencia": "Trimestral",
+    "fuente_original": "BIS — Credit-to-GDP gaps (WS_CREDIT_GAP), cifra observada",
+    "fuente_corto": "BIS · crédito/PIB · EE. UU.",
+    "nota": "Crédito total de todos los prestamistas al sector privado no financiero, como % del PIB (cifra observada, no la tendencia ni la brecha). Series trimestrales; el primer dato depende del país.",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CREDIT_GAP",
+      "clave": "Q.US.P.A.A"
+    },
+    "unidad": "% del PIB",
+    "esquema": {
+      "unidad": "% del PIB",
+      "frecuencia": "Q",
+      "min": 0,
+      "max": 400,
+      "saltoMax": 40
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_credito_pib_xm",
+    "nombre": "Crédito al sector privado no financiero / PIB — Zona euro (BIS)",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "bis",
+      "credito",
+      "sector privado",
+      "deuda",
+      "pib",
+      "xm",
+      "zona euro"
+    ],
+    "frecuencia": "Trimestral",
+    "fuente_original": "BIS — Credit-to-GDP gaps (WS_CREDIT_GAP), cifra observada",
+    "fuente_corto": "BIS · crédito/PIB · Zona euro",
+    "nota": "Crédito total de todos los prestamistas al sector privado no financiero, como % del PIB (cifra observada, no la tendencia ni la brecha). Series trimestrales; el primer dato depende del país.",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CREDIT_GAP",
+      "clave": "Q.XM.P.A.A"
+    },
+    "unidad": "% del PIB",
+    "esquema": {
+      "unidad": "% del PIB",
+      "frecuencia": "Q",
+      "min": 0,
+      "max": 400,
+      "saltoMax": 40
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_credito_pib_jp",
+    "nombre": "Crédito al sector privado no financiero / PIB — Japón (BIS)",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "bis",
+      "credito",
+      "sector privado",
+      "deuda",
+      "pib",
+      "jp",
+      "japón"
+    ],
+    "frecuencia": "Trimestral",
+    "fuente_original": "BIS — Credit-to-GDP gaps (WS_CREDIT_GAP), cifra observada",
+    "fuente_corto": "BIS · crédito/PIB · Japón",
+    "nota": "Crédito total de todos los prestamistas al sector privado no financiero, como % del PIB (cifra observada, no la tendencia ni la brecha). Series trimestrales; el primer dato depende del país.",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CREDIT_GAP",
+      "clave": "Q.JP.P.A.A"
+    },
+    "unidad": "% del PIB",
+    "esquema": {
+      "unidad": "% del PIB",
+      "frecuencia": "Q",
+      "min": 0,
+      "max": 400,
+      "saltoMax": 40
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_credito_pib_gb",
+    "nombre": "Crédito al sector privado no financiero / PIB — Reino Unido (BIS)",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "bis",
+      "credito",
+      "sector privado",
+      "deuda",
+      "pib",
+      "gb",
+      "reino unido"
+    ],
+    "frecuencia": "Trimestral",
+    "fuente_original": "BIS — Credit-to-GDP gaps (WS_CREDIT_GAP), cifra observada",
+    "fuente_corto": "BIS · crédito/PIB · Reino Unido",
+    "nota": "Crédito total de todos los prestamistas al sector privado no financiero, como % del PIB (cifra observada, no la tendencia ni la brecha). Series trimestrales; el primer dato depende del país.",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CREDIT_GAP",
+      "clave": "Q.GB.P.A.A"
+    },
+    "unidad": "% del PIB",
+    "esquema": {
+      "unidad": "% del PIB",
+      "frecuencia": "Q",
+      "min": 0,
+      "max": 400,
+      "saltoMax": 40
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_credito_pib_co",
+    "nombre": "Crédito al sector privado no financiero / PIB — Colombia (BIS)",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "bis",
+      "credito",
+      "sector privado",
+      "deuda",
+      "pib",
+      "co",
+      "colombia"
+    ],
+    "frecuencia": "Trimestral",
+    "fuente_original": "BIS — Credit-to-GDP gaps (WS_CREDIT_GAP), cifra observada",
+    "fuente_corto": "BIS · crédito/PIB · Colombia",
+    "nota": "Crédito total de todos los prestamistas al sector privado no financiero, como % del PIB (cifra observada, no la tendencia ni la brecha). Series trimestrales; el primer dato depende del país.",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CREDIT_GAP",
+      "clave": "Q.CO.P.A.A"
+    },
+    "unidad": "% del PIB",
+    "esquema": {
+      "unidad": "% del PIB",
+      "frecuencia": "Q",
+      "min": 0,
+      "max": 400,
+      "saltoMax": 40
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_credito_pib_mx",
+    "nombre": "Crédito al sector privado no financiero / PIB — México (BIS)",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "bis",
+      "credito",
+      "sector privado",
+      "deuda",
+      "pib",
+      "mx",
+      "méxico"
+    ],
+    "frecuencia": "Trimestral",
+    "fuente_original": "BIS — Credit-to-GDP gaps (WS_CREDIT_GAP), cifra observada",
+    "fuente_corto": "BIS · crédito/PIB · México",
+    "nota": "Crédito total de todos los prestamistas al sector privado no financiero, como % del PIB (cifra observada, no la tendencia ni la brecha). Series trimestrales; el primer dato depende del país.",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CREDIT_GAP",
+      "clave": "Q.MX.P.A.A"
+    },
+    "unidad": "% del PIB",
+    "esquema": {
+      "unidad": "% del PIB",
+      "frecuencia": "Q",
+      "min": 0,
+      "max": 400,
+      "saltoMax": 40
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_credito_pib_br",
+    "nombre": "Crédito al sector privado no financiero / PIB — Brasil (BIS)",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "bis",
+      "credito",
+      "sector privado",
+      "deuda",
+      "pib",
+      "br",
+      "brasil"
+    ],
+    "frecuencia": "Trimestral",
+    "fuente_original": "BIS — Credit-to-GDP gaps (WS_CREDIT_GAP), cifra observada",
+    "fuente_corto": "BIS · crédito/PIB · Brasil",
+    "nota": "Crédito total de todos los prestamistas al sector privado no financiero, como % del PIB (cifra observada, no la tendencia ni la brecha). Series trimestrales; el primer dato depende del país.",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CREDIT_GAP",
+      "clave": "Q.BR.P.A.A"
+    },
+    "unidad": "% del PIB",
+    "esquema": {
+      "unidad": "% del PIB",
+      "frecuencia": "Q",
+      "min": 0,
+      "max": 400,
+      "saltoMax": 40
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_credito_pib_cl",
+    "nombre": "Crédito al sector privado no financiero / PIB — Chile (BIS)",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "bis",
+      "credito",
+      "sector privado",
+      "deuda",
+      "pib",
+      "cl",
+      "chile"
+    ],
+    "frecuencia": "Trimestral",
+    "fuente_original": "BIS — Credit-to-GDP gaps (WS_CREDIT_GAP), cifra observada",
+    "fuente_corto": "BIS · crédito/PIB · Chile",
+    "nota": "Crédito total de todos los prestamistas al sector privado no financiero, como % del PIB (cifra observada, no la tendencia ni la brecha). Series trimestrales; el primer dato depende del país.",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CREDIT_GAP",
+      "clave": "Q.CL.P.A.A"
+    },
+    "unidad": "% del PIB",
+    "esquema": {
+      "unidad": "% del PIB",
+      "frecuencia": "Q",
+      "min": 0,
+      "max": 400,
+      "saltoMax": 40
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bis_credito_pib_cn",
+    "nombre": "Crédito al sector privado no financiero / PIB — China (BIS)",
+    "categoria": "Deuda",
+    "etiquetas": [
+      "bis",
+      "credito",
+      "sector privado",
+      "deuda",
+      "pib",
+      "cn",
+      "china"
+    ],
+    "frecuencia": "Trimestral",
+    "fuente_original": "BIS — Credit-to-GDP gaps (WS_CREDIT_GAP), cifra observada",
+    "fuente_corto": "BIS · crédito/PIB · China",
+    "nota": "Crédito total de todos los prestamistas al sector privado no financiero, como % del PIB (cifra observada, no la tendencia ni la brecha). Series trimestrales; el primer dato depende del país.",
+    "cita": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "cita_pie": "BIS",
+    "licencia": "Uso sin restricción citando al BIS como fuente (https://data.bis.org/help/legal): sin sugerir su aval, sin cobro adicional por las estadísticas en un producto comercial y sin presentarlas como consejo de inversión; una traducción no es oficial del BIS",
+    "requiere_aviso": "Fuente: BIS (Banco de Pagos Internacionales)",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://data.bis.org/help/legal",
+    "adaptador": "bis",
+    "args": {
+      "flujo": "WS_CREDIT_GAP",
+      "clave": "Q.CN.P.A.A"
+    },
+    "unidad": "% del PIB",
+    "esquema": {
+      "unidad": "% del PIB",
+      "frecuencia": "Q",
+      "min": 0,
+      "max": 400,
+      "saltoMax": 40
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bce_eur_usd_d",
+    "nombre": "Tipo de cambio de referencia del euro: USD por EUR (diario, BCE)",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "bce",
+      "ecb",
+      "euro",
+      "tipo de cambio",
+      "usd",
+      "dólar estadounidense"
+    ],
+    "frecuencia": "Diaria (días hábiles)",
+    "fuente_original": "Banco Central Europeo — Euro foreign exchange reference rates (EXR)",
+    "fuente_corto": "ECB statistics · EXR · USD/EUR diario",
+    "nota": "Tipo de cambio de referencia del BCE (publicado hacia las 14:15 CET) de dólar estadounidense por 1 euro. Solo días hábiles; los fines de semana no se rellenan.",
+    "cita": "Source: ECB statistics",
+    "cita_pie": "ECB statistics",
+    "licencia": "Reuso libre y gratuito citando la fuente («Source: ECB statistics») y SIN modificar las estadísticas ni sus metadatos; no cubre datos de terceros (política de reuso del BCE/SEBC)",
+    "requiere_aviso": "Source: ECB statistics",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html",
+    "adaptador": "bce",
+    "args": {
+      "flujo": "EXR",
+      "clave": "D.USD.EUR.SP00.A"
+    },
+    "unidad": "USD por 1 EUR",
+    "esquema": {
+      "unidad": "USD por 1 EUR",
+      "frecuencia": "D",
+      "min": 0.5,
+      "max": 2,
+      "saltoMax": 0.3
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bce_eur_usd_m",
+    "nombre": "Tipo de cambio de referencia del euro: USD por EUR (promedio mensual, BCE)",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "bce",
+      "ecb",
+      "euro",
+      "tipo de cambio",
+      "usd",
+      "dólar estadounidense"
+    ],
+    "frecuencia": "Mensual",
+    "fuente_original": "Banco Central Europeo — Euro foreign exchange reference rates (EXR)",
+    "fuente_corto": "ECB statistics · EXR · USD/EUR mensual",
+    "nota": "Promedio mensual del tipo de cambio de referencia del BCE de dólar estadounidense por 1 euro.",
+    "cita": "Source: ECB statistics",
+    "cita_pie": "ECB statistics",
+    "licencia": "Reuso libre y gratuito citando la fuente («Source: ECB statistics») y SIN modificar las estadísticas ni sus metadatos; no cubre datos de terceros (política de reuso del BCE/SEBC)",
+    "requiere_aviso": "Source: ECB statistics",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html",
+    "adaptador": "bce",
+    "args": {
+      "flujo": "EXR",
+      "clave": "M.USD.EUR.SP00.A"
+    },
+    "unidad": "USD por 1 EUR",
+    "esquema": {
+      "unidad": "USD por 1 EUR",
+      "frecuencia": "M",
+      "min": 0.5,
+      "max": 2,
+      "saltoMax": 0.3
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bce_eur_jpy_d",
+    "nombre": "Tipo de cambio de referencia del euro: JPY por EUR (diario, BCE)",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "bce",
+      "ecb",
+      "euro",
+      "tipo de cambio",
+      "jpy",
+      "yen japonés"
+    ],
+    "frecuencia": "Diaria (días hábiles)",
+    "fuente_original": "Banco Central Europeo — Euro foreign exchange reference rates (EXR)",
+    "fuente_corto": "ECB statistics · EXR · JPY/EUR diario",
+    "nota": "Tipo de cambio de referencia del BCE (publicado hacia las 14:15 CET) de yen japonés por 1 euro. Solo días hábiles; los fines de semana no se rellenan.",
+    "cita": "Source: ECB statistics",
+    "cita_pie": "ECB statistics",
+    "licencia": "Reuso libre y gratuito citando la fuente («Source: ECB statistics») y SIN modificar las estadísticas ni sus metadatos; no cubre datos de terceros (política de reuso del BCE/SEBC)",
+    "requiere_aviso": "Source: ECB statistics",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html",
+    "adaptador": "bce",
+    "args": {
+      "flujo": "EXR",
+      "clave": "D.JPY.EUR.SP00.A"
+    },
+    "unidad": "JPY por 1 EUR",
+    "esquema": {
+      "unidad": "JPY por 1 EUR",
+      "frecuencia": "D",
+      "min": 50,
+      "max": 250,
+      "saltoMax": 20
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bce_eur_gbp_d",
+    "nombre": "Tipo de cambio de referencia del euro: GBP por EUR (diario, BCE)",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "bce",
+      "ecb",
+      "euro",
+      "tipo de cambio",
+      "gbp",
+      "libra esterlina"
+    ],
+    "frecuencia": "Diaria (días hábiles)",
+    "fuente_original": "Banco Central Europeo — Euro foreign exchange reference rates (EXR)",
+    "fuente_corto": "ECB statistics · EXR · GBP/EUR diario",
+    "nota": "Tipo de cambio de referencia del BCE (publicado hacia las 14:15 CET) de libra esterlina por 1 euro. Solo días hábiles; los fines de semana no se rellenan.",
+    "cita": "Source: ECB statistics",
+    "cita_pie": "ECB statistics",
+    "licencia": "Reuso libre y gratuito citando la fuente («Source: ECB statistics») y SIN modificar las estadísticas ni sus metadatos; no cubre datos de terceros (política de reuso del BCE/SEBC)",
+    "requiere_aviso": "Source: ECB statistics",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html",
+    "adaptador": "bce",
+    "args": {
+      "flujo": "EXR",
+      "clave": "D.GBP.EUR.SP00.A"
+    },
+    "unidad": "GBP por 1 EUR",
+    "esquema": {
+      "unidad": "GBP por 1 EUR",
+      "frecuencia": "D",
+      "min": 0.4,
+      "max": 1.2,
+      "saltoMax": 0.3
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bce_eur_chf_d",
+    "nombre": "Tipo de cambio de referencia del euro: CHF por EUR (diario, BCE)",
+    "categoria": "Divisas",
+    "etiquetas": [
+      "bce",
+      "ecb",
+      "euro",
+      "tipo de cambio",
+      "chf",
+      "franco suizo"
+    ],
+    "frecuencia": "Diaria (días hábiles)",
+    "fuente_original": "Banco Central Europeo — Euro foreign exchange reference rates (EXR)",
+    "fuente_corto": "ECB statistics · EXR · CHF/EUR diario",
+    "nota": "Tipo de cambio de referencia del BCE (publicado hacia las 14:15 CET) de franco suizo por 1 euro. Solo días hábiles; los fines de semana no se rellenan.",
+    "cita": "Source: ECB statistics",
+    "cita_pie": "ECB statistics",
+    "licencia": "Reuso libre y gratuito citando la fuente («Source: ECB statistics») y SIN modificar las estadísticas ni sus metadatos; no cubre datos de terceros (política de reuso del BCE/SEBC)",
+    "requiere_aviso": "Source: ECB statistics",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html",
+    "adaptador": "bce",
+    "args": {
+      "flujo": "EXR",
+      "clave": "D.CHF.EUR.SP00.A"
+    },
+    "unidad": "CHF por 1 EUR",
+    "esquema": {
+      "unidad": "CHF por 1 EUR",
+      "frecuencia": "D",
+      "min": 0.8,
+      "max": 2,
+      "saltoMax": 0.4
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bce_curva_aaa_10y",
+    "nombre": "Rendimiento de bonos soberanos AAA de la zona euro a 10 años (curva spot, BCE)",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "bce",
+      "ecb",
+      "bonos",
+      "rendimiento",
+      "curva de tipos",
+      "zona euro",
+      "10 años"
+    ],
+    "frecuencia": "Diaria (días hábiles)",
+    "fuente_original": "Banco Central Europeo — Euro area yield curves (YC)",
+    "fuente_corto": "ECB statistics · YC · AAA 10 años",
+    "nota": "Curva estimada por el BCE con el modelo de Svensson para bonos soberanos de la zona euro con calificación AAA (composición cambiante). Es un tipo estimado, no una cotización de mercado.",
+    "cita": "Source: ECB statistics",
+    "cita_pie": "ECB statistics",
+    "licencia": "Reuso libre y gratuito citando la fuente («Source: ECB statistics») y SIN modificar las estadísticas ni sus metadatos; no cubre datos de terceros (política de reuso del BCE/SEBC)",
+    "requiere_aviso": "Source: ECB statistics",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html",
+    "adaptador": "bce",
+    "args": {
+      "flujo": "YC",
+      "clave": "B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y"
+    },
+    "unidad": "% anual",
+    "esquema": {
+      "unidad": "% anual",
+      "frecuencia": "D",
+      "min": -2,
+      "max": 12,
+      "saltoMax": 1.5
+    },
+    "abierta": "2026-11-09"
+  },
+  {
+    "id": "bce_curva_aaa_2y",
+    "nombre": "Rendimiento de bonos soberanos AAA de la zona euro a 2 años (curva spot, BCE)",
+    "categoria": "Tasas",
+    "etiquetas": [
+      "bce",
+      "ecb",
+      "bonos",
+      "rendimiento",
+      "curva de tipos",
+      "zona euro",
+      "2 años"
+    ],
+    "frecuencia": "Diaria (días hábiles)",
+    "fuente_original": "Banco Central Europeo — Euro area yield curves (YC)",
+    "fuente_corto": "ECB statistics · YC · AAA 2 años",
+    "nota": "Curva estimada por el BCE con el modelo de Svensson para bonos soberanos de la zona euro con calificación AAA (composición cambiante). Es un tipo estimado, no una cotización de mercado.",
+    "cita": "Source: ECB statistics",
+    "cita_pie": "ECB statistics",
+    "licencia": "Reuso libre y gratuito citando la fuente («Source: ECB statistics») y SIN modificar las estadísticas ni sus metadatos; no cubre datos de terceros (política de reuso del BCE/SEBC)",
+    "requiere_aviso": "Source: ECB statistics",
+    "licencia_estado": "atribucion",
+    "licencia_verificada": "2026-11-09",
+    "licencia_url": "https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html",
+    "adaptador": "bce",
+    "args": {
+      "flujo": "YC",
+      "clave": "B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y"
+    },
+    "unidad": "% anual",
+    "esquema": {
+      "unidad": "% anual",
+      "frecuencia": "D",
+      "min": -2,
+      "max": 12,
+      "saltoMax": 1.5
+    },
+    "abierta": "2026-11-09"
   }
 ]

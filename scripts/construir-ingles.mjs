@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {PAISES, PAISES_EN, entradasPaises} from '../servidor/paises.mjs';
+import {entradasAbiertas} from '../servidor/datos_abiertos.mjs';
 import {rutaCatalogo, rutaCatalogoEn} from '../servidor/catalogo.mjs';
 import * as TB from './ingles-tablas.mjs';
 
@@ -17,6 +18,7 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rutaInforme = path.join(RAIZ, 'docs', 'diagnosticos', '2026-11-08-ingles-frente3-pendientes.md');
 const base = JSON.parse(fs.readFileSync(rutaCatalogo, 'utf8'));
 const paisEn = new Map(entradasPaises('en').map((e) => [e.id, e]));
+const abiertaEn = new Map(entradasAbiertas('en').map((e) => [e.id, e]));   // BIS/BCE: el texto inglés vive junto a las entradas (servidor/datos_abiertos.mjs)
 const es2en = new Map(PAISES.map((p) => [p.nombre, PAISES_EN[p.iso3]]));   // «Alemania» → «Germany»
 for (const [k, v] of Object.entries(TB.AGREGADOS_UE)) es2en.set(k, v);
 
@@ -113,6 +115,7 @@ const fuenteCorto = (s, id) => {
 const out = {}, conteo = {pais: 0, otras: 0};
 for (const e of base) {
   const p = paisEn.get(e.id);
+  if (e.abierta && abiertaEn.has(e.id)) { const {id, ...vis} = abiertaEn.get(e.id); out[e.id] = vis; conteo.otras++; continue; }
   if (e.pais && p) {
     const {id, adaptador, args, unidad, ...vis} = p;   // ids/args/unidad come from series.json, not from the overlay
     out[e.id] = vis; conteo.pais++;

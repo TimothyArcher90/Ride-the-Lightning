@@ -6,6 +6,7 @@ import {rutaCatalogo} from '../servidor/catalogo.mjs';
 import {listarPinkSheet} from '../servidor/biblioteca.mjs';
 import {entradasPaises} from '../servidor/paises.mjs';
 import {entradasAmpliacion} from '../servidor/ampliacion.mjs';
+import {entradasAbiertas} from '../servidor/datos_abiertos.mjs';
 
 const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 const E = [];
@@ -135,6 +136,9 @@ E.push({id: 'co_trm', nombre: 'Colombia — dólar (TRM, pesos por US$)', catego
 E.push(...entradasPaises());
 // ── Ampliación (FRED, OWID, Eurostat, Tesoro, NASA/NOAA/USGS, datos.gov.co, agregados del BM): servidor/ampliacion.mjs; también la funde scripts/construir-ampliacion.mjs ──
 E.push(...entradasAmpliacion().map((e) => ({...e, ampliacion: '2026-11-04'})));
+
+// ── BIS y BCE (SDMX/CSV, licencia y cita verificadas): servidor/datos_abiertos.mjs; también las funde scripts/construir-abiertas.mjs ──
+E.push(...entradasAbiertas());
 
 const fed = JSON.parse(fs.readFileSync(rutaCatalogo, 'utf8')).find((e) => e.id === 'fed_balance');
 if (fed) E.unshift(fed);
