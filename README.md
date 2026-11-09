@@ -146,6 +146,7 @@ Full details, endpoints, limits and verification records: [docs/DATA_SOURCES.md]
 | `eurusd-daily-returns` | Distribution of daily returns |
 | `wti-candlesticks` | Candlesticks (closes-only mode, declared) |
 | `latam-debt-to-gdp` | Public debt of six Latin American countries (spec only — IMF data terms) |
+| `enjambre` · `cordillera` · `corriente` | Draft videos of the distribution models: [beeswarm](examples/video/enjambre-h.mp4) (GDP per capita, 72 countries), [ridgeline](examples/video/cordillera-h.mp4) (10-year Treasury yield by year), [streamgraph](examples/video/corriente-h.mp4) (global energy by source) |
 | `bitcoin-full-history` | Complete history, log scale (spec only — CC BY-NC data) |
 
 ---

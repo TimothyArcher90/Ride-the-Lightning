@@ -157,6 +157,8 @@ When: "where does Colombia sit among 70 countries?" Needs: a categories table wi
 |---|---|
 | ![](gallery/enjambre-h.png) | ![](gallery/enjambre-v.png) |
 
+Video: [enjambre-h.mp4](../examples/video/enjambre-h.mp4) (11 s).
+
 ### `cordillera` — ridgeline: a daily series' distribution, year by year
 When: "how did the SHAPE of the values change, not just the average?" Needs: 1 daily series with ≥ 3 years (≥ 20 observations per year). Declares: each ridge is the % of that year's observations in each of 40 equal ranges (frequency polygon, **not smoothed**), the same height scale for every ridge, white mark = exact median; the last 12 years are shown and the screen says so. Template `cordillera`.
 
@@ -164,12 +166,16 @@ When: "how did the SHAPE of the values change, not just the average?" Needs: 1 d
 |---|---|
 | ![](gallery/cordillera-h.png) | ![](gallery/cordillera-v.png) |
 
+Video: [cordillera-h.mp4](../examples/video/cordillera-h.mp4) (12 s).
+
 ### `corriente` — streamgraph: a stacked area with a centered baseline
 When: the `apilada` use case when the *flow* of the parts matters more than reading the total. Needs: 3–8 series of the same unit, all positive. Declares: band thickness is the exact value; the baseline is centered (a "wiggle" baseline after Byron & Wattenberg 2008, own implementation), so vertical position is NOT a value and a scale bar measures the unit. Inside-out ordering by peak time. Template `corriente`.
 
 | Horizontal | Vertical |
 |---|---|
 | ![](gallery/corriente-h.png) | ![](gallery/corriente-v.png) |
+
+Video: [corriente-h.mp4](../examples/video/corriente-h.mp4) (12 s).
 
 ### `dos_hitos` — one series, two milestones (alias `two_milestones`)
 When: "what did the same index do after event A versus after event B?". Needs: **1 daily series** and `hitos`: two `AAAA-MM-DD` dates with a name each (the template refuses to run without them, so it is not in the studio's template list: use a spec, the CLI or the MCP). Declares: each milestone rebases the series to 100 at the close of its date; the two curves are aligned by trading sessions since the milestone (not by calendar date); log axis when max/min > 5 (`escala` forces `lineal` or `log`); where the shorter series ends the screen shades "no projection". Shows: tip labels (name + date), session counter, peak and trough annotations, drawdown from the running maximum, a live table (return, drawdown now, worst drawdown) and two final figures. Every figure is computed from the series and listed in the compiler report; the milestone dates and names are **claims to confirm against a primary source**. In 9:16 the names sit in a legend above the chart (the 40 px name floor leaves no gutter at the line tip).
