@@ -70,7 +70,12 @@ for (const arch of ['servidor/estudio.mjs', 'servidor/chat.mjs', 'servidor/cli.m
 }
 // every zod .describe() in the MCP must be English or switch on the language (LS === 'en' ? … : …); a bare Spanish literal leaks into English sessions
 for (const m of leer('servidor/mcp.mjs').matchAll(/\.describe\(\s*(['`])((?:(?!\1)[^\\\n]|\\.)*)\1/g)) if (/[áéíóúñ¿¡]|\b(?:de|del|la|el|los|por|para|texto|pieza)\b/i.test(m[2])) F('Spanish .describe() in servidor/mcp.mjs: ' + m[2].slice(0, 60));
-for (const t of ['pieza_actual', 'editar_pieza', 'generar_trimestre', 'generar_pieza', 'listar_trimestres', 'buscar_series', 'descargar_serie', 'analizar_serie', 'vista_previa', 'compilar_spec']) if (!(`srv_h_${t}` in DICT.en)) F(`missing srv_h_${t}`);
+for (const t of ['pieza_actual', 'editar_pieza', 'generar_trimestre', 'generar_pieza', 'listar_trimestres', 'buscar_series', 'descargar_serie', 'analizar_serie', 'vista_previa', 'compilar_spec', 'anotar_pedido']) if (!(`srv_h_${t}` in DICT.en)) F(`missing srv_h_${t}`);
+// chat as a question box: the new keys exist in both languages and every chat tool has its human label
+for (const k of ['chat_btn', 'chat_aria', 'chat_h', 'chat_ph', 'chat_hola', 'sug_q1', 'sug_q2', 'sug_r1']) if (!DICT.es[k]?.trim() || !DICT.en[k]?.trim()) F(`chat key missing in es/en: ${k}`);
+if (!/anotar_pedido/.test(leer('servidor/mcp.mjs')) || !/anotar_pedido/.test(leer('servidor/chat.mjs'))) F('anotar_pedido must exist in mcp.mjs and be allowed in chat.mjs');
+const chatSrc = leer('servidor/chat.mjs');
+for (const t of ['Bash', 'Edit', 'Write']) if (!new RegExp(`--disallowedTools[^\\]]*'${t}'`).test(chatSrc)) F(`chat.mjs must keep ${t} disallowed`);
 
 console.log(`es keys: ${kes.length} · en keys: ${ken.length} · keys used by the UI: ${usadas.size}`);
 if (fallos.length) { console.log(`\nFAIL (${fallos.length}):\n` + fallos.map((f) => '  ✗ ' + f).join('\n')); process.exit(1); }

@@ -70,14 +70,14 @@ D('posicion', 'Posición en la animación', 'Position in the animation');
 D('spec_h', 'Spec (para expertos)', 'Spec (for experts)');
 D('spec_aplicar', 'Aplicar cambios', 'Apply changes');
 D('spec_nota', 'Se compila y valida igual que lo demás.', 'It is compiled and validated like everything else.');
-D('chat_btn', 'Pedir cambios hablando', 'Ask for changes in chat');
-D('chat_aria', 'Chat para editar la animación', 'Chat to edit the animation');
-D('chat_h', 'Edita hablando', 'Edit by chat');
+D('chat_btn', 'Pregúntale a Claude', 'Ask Claude');
+D('chat_aria', 'Chat con Claude: preguntas, pedidos y cambios a la animación', 'Chat with Claude: questions, requests and changes to the animation');
+D('chat_h', 'Pregunta o pide', 'Ask or request');
 D('chat_nuevo', 'Nuevo', 'New');
 D('chat_nuevo_t', 'Empezar una conversación nueva', 'Start a new conversation');
 D('chat_cerrar', 'Cerrar el chat', 'Close chat');
 D('chat_msg', 'Tu mensaje', 'Your message');
-D('chat_ph', 'Ej.: pásalo a vertical, pon el trimestre anterior, quita los impuestos…', 'E.g.: make it vertical, show the previous quarter, remove the taxes…');
+D('chat_ph', 'Ej.: ¿qué fuente tiene esta serie?, pásalo a vertical, quiero un gráfico de…', 'E.g.: which source does this series have?, make it vertical, I need a chart of…');
 D('chat_enviar', 'Enviar', 'Send');
 
 // ── navigation and shared bits ──────────────────────────────────────────────────────────────────────────────────
@@ -376,7 +376,7 @@ D('x_json_mal', 'JSON no válido: {e}', 'Invalid JSON: {e}');
 D('ejemplos_h', 'Ejemplos listos', 'Ready examples');
 
 // ── chat ────────────────────────────────────────────────────────────────────────────────────────────────────────
-D('chat_hola', 'Hola. Dime qué quieres **cambiar** en la animación (colores, formato, otro trimestre, otra empresa…) y lo hago aquí mismo. Si tocas los pasos de la izquierda, la pieza se rehace desde cero.', 'Hi. Tell me what you want to **change** in the animation (colours, format, another quarter, another company…) and I will do it right here. If you touch the steps on the left, the piece is rebuilt from scratch.');
+D('chat_hola', 'Hola. **Pregúntame** lo que necesites (de qué fuente es un dato, qué modelo de gráfico usar, cómo hacer algo aquí) o **pídeme cambios** en la animación (colores, formato, otro trimestre, otra empresa…). Lo que el estudio aún no pueda hacer, lo dejo anotado como pedido. Si tocas los pasos de la izquierda, la pieza se rehace desde cero.', 'Hi. **Ask me** anything you need (where a figure comes from, which chart model to use, how to do something here) or **ask for changes** to the animation (colours, format, another quarter, another company…). Whatever the studio cannot do yet, I save as a request. If you touch the steps on the left, the piece is rebuilt from scratch.');
 D('chat_pensando', 'Pensando…', 'Thinking…');
 D('chat_actualizada', 'Vista previa actualizada', 'Preview updated');
 D('sug_t1', 'Pásalo a vertical', 'Make it vertical');
@@ -388,7 +388,10 @@ D('sug_p1', 'Pásalo a vertical', 'Make it vertical');
 D('sug_p2', 'Cambia los colores', 'Change the colours');
 D('sug_p3', 'Hazlo más corto', 'Make it shorter');
 D('sug_p4', 'Pon un título más claro', 'Use a clearer title');
-D('sug_v1', 'Muéstrame Amazon, último trimestre', 'Show me Amazon, latest quarter');
+D('sug_q1', '¿De qué fuente y licencia es esta serie?', 'Which source and license does this series have?');
+D('sug_q2', '¿Qué modelo de gráfico me conviene?', 'Which chart model should I use?');
+D('sug_r1', 'Quiero un gráfico que aún no existe', 'I need a chart the studio does not have yet');
+D('sug_v1','Muéstrame Amazon, último trimestre', 'Show me Amazon, latest quarter');
 D('sug_v2', 'Cómo gana dinero NVIDIA', 'How NVIDIA makes money');
 D('sug_v3', 'Compara el balance de la Fed con el oro', 'Compare the Fed balance sheet with gold');
 
@@ -485,6 +488,7 @@ D('srv_h_generar_trimestre', 'Armé el trimestre', 'I built the quarter');
 D('srv_h_generar_pieza', 'Armé la pieza', 'I built the piece');
 D('srv_h_listar_trimestres', 'Busqué en la biblioteca de empresas', 'I searched the company library');
 D('srv_h_buscar_series', 'Busqué datos', 'I searched for data');
+D('srv_h_anotar_pedido', 'Anoté tu pedido', 'I saved your request');
 D('srv_h_descargar_serie', 'Traje el dato', 'I fetched the series');
 D('srv_h_analizar_serie', 'Analicé la serie', 'I analyzed the series');
 D('srv_h_vista_previa', 'Revisé fotogramas', 'I checked frames');

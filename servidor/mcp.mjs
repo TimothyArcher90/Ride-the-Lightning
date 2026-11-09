@@ -51,6 +51,14 @@ const leerSpec = (spec, ruta) => { if (spec) return spec; if (ruta) return JSON.
 const resumen = (i) => ({ok: i.ok, errores: i.errores, avisos: i.avisos, datos: i.datos.map((d) => ({id: d.id, filas: d.filas, inicio: d.inicio, fin: d.fin, recortada: d.recortada, fuente: d.fuente.nombre, sha256: d.sha256.slice(0, 16)})),
   cifras: i.cifras.filter((c) => c.mostrado).map((c) => ({mostrado: c.mostrado, serie: c.serie, fecha: c.fecha, fila: c.fila})), metodos: i.metodos});
 const trabajos = new Map();
+server.tool('anotar_pedido', 'Save a user request the studio cannot fulfil yet (new chart model, data source, style change, bug) to docs/PEDIDOS.md so it is not lost. One clear sentence plus optional context.',
+  {pedido: z.string().min(5).max(600), contexto: z.string().max(1500).optional()}, async (a) => {
+    const f = path.join(RAIZ, 'docs', 'PEDIDOS.md'); fs.mkdirSync(path.dirname(f), {recursive: true});
+    if (!fs.existsSync(f)) fs.writeFileSync(f, '# Pedidos desde el chat del estudio\n\nUna línea por pedido, más reciente abajo. Las revisa quien mantiene el estudio.\n\n');
+    const una = (s) => String(s).replace(/\s+/g, ' ').trim();
+    fs.appendFileSync(f, `- ${new Date().toISOString().slice(0, 16).replace('T', ' ')} · ${una(a.pedido)}${a.contexto ? ` — _${una(a.contexto)}_` : ''}\n`);
+    return texto({ok: true, archivo: 'docs/PEDIDOS.md'});
+  });
 
 server.tool('guia_de_direccion', 'Reglas de exactitud, lenguaje de movimiento y criterio de gráficas. Léela antes de dirigir.', {}, async () =>
   texto(fs.readFileSync(path.join(RAIZ, 'servidor', 'guia-de-direccion.md'), 'utf8')));

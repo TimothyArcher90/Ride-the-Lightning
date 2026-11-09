@@ -781,7 +781,7 @@ const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replac
 function burbuja(clase, html) { const d = document.createElement('div'); d.className = 'cm ' + clase; d.innerHTML = html; chatMsgs.append(d); chatMsgs.scrollTop = chatMsgs.scrollHeight; return d; }
 function sugerencias() {
   const box = $('#chatSug'); if (!box) return;
-  const tri = S.series[0]?.trimestre, lista = (tri ? ['sug_t1', 'sug_t2', 'sug_t3', 'sug_t4', 'sug_t5'] : S.plano ? ['sug_p1', 'sug_p2', 'sug_p3', 'sug_p4'] : ['sug_v1', 'sug_v2', 'sug_v3']).map((k) => T(k));
+  const tri = S.series[0]?.trimestre, lista = (tri ? ['sug_q1', 'sug_q2', 'sug_t1', 'sug_t3', 'sug_r1'] : S.plano ? ['sug_q1', 'sug_q2', 'sug_p1', 'sug_p2', 'sug_r1'] : ['sug_q2', 'sug_v1', 'sug_v2', 'sug_r1']).map((k) => T(k));
   box.innerHTML = lista.map((t) => `<button type="button">${esc(t)}</button>`).join('');
   box.querySelectorAll('button').forEach((b) => (b.onclick = () => enviarChat(b.textContent)));
 }
