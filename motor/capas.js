@@ -294,8 +294,8 @@ function linea(env, capa) {
       if (yh != null && seg && ult && xh > ult[0]) seg.push([px(xh), py(yh)]);
       for (const sg of segs) { const cv = curva(P); cv.lineStart(); sg.forEach(([qx, qy]) => cv.point(qx, qy)); cv.lineEnd(); }
     } else if (yh != null && ult && xh > ult[0]) { P.lineTo(px(xh), py(yh)); }
-    if (yh == null || x0p === null) return;
-    if (capa.area && !mudo) {
+    if (x0p === null) return;   // una serie que termina ANTES que las demás (valor nulo en la cabeza) se dibuja entera, pero no lleva cabeza ni etiqueta
+    if (capa.area && !mudo && yh != null) {
       const A = new Path2D(P);
       A.lineTo(px(xh), B.y + B.h); A.lineTo(x0p, B.y + B.h); A.closePath();
       const g = ctx.createLinearGradient(0, B.y, 0, B.y + B.h);
@@ -308,7 +308,7 @@ function linea(env, capa) {
       ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 22 * u; ctx.strokeStyle = rgba(color, 0.55); ctx.lineWidth = 7 * u; ctx.stroke(P); ctx.restore();
       ctx.strokeStyle = color; ctx.lineWidth = 3.4 * u; ctx.stroke(P);
     }
-    cabezas.push({si, color, x: px(xh), y: py(yh), valor: yo, nombre: s.nombre, fmt: s.fmt, s, mudo});
+    if (yh != null) cabezas.push({si, color, x: px(xh), y: py(yh), valor: yo, nombre: s.nombre, fmt: s.fmt, s, mudo});
   });
   ctx.restore();
 

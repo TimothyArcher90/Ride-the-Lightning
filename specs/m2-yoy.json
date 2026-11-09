@@ -1,0 +1,250 @@
+{
+  "version": 1,
+  "idioma": "en",
+  "titulo": "US M2 money supply, year over year",
+  "formato": "horizontal",
+  "fps": 30,
+  "duracion": 24,
+  "datos": {
+    "d": {
+      "archivo": "datos/m2/m2_yoy.csv",
+      "x": "fecha",
+      "tipoX": "fecha",
+      "fuente": {
+        "nombre": "Federal Reserve H.6 vía FRED (M2SL mensual SA, WM2NS semanal NSA)",
+        "corto": "Federal Reserve H.6 via FRED (M2SL, WM2NS)",
+        "url": "https://fred.stlouisfed.org/series/M2SL",
+        "obtenido": "2026-11-09",
+        "licencia": "Dominio público (Federal Reserve Board); se pide citar. Public domain: citation requested"
+      },
+      "columnas": [
+        {
+          "col": "mensual",
+          "nombre": "Monthly M2, YoY (seasonally adjusted)",
+          "color": "piedra",
+          "prefijo": "",
+          "sufijo": "%",
+          "decimales": 1,
+          "unidad": "interanual, %"
+        },
+        {
+          "col": "mensual_24m",
+          "nombre": "Last 24 months (monthly)",
+          "color": "oro",
+          "prefijo": "",
+          "sufijo": "%",
+          "decimales": 1,
+          "unidad": "interanual, %"
+        },
+        {
+          "col": "semanal",
+          "nombre": "Weekly M2, YoY (not adjusted)",
+          "color": "oro",
+          "prefijo": "",
+          "sufijo": "%",
+          "decimales": 1,
+          "unidad": "interanual, %"
+        }
+      ]
+    }
+  },
+  "capas": [
+    {
+      "tipo": "titulo",
+      "id": "ti",
+      "texto": "M2 growth nears 6%, its fastest pace since 2022",
+      "t": [
+        0.2,
+        23.5
+      ],
+      "verificada": {
+        "fuente": "FRED M2SL/WM2NS: 5,71 % mensual (sep 2026) y 5,98 % semanal (5 oct 2026); último valor mayor: mayo 2022 (mensual 6,07 %; semanal 6,14 %)"
+      }
+    },
+    {
+      "tipo": "linea",
+      "id": "g1",
+      "datos": "d",
+      "series": [
+        0,
+        1,
+        2
+      ],
+      "t": [
+        1,
+        16
+      ]
+    },
+    {
+      "tipo": "zona",
+      "id": "rec1",
+      "capa": "g1",
+      "datos": "d",
+      "desde": "1960-05-01",
+      "hasta": "1961-03-01",
+      "estilo": "banda",
+      "color": "piedra",
+      "t": [
+        0.6,
+        23.9
+      ]
+    },
+    {
+      "tipo": "zona",
+      "id": "rec2",
+      "capa": "g1",
+      "datos": "d",
+      "desde": "1970-01-01",
+      "hasta": "1970-12-01",
+      "estilo": "banda",
+      "color": "piedra",
+      "t": [
+        0.6,
+        23.9
+      ]
+    },
+    {
+      "tipo": "zona",
+      "id": "rec3",
+      "capa": "g1",
+      "datos": "d",
+      "desde": "1973-12-01",
+      "hasta": "1975-04-01",
+      "estilo": "banda",
+      "color": "piedra",
+      "t": [
+        0.6,
+        23.9
+      ]
+    },
+    {
+      "tipo": "zona",
+      "id": "rec4",
+      "capa": "g1",
+      "datos": "d",
+      "desde": "1980-02-01",
+      "hasta": "1980-08-01",
+      "estilo": "banda",
+      "color": "piedra",
+      "t": [
+        0.6,
+        23.9
+      ]
+    },
+    {
+      "tipo": "zona",
+      "id": "rec5",
+      "capa": "g1",
+      "datos": "d",
+      "desde": "1981-08-01",
+      "hasta": "1982-12-01",
+      "estilo": "banda",
+      "color": "piedra",
+      "t": [
+        0.6,
+        23.9
+      ]
+    },
+    {
+      "tipo": "zona",
+      "id": "rec6",
+      "capa": "g1",
+      "datos": "d",
+      "desde": "1990-08-01",
+      "hasta": "1991-04-01",
+      "estilo": "banda",
+      "color": "piedra",
+      "t": [
+        0.6,
+        23.9
+      ]
+    },
+    {
+      "tipo": "zona",
+      "id": "rec7",
+      "capa": "g1",
+      "datos": "d",
+      "desde": "2001-04-01",
+      "hasta": "2001-12-01",
+      "estilo": "banda",
+      "color": "piedra",
+      "t": [
+        0.6,
+        23.9
+      ]
+    },
+    {
+      "tipo": "zona",
+      "id": "rec8",
+      "capa": "g1",
+      "datos": "d",
+      "desde": "2008-01-01",
+      "hasta": "2009-07-01",
+      "estilo": "banda",
+      "color": "piedra",
+      "t": [
+        0.6,
+        23.9
+      ]
+    },
+    {
+      "tipo": "zona",
+      "id": "rec9",
+      "capa": "g1",
+      "datos": "d",
+      "desde": "2020-03-01",
+      "hasta": "2020-05-01",
+      "estilo": "banda",
+      "color": "piedra",
+      "t": [
+        0.6,
+        23.9
+      ]
+    },
+    {
+      "tipo": "llamada",
+      "id": "c_max",
+      "capa": "g1",
+      "datos": "d",
+      "serie": 0,
+      "ancla": {
+        "max": true
+      },
+      "texto": "Series high",
+      "t": [
+        13.5,
+        16.2
+      ]
+    },
+    {
+      "tipo": "llamada",
+      "id": "c_min",
+      "capa": "g1",
+      "datos": "d",
+      "serie": 0,
+      "ancla": {
+        "min": true
+      },
+      "texto": "Series low",
+      "t": [
+        16.2,
+        19
+      ]
+    },
+    {
+      "tipo": "llamada",
+      "id": "c_ult",
+      "capa": "g1",
+      "datos": "d",
+      "serie": 2,
+      "ancla": {
+        "ultimo": true
+      },
+      "texto": "Latest, weekly",
+      "t": [
+        19,
+        23.5
+      ]
+    }
+  ]
+}

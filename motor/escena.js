@@ -54,6 +54,13 @@ export class Escena {
     ctx.clearRect(0, 0, W, H);
     if (!sinFondo && modo !== 'texto') this.fondo(ctx, W, H, t);
     const env = {ctx, W, H, u: Math.min(W, H) / 1080, t, tablas: this.spec.tablas, imgs: this.imgs, vistas: {}, cabezas: {}, proy: {}, registro: [], capasTodas: this.capas};
+    // las zonas (z 8) van DETRÁS de la gráfica (z 10) pero necesitan su proyección datos→píxel: se dibuja antes la gráfica a la que apuntan en un lienzo desechable
+    // solo para publicar su vista, y se descarta lo que ese dibujo registró (cajas de texto) para no duplicar colisiones
+    const conZona = new Set(this.capas.filter((c) => c.tipo === 'zona' && c.capa).map((c) => c.capa));
+    if (conZona.size) for (const capa of this.capas) {
+      if (!conZona.has(capa.id) || !DIBUJO[capa.tipo] || !GRAFICA.has(capa.tipo)) continue;
+      const n = env.registro.length; env.ctx = this.scratch(W, H); env.ctx.save(); DIBUJO[capa.tipo](env, capa); env.ctx.restore(); env.ctx = ctx; env.registro.length = n;
+    }
     for (const capa of this.capas) {
       const f = DIBUJO[capa.tipo];
       if (!f) continue;
