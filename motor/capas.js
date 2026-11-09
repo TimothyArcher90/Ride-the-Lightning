@@ -11,7 +11,7 @@ import {celdas} from './arbol.js';
 import sankeyD3 from './vendor/d3-sankey/sankey.js';
 import {stepAfter as curvaEscalon} from './vendor/d3-shape/curve/step.js';
 import {monotoneX as curvaMonotona} from './vendor/d3-shape/curve/monotone.js';
-import {relajar1D, envolverEntero} from './etiquetas.js';
+import {relajar1D, envolverEntero, colocar2D, hiloEtiqueta} from './etiquetas.js';
 import {decimarPorColumna, decimaDesde} from './decimar.js';
 import {t as tr, registrar} from './idioma.js';   // «tr»: en las capas «t» es el tiempo
 
@@ -238,7 +238,7 @@ function linea(env, capa) {
   // series
   ctx.save();
   ctx.beginPath(); ctx.rect(B.x - 2, B.y - 12 * u, B.w + 4, B.h + 24 * u); ctx.clip();
-  const cabezas = [];
+  const cabezas = [], muestras = [];   // muestras: puntos de las curvas (≤ 80 por serie) que las etiquetas de cabeza deben esquivar
   // «foco»: una serie protagonista y las demás atenuadas (la técnica de Johnny Harris: una sola línea manda y el resto da contexto)
   // curva declarada (nunca por defecto): 'escalon' = el valor se mantiene hasta el siguiente dato (tasas de política); 'monotono' = Steffen, no inventa máximos ni mínimos entre datos
   const curva = capa.curva === 'escalon' ? curvaEscalon : capa.curva === 'monotono' ? curvaMonotona : null;
@@ -247,6 +247,7 @@ function linea(env, capa) {
     const s = tab.series[si], color = colorDe(s.color, si), py = der.has(si) ? pyR : pyL, mudo = foco != null && si !== foco;
     const a = Math.max(0, lowerBound(tab.x, cam.x[0]) - 1), b = Math.min(n - 1, lowerBound(tab.x, Math.min(cam.x[1], xh)));
     const P = new Path2D();
+    for (let i = a, paso = Math.max(1, Math.floor((b - a) / 80)); i <= b; i += paso) if (s.y[i] != null && !mudo) muestras.push([px(tab.x[i]), py(s.y[i]), 2.5 * u]);
     let abierto = false, x0p = null, ult = null, seg = null; const segs = [];   // seg/segs: solo con curva declarada (escalón o monótona)
     if (!curva && capa.decimar !== false && b - a + 1 > decimaDesde(B.w)) {
       // serie más larga que ~2 filas por píxel: de cada columna de píxeles se dibujan el primer, el mínimo, el máximo y el último dato REAL (nada se interpola ni se salta un extremo)
@@ -295,11 +296,27 @@ function linea(env, capa) {
   // cabezas: punto + ondas + etiqueta. Los nombres se separan en vertical para que dos series cercanas no se pisen.
   const gapEt = escalarFuente(24 * u) * 1.2, visibles = cabezas.filter((h) => reveal > 0 && h.x >= B.x - 4 && h.x <= B.x + B.w + 4), yEt = new Map();
   if (visibles.length > 1) separar(visibles.map((h) => h.y), gapEt, B.y + gapEt / 2, B.y + B.h - gapEt / 2).forEach((y, i) => yEt.set(visibles[i], y));
+  // colocación 2-D de los nombres: por defecto a la derecha de la cabeza (alineados con la separación vertical); si ahí no caben o pisarían una curva,
+  // arriba/abajo/izquierda, y con hilo si quedan lejos. Los datos de las demás series y los nombres vecinos cuentan como obstáculos.
+  const pos2 = new Map();
+  if (capa.etiquetas !== false && visibles.length && (idxs.length > 1 || visibles.some((h) => h.mudo))) {
+    const {W, H} = env, lim = H > W ? ZONA.x * W - 6 : W - 40 * u, hh = escalarFuente(24 * u) * 1.2;
+    const its = visibles.filter((h) => h.mudo || idxs.length > 1).map((h) => { ctx.font = fnt(h.mudo ? 500 : 700, 24 * u); return {cab: h, x: h.x, y: yEt.get(h) ?? h.y, w: ctx.measureText(h.nombre).width + 4 * u, h: hh, r: 9 * u, pref: ['der', 'arr', 'aba', 'izq', 'arrDer', 'abaDer', 'arrIzq', 'abaIzq']}; });
+    const sp = colocar2D(its, {caja: [B.x, B.y - hh, lim, B.y + B.h + hh], puntos: muestras, gap: 7 * u});
+    its.forEach((q, k) => pos2.set(q.cab, {p: sp[k], q}));
+  }
+  const nombreCabeza = (h, peso) => {
+    const e = pos2.get(h); if (!e) return;
+    const {p, q} = e;
+    const [x1, y1, x2, y2] = hiloEtiqueta({x: h.x, y: h.y, r: 10 * u}, p);
+    if (Math.hypot(x2 - x1, y2 - y1) > 12 * u) { ctx.strokeStyle = rgba(h.color, 0.7); ctx.lineWidth = 1.5 * u; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+    texto(ctx, h.nombre, p.x, p.y + q.h / 2 + mid(24 * u), fnt(peso, 24 * u), h.color, 'left');
+  };
   for (const h of cabezas) {
     if (reveal <= 0 || h.x < B.x - 4 || h.x > B.x + B.w + 4) continue;
     if (h.mudo) {   // serie de contexto: punto pequeño y nombre tenue, sin ondas
       ctx.fillStyle = rgba(h.color, 0.6); ctx.beginPath(); ctx.arc(h.x, h.y, 4.5 * u, 0, 7); ctx.fill();
-      if (capa.etiquetas !== false) etiquetaCabeza(env, h, h.nombre, (yEt.get(h) ?? h.y) + mid(24 * u), 24 * u, 500, h.color, B);
+      if (capa.etiquetas !== false) nombreCabeza(h, 500);
       continue;
     }
     const ciclo = (t * 0.9) % 1;
@@ -308,7 +325,7 @@ function linea(env, capa) {
     ctx.fillStyle = PALETA.blanco; ctx.beginPath(); ctx.arc(h.x, h.y, 6.5 * u, 0, 7); ctx.fill();
     ctx.strokeStyle = h.color; ctx.lineWidth = 3 * u; ctx.beginPath(); ctx.arc(h.x, h.y, 9.5 * u, 0, 7); ctx.stroke();
     if (capa.etiquetas !== false && idxs.length > 1) {
-      etiquetaCabeza(env, h, h.nombre, (yEt.get(h) ?? h.y) + mid(24 * u), 24 * u, 700, h.color, B);
+      nombreCabeza(h, 700);
     }
   }
   ctx.restore();
@@ -476,6 +493,29 @@ function dispersion(env, capa) {
     if (g <= 0) continue;
     ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 10 * u; ctx.fillStyle = rgba(color, 0.78);
     ctx.beginPath(); ctx.arc(X(tab.x[i]), Y(s.y[i]), 8 * u * g, 0, 7); ctx.fill(); ctx.restore();
+  }
+  // puntos rotulados (opt-in): `etiquetasPuntos: [{i, texto?}]` (texto de quien escribe la spec; sin texto sale «x · y» con los datos) o `extremos: true`
+  // (el punto más alto, el más bajo, el de más a la izquierda y el de más a la derecha). Cada rótulo se coloca con colocar2D: junto a su punto y sin pisar
+  // otros rótulos, ejes ni puntos; si queda lejos, lleva un hilo.
+  {
+    let marc = capa.etiquetasPuntos ?? [];
+    if (capa.extremos && !marc.length) {
+      const val = [...Array(n).keys()].filter((i) => s.y[i] != null), pick = (f) => val.reduce((a, b) => (f(b) > f(a) ? b : a), val[0]);
+      marc = [...new Set([pick((i) => s.y[i]), pick((i) => -s.y[i]), pick((i) => tab.x[i]), pick((i) => -tab.x[i])])].map((i) => ({i}));
+    }
+    const wL = prog(t, t1 - 0.2, t1 + 0.5, ease.io3);
+    if (marc.length && wL > 0) {
+      const sz = 22 * u; ctx.font = fnt(700, sz);
+      const its = marc.filter((m) => s.y[m.i] != null).map((m) => { const dd = (v) => (Math.abs(v) >= 1000 ? 0 : Math.abs(v) >= 100 ? 1 : 2), tx = m.texto ?? `${fmtNum(tab.x[m.i], {decimales: dd(tab.x[m.i])})} · ${fmtNum(s.y[m.i], {decimales: dd(s.y[m.i])})}`; return {m, tx, x: X(tab.x[m.i]), y: Y(s.y[m.i]), w: ctx.measureText(tx).width + 12 * u, h: escalarFuente(sz) * 1.5, r: 9 * u}; });
+      const ptsD = []; for (let i = 0; i < n; i++) if (s.y[i] != null && !its.some((q) => q.m.i === i)) ptsD.push([X(tab.x[i]), Y(s.y[i]), 9 * u]);
+      const pos = colocar2D(its, {caja: [B.x, B.y - 4 * u, B.x + B.w, B.y + B.h], puntos: ptsD, gap: 6 * u});
+      its.forEach((q, k) => {
+        const p = pos[k]; ctx.save(); ctx.globalAlpha *= wL;
+        if (p.hilo) { const [x1, y1, x2, y2] = hiloEtiqueta(q, p); ctx.strokeStyle = rgba(PALETA.blanco, 0.7); ctx.lineWidth = 1.5 * u; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+        texto(ctx, q.tx, p.x + 6 * u, p.y + q.h / 2 + mid(sz), fnt(700, sz), PALETA.blanco, 'left'); ctx.restore();
+        reg(env, 'etiqueta', [p.x, p.y, p.x + q.w, p.y + q.h], `${capa.id ?? 'dispersion'}:p${q.m.i}`);
+      });
+    }
   }
   const R = capa.regresion;
   if (R) {

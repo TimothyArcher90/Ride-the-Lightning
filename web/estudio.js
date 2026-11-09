@@ -7,7 +7,7 @@ import {tr as T, tt, L, setL, onL, num, aplicarDOM} from '/web/i18n.js';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 const ICON = {
-  check: '<path d="M20 6 9 17l-5-5"/>', x: '<path d="M18 6 6 18M6 6l12 12"/>', info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>', spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>', x: '<path d="M18 6 6 18M6 6l12 12"/>', info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
   warn: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>', play: '<path d="M6 4l14 8-14 8z" fill="currentColor"/>', pause: '<path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor"/>',
   up: '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>', folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
@@ -24,12 +24,12 @@ const api = async (u, o) => {
 const post = (u, body) => api(u, {method: 'POST', body: JSON.stringify(body && typeof body === 'object' && !Array.isArray(body) ? {idioma: L(), ...body} : body)});
 /** The compiled plan gets the piece language so the engine draws its fixed texts in it, whatever the server returned. */
 const conI = (plano, spec) => { if (plano && typeof plano === 'object') plano.idioma = spec?.idioma ?? L(); return plano; };
-const guardar = () => { try { localStorage.setItem('rtl', JSON.stringify({series: S.series, plantilla: S.plantilla, titulo: S.titulo, formato: S.formato, camara: S.camara, vivo: S.vivo, foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, intento: S.intento, emp: S.emp, tituloEditado: S.tituloEditado, paso: Math.min(S.paso, 3), etiquetas: S.etiquetas, sel: S.sel, pais: S.pais, indPais: S.indPais})); } catch {} };
+const guardar = () => { try { localStorage.setItem('rtl', JSON.stringify({series: S.series, plantilla: S.plantilla, titulo: S.titulo, formato: S.formato, camara: S.camara, vivo: S.vivo, foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, intento: S.intento, emp: S.emp, tituloEditado: S.tituloEditado, paso: Math.min(S.paso, 3), etiquetas: S.etiquetas, sel: S.sel, pais: S.pais, indPais: S.indPais, hitos: S.hitos})); } catch {} };
 const cargarGuardado = () => { try { return JSON.parse(localStorage.getItem('rtl') ?? 'null'); } catch { return null; } };
 
 const PASOS = () => [T('paso_n1'), T('paso_n2'), T('paso_n3'), T('paso_n4')];
 const S = Object.assign({estiloMomento: 'tarjeta', tema: 'oscuro', intento: 'serie', emp: null, empQ: '', empresas: null, trims: null, foco: 0, paso: 0, series: [], plantilla: 'historia', titulo: '', tituloAuto: true, formato: 'horizontal', camara: 'documental', vivo: false, etiquetas: {}, sel: null,
-  bib: null, q: '', cat: '', plantillas: [], camaras: [], analisis: null, spec: null, plano: null, informe: null, notas: [], error: '', generando: false, modo: 'guiado', render: null, subida: null}, cargarGuardado() ?? {});
+  bib: null, q: '', cat: '', plantillas: [], camaras: [], analisis: null, spec: null, plano: null, informe: null, notas: [], error: '', generando: false, modo: 'guiado', render: null, subida: null, hitos: [{fecha: '', nombre: '', fuente: ''}, {fecha: '', nombre: '', fuente: ''}]}, cargarGuardado() ?? {});
 S.tituloEditado = !!S.tituloEditado && !!S.titulo;
 // Template and camera texts come from the server in Spanish; the studio translates them by id (fallback: the server text).
 const nomTpl = (p) => tt('tpl', p.id, 'n', p.nombre), desTpl = (p) => tt('tpl', p.id, 'd', p.descripcion), ayuTpl = (p) => tt('tpl', p.id, 'a', p.ayuda);
@@ -106,13 +106,36 @@ const INTENTOS = [
 const esSerie = () => ['serie', 'pais', 'paises'].includes(S.intento);
 const claseDe = (intento) => (['serie', 'pais', 'paises'].includes(intento) ? 'serie' : intento === 'flujos' ? 'flujos' : 'categorias');
 const claseDatos = () => S.series[0]?.tabla ?? (S.series.length ? 'serie' : claseDe(S.intento));
+// «Surprise me»: a real series from the catalog (long history, not a licence-restricted one) paired with the style the visualizer ranks first for it.
+// The randomness lives only here (UI); the engine stays deterministic. Step 2 then shows the 3 best-fitting styles side by side as live drafts.
+async function sorprender() {
+  const est = $('#sorpresaEstado'), btn = $('#sorpresa'); btn.disabled = true; est.textContent = T('sorpresa_busca');
+  try {
+    const tot = (await api('/api/biblioteca?desde=0')).total ?? 0;
+    for (let intento = 0; intento < 8; intento++) {
+      const desde = Math.floor(Math.random() * Math.max(1, tot - 24)), lote = (await api('/api/biblioteca?desde=' + desde)).series ?? [];
+      const largas = lote.filter((f) => f.descargada && f.inicio && f.fin && +String(f.fin).slice(0, 4) - +String(f.inicio).slice(0, 4) >= 15 && !/\bNC\b|personal|no redistribuir|investigaci|términos/i.test(f.licencia ?? ''));
+      for (const f of largas.sort(() => Math.random() - 0.5).slice(0, 3)) {
+        const serie = {origen: 'biblioteca', id: f.id, nombre: f.nombre.split(' — ')[0], ficha: f};
+        const rec = (await post('/api/recomendar', {series: [limpio(serie)], formato: S.formato})).recomendadas ?? [];
+        if (!rec.length) continue;
+        S.intento = 'serie'; S.series = [serie]; S.plantilla = rec[0].plantilla; S.sel = null; S.analisis = null; S.modo = 'guiado'; S.subida = null; S.titulo = ''; S.tituloEditado = false;
+        guardar(); pintarPasos(); regenerar(); ir(1); return;
+      }
+    }
+    est.textContent = T('sorpresa_fallo');
+  } catch { est.textContent = T('sorpresa_fallo'); }
+  btn.disabled = false;
+}
 function paso1() {
   $('#paso').innerHTML = `
     <div class="guia"><strong>${T('guia_para_que')}</strong> ${T('guia_texto')}
       <ol><li>${T('guia_1')}</li><li>${T('guia_2')}</li><li>${T('guia_3')}</li></ol></div>
     <h2>${T('p1_h')}</h2>
+    <p style="margin:0 0 10px"><button type="button" class="btn" id="sorpresa">${ic('spark')}${T('sorpresa_b')}</button> <span class="ayuda" id="sorpresaEstado" role="status">${T('sorpresa_a')}</span></p>
     <div class="intentos" id="intentos" role="radiogroup" aria-label="${T('p1_aria')}">${INTENTOS.map((i) => `<button type="button" class="intento" role="radio" aria-checked="${S.intento === i.id}" data-id="${i.id}"><span class="g">${esc(T(i.g))}</span><span class="t">${esc(T(i.t))}</span><span class="s">${esc(T(i.s))}</span></button>`).join('')}</div>
     <div id="bloque"></div>`;
+  $('#sorpresa').onclick = sorprender;
   $('#intentos').querySelectorAll('.intento').forEach((b) => (b.onclick = () => {
     const nuevo = b.dataset.id; if (nuevo === S.intento) return;
     S.intento = nuevo;
@@ -381,6 +404,7 @@ function pintarSubida() {
 
 // ── STEP 2: how to see it ───────────────────────────────────────────────────────────────────────────────────────
 const MINI = {
+  dos_hitos: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true"><path d="M10 52 L50 54 L80 36 L110 44 L150 20 L190 26" fill="none" stroke="#C9A84C" stroke-width="2.5"/><path d="M10 52 L50 50 L80 62 L110 56 L150 48 L190 40" fill="none" stroke="#50B5A2" stroke-width="2.5"/><circle cx="10" cy="52" r="4" fill="#F2EEE3"/></svg>',
   comparar: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true"><path d="M8 60 L50 56 L90 62 L130 50 L190 52" fill="none" stroke="#50B5A2" stroke-width="2" opacity=".4"/><path d="M8 66 L50 64 L90 56 L130 58 L190 40" fill="none" stroke="#C27BCB" stroke-width="2" opacity=".4"/><path d="M8 72 L50 60 L90 46 L130 30 L190 12" fill="none" stroke="#C9A84C" stroke-width="3.5" stroke-linecap="round"/><circle cx="190" cy="12" r="5" fill="#fff"/></svg>',
   historia: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true"><path d="M8 70 L40 64 L64 66 L96 40 L124 46 L168 18 L168 78 L8 78Z" fill="#C9A84C" opacity=".15"/><path d="M8 70 L40 64 L64 66 L96 40 L124 46 L168 18" fill="none" stroke="#C9A84C" stroke-width="3" stroke-linecap="round"/><circle cx="168" cy="18" r="5" fill="#fff"/><rect x="104" y="6" width="50" height="22" rx="3" fill="#232320" stroke="#C9A84C"/></svg>',
   panel: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true">' + [[8, 6], [106, 6], [8, 46], [106, 46]].map(([x, y], k) => `<path d="M${x} ${y + 32} L${x + 24} ${y + 24} L${x + 48} ${y + 28} L${x + 84} ${y + 6}" fill="none" stroke="${['#C9A84C', '#50B5A2', '#C27BCB', '#CBC6BC'][k]}" stroke-width="2.5"/>`).join('') + '</svg>',
@@ -396,6 +420,19 @@ const MINI = {
   lollipop: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true">' + [150, 110, 80, 46].map((w, k) => `<path d="M12 ${14 + k * 19} H${12 + w}" stroke="${['#C9A84C', '#50B5A2', '#C27BCB', '#4FB477'][k]}" stroke-width="4"/><circle cx="${12 + w}" cy="${14 + k * 19}" r="7" fill="${['#C9A84C', '#50B5A2', '#C27BCB', '#4FB477'][k]}"/>`).join('') + '</svg>',
   correlacion: '<svg class="mini" viewBox="0 0 200 84" aria-hidden="true">' + [0, 1, 2, 3].flatMap((r) => [0, 1, 2, 3].map((c) => `<rect x="${50 + c * 26}" y="${4 + r * 19}" width="24" height="17" rx="2" fill="${r === c ? '#50B5A2' : (r + c) % 3 === 0 ? '#C27BCB' : '#50B5A2'}" opacity="${r === c ? 1 : 0.25 + ((r * 3 + c) % 4) * 0.2}"/>`)).join('') + '</svg>',
 };
+// Two milestones: every date is a claim, so nothing is drawn until BOTH have a date, a name and a source (the server enforces the same rule).
+const hitoOk = (h) => /^\d{4}-\d{2}-\d{2}$/.test(h.fecha) && h.nombre.trim() !== '' && h.fuente.trim().length >= 8;
+const hitosListos = () => S.hitos.every(hitoOk);
+const extraHitos = () => (S.plantilla === 'dos_hitos' ? {hitos: S.hitos.map((h) => ({fecha: h.fecha, nombre: h.nombre.trim(), fuente: h.fuente.trim()})), estricto: true} : {});
+function panelHitos() {
+  const s0 = S.series[0] ?? {}, ini = s0.inicio ? String(s0.inicio).slice(0, 10) : '', fin = s0.fin ? String(s0.fin).slice(0, 10) : '';
+  return `<h3>${T('hitos_h')}</h3><p class="ayuda">${T('hitos_a')}${ini && fin ? ' ' + T('hitos_rango', {a: ini, b: fin}) : ''}</p>
+    ${S.hitos.map((h, k) => `<fieldset class="hito" style="border:1px solid var(--linea,#3a3a36);border-radius:10px;margin:8px 0;padding:10px 12px"><legend>${T('hito_n', {n: k + 1})}</legend>
+      <label class="etq" for="hf${k}">${T('hito_fecha')}</label><input id="hf${k}" type="date" data-k="${k}" data-c="fecha" value="${esc(h.fecha)}"${ini ? ` min="${ini}"` : ''}${fin ? ` max="${fin}"` : ''}>
+      <label class="etq" for="hn${k}">${T('hito_nombre')}</label><input id="hn${k}" type="text" maxlength="40" data-k="${k}" data-c="nombre" value="${esc(h.nombre)}" placeholder="${esc(T('hito_nombre_ph'))}">
+      <label class="etq" for="hs${k}">${T('hito_fuente')}</label><input id="hs${k}" type="text" maxlength="200" data-k="${k}" data-c="fuente" value="${esc(h.fuente)}" placeholder="${esc(T('hito_fuente_ph'))}"></fieldset>`).join('')}
+    <p class="ayuda" id="hitosEstado" ${hitosListos() ? 'hidden' : ''}>${T('hitos_faltan')}</p>`;
+}
 async function paso2() {
   const n = S.series.length;
   // First ask which styles tell THIS data well (visualizer rules); only those are shown large.
@@ -406,7 +443,7 @@ async function paso2() {
   $('#paso').innerHTML = `
     <h2>${T('p2_h')}</h2>
     <p class="ayuda">${T('p2_a')}</p>
-    ${ideasPais()}
+    ${ideasPais()}${ideasSerie()}
     ${(() => {
       // only the styles that work for what you chose are shown; the rest stay folded (no scolding)
       const clase = claseDatos(), mios = S.plantillas.filter((p) => (p.datos ?? 'serie') === clase), encajan = mios.filter((p) => n >= p.necesita.min && n <= p.necesita.max), otros = mios.filter((p) => !encajan.includes(p));
@@ -414,7 +451,7 @@ async function paso2() {
       let casos = clase === 'categorias' && !esSerie() ? encajan.filter((p) => (S.intento === 'puente' ? p.id === 'puente' : p.id === 'composicion')).concat(encajan.filter((p) => !(S.intento === 'puente' ? p.id === 'puente' : p.id === 'composicion'))) : encajan;
       let sobran = [];
       if (orden.length) { const rec2 = orden.map((id) => casos.find((p) => p.id === id)).filter(Boolean); if (rec2.length) { sobran = casos.filter((p) => !rec2.includes(p)); casos = rec2; } }
-      if (!casos.some((p) => p.id === S.plantilla) && casos[0]) { S.plantilla = casos[0].id; guardar(); setTimeout(regenerar, 0); }
+      if (!casos.some((p) => p.id === S.plantilla) && !sobran.some((p) => p.id === S.plantilla) && casos[0]) { S.plantilla = casos[0].id; guardar(); setTimeout(regenerar, 0); }
       return `<div class="rejilla galeria" role="radiogroup" aria-label="${T('estilos_aria')}">${casos.map((p) => carta(p, true)).join('')}</div>
         ${sobran.length ? `<details class="det"><summary>${T('otros_no_rec', {n: sobran.length})}</summary><p class="ayuda" style="margin-top:8px">${T('otros_no_rec_a')}</p><div class="rejilla" style="margin-top:10px">${sobran.map((p) => carta(p, true, true)).join('')}</div></details>` : ''}
         ${otros.length ? `<details class="det"><summary>${T('otros_cantidad')}</summary><div class="rejilla" style="margin-top:10px">${otros.map((p) => carta(p, false, true)).join('')}</div></details>` : ''}`;
@@ -424,6 +461,7 @@ async function paso2() {
     <input id="titulo" type="text" maxlength="60" value="${esc(S.titulo)}" placeholder="${esc(S.series[0]?.nombre ?? T('titulo_ph'))}">
     <h3>${T('formato_h')}</h3>
     <div class="seg" role="group" aria-label="${T('formato_aria')}"><button type="button" data-f="horizontal" aria-pressed="${S.formato === 'horizontal'}">${T('fmt_h')}</button><button type="button" data-f="vertical" aria-pressed="${S.formato === 'vertical'}">${T('fmt_v')}</button></div>
+    ${S.plantilla === 'dos_hitos' ? panelHitos() : ''}
     ${S.plantilla === 'comparar' ? `<h3>${T('protagonista_h')}</h3><p class="ayuda">${T('protagonista_a')}</p><div role="radiogroup" aria-label="${T('protagonista_aria')}">${S.series.map((s, k) => `<label class="conmuta" style="margin:4px 0"><input type="radio" name="foco" value="${k}" ${S.foco === k ? 'checked' : ''}><span>${esc(s.nombre)}</span></label>`).join('')}</div>` : ''}
     <div id="momentos"></div>
     ${barraNav(true, true, T('sig_camara'), n > 0)}`;
@@ -433,11 +471,12 @@ async function paso2() {
     lista.forEach((c, k) => { const el = $('#paso').querySelector(`.tpl[data-id="${c.plantilla}"]`); if (!el || el.querySelector('.recom')) return; el.insertAdjacentHTML('beforeend', `<span class="sub recom" style="color:var(--oro,#C9A84C)">${k === 0 ? T('recomendada_c') : T('encaja_c')}${esc(c.porque)}</span>`); });
     const gal = $('#paso').querySelector('.galeria'); if (gal) [...lista].reverse().forEach((c) => { const el = gal.querySelector(`.tpl[data-id="${c.plantilla}"]`); if (el) gal.prepend(el); });
   }).catch(() => {});
+  $('#paso').querySelectorAll('.hito input').forEach((i) => (i.oninput = () => { S.hitos[+i.dataset.k][i.dataset.c] = i.value; guardar(); const m = $('#hitosEstado'); if (m) m.hidden = hitosListos(); regenerarDebounce(); }));
   $('#paso').querySelectorAll('input[name=foco]').forEach((r) => (r.onchange = () => { S.foco = +r.value; guardar(); regenerar(); }));
   $('#paso').querySelectorAll('.tpl').forEach((b) => (b.onclick = () => { if (b.getAttribute('aria-disabled') === 'true') { aviso(ayuTpl(S.plantillas.find((p) => p.id === b.dataset.id))); return; } S.plantilla = b.dataset.id; guardar(); paso2(); regenerar(); }));
   $('#titulo').oninput = (e) => { S.titulo = e.target.value; S.tituloEditado = !!S.titulo.trim(); guardar(); regenerarDebounce(); };
   $('#paso').querySelectorAll('.seg button').forEach((b) => (b.onclick = () => { S.formato = b.dataset.f; guardar(); paso2(); regenerar(); }));
-  enlazarNav(1); enlazarIdeas();
+  enlazarNav(1); enlazarIdeas(); enlazarIdeasSerie();
   miniaturas();
   if (S.plantilla === 'historia' && n === 1) await pintarMomentos();
 }
@@ -467,8 +506,39 @@ function enlazarIdeas() {
     } catch (e) { r.disabled = false; r.querySelector('span').textContent = e.message; }
   };
 }
+// More ideas for ONE catalog series (not a country figure): put it next to similar series, or let the line stop at its biggest moves.
+const serieSuelta = () => (S.series.length === 1 && S.series[0].origen === 'biblioteca' && !datosPaisSel() ? S.series[0] : null);
+function ideasSerie() {
+  const sr = serieSuelta(); if (!sr) return '';
+  const cat = sr.ficha?.categoria ?? '';
+  return `<div class="ideas"><p class="tag">${T('ideas_h')}</p><div class="ideas-fila">
+    ${cat ? `<button type="button" class="idea" id="ideaParecidas"><b>${T('idea_rel_t')}</b><span>${T('idea_rel_s', {c: esc(cat)})}</span></button>` : ''}
+    <button type="button" class="idea" id="ideaMovs"><b>${T('idea_mov_t')}</b><span>${T('idea_mov_s')}</span></button></div></div>`;
+}
+function enlazarIdeasSerie() {
+  const sr = serieSuelta(); if (!sr) return;
+  const rel = $('#ideaParecidas'), mov = $('#ideaMovs');
+  if (rel) rel.onclick = async () => {
+    rel.disabled = true; const sp = rel.querySelector('span'); sp.textContent = T('idea_rel_busca');
+    try {
+      const lista = (await api('/api/biblioteca?categoria=' + encodeURIComponent(sr.ficha.categoria))).series ?? [];
+      const otras = lista.filter((f) => f.id !== sr.id && f.descargada && f.frecuencia === sr.ficha.frecuencia && !/\bNC\b|personal|no redistribuir|investigaci|términos/i.test(f.licencia ?? '')).slice(0, 2);
+      if (!otras.length) { sp.textContent = T('idea_rel_no'); rel.disabled = false; return; }
+      S.series = [sr, ...otras.map((f) => ({origen: 'biblioteca', id: f.id, nombre: f.nombre.split(' — ')[0], ficha: f}))]; S.plantilla = 'comparar'; S.foco = 0; S.sel = null; S.analisis = null; guardar(); pintarPasos(); regenerar(); paso2();
+    } catch { sp.textContent = T('idea_rel_no'); rel.disabled = false; }
+  };
+  if (mov) mov.onclick = async () => {
+    mov.disabled = true;
+    try {
+      const an = await post('/api/analizar', {series: [limpio(sr)]});
+      if (an.ok) { S.analisis = an; S.sel = Object.fromEntries(an.momentos.map((m) => [m.id, m.tipo === 'subida' || m.tipo === 'caida'])); }
+      S.plantilla = 'historia'; guardar(); regenerar(); paso2();
+    } catch { mov.disabled = false; }
+  };
+}
 // Live gallery: each style shows how YOUR data would look (not a generic doodle). A real frame of each one is drawn.
 let miniSeq = 0;
+const cacheMini = new Map();   // miniaturas ya dibujadas, por (idioma + todo lo que cambia el dibujo): cambiar de paso o de título no las redibuja
 const momentosSel = () => (S.analisis?.momentos ?? []).filter((m) => S.sel?.[m.id]).map((m) => ({tipo: m.tipo, ancla: m.ancla, etiqueta: (S.etiquetas[m.id] || m.etiqueta).slice(0, 30)}));
 async function miniaturas() {
   const seq = ++miniSeq, cards = [...$('#paso').querySelectorAll('.galeria .tpl:not([aria-disabled="true"])')];
@@ -477,13 +547,23 @@ async function miniaturas() {
     if (seq !== miniSeq || S.paso !== 1) return;
     card.classList.add('cargando');
     try {
-      const r = await post('/api/generar', {plantilla: card.dataset.id, series: S.series.map(limpio), momentos: momentosSel(), camara: S.camara, formato: S.formato, titulo: '', foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, resalta: S.resalta});
+      if (card.dataset.id === 'dos_hitos' && !hitosListos()) { card.classList.remove('cargando'); continue; }
+      const carga = {...(card.dataset.id === 'dos_hitos' ? {hitos: S.hitos.map((h) => ({fecha: h.fecha, nombre: h.nombre.trim(), fuente: h.fuente.trim()})), estricto: true} : {}), plantilla: card.dataset.id, series: S.series.map(limpio), momentos: momentosSel(), camara: S.camara, formato: S.formato, titulo: '', foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, resalta: S.resalta};
+      const clave = JSON.stringify([L(), carga]), hit = cacheMini.get(clave);
+      if (hit) {   // misma combinación ya dibujada: se reutiliza sin llamar al servidor ni volver a dibujar
+        cacheMini.delete(clave); cacheMini.set(clave, hit);
+        const cv = document.createElement('canvas'); cv.width = hit.width; cv.height = hit.height; cv.className = hit.className; cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', hit.getAttribute('aria-label') ?? ''); cv.getContext('2d').drawImage(hit, 0, 0);
+        const v0 = card.querySelector('svg.mini, canvas.mini-vivo'); if (v0) v0.replaceWith(cv); else card.prepend(cv);
+        card.classList.remove('cargando'); continue;
+      }
+      const r = await post('/api/generar', carga);
       if (seq !== miniSeq || !card.isConnected) return;
       if (!r.plano || r.informe?.errores?.length) { card.classList.remove('cargando'); continue; }
       conI(r.plano, r.spec);
       const vert = r.plano.formato === 'vertical', cv = document.createElement('canvas'); cv.width = vert ? 270 : 480; cv.height = vert ? 480 : 270; cv.className = 'mini-vivo' + (vert ? ' vert' : ''); cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', T('vista_de', {n: card.querySelector('.tit').textContent}));
       new Escena(r.plano, await cargarImagenes(r.plano)).dibujar(cv.getContext('2d'), cv.width, cv.height, r.plano.duracion * 0.88);
       const viejo = card.querySelector('svg.mini, canvas.mini-vivo'); if (viejo) viejo.replaceWith(cv); else card.prepend(cv);
+      { const copia = document.createElement('canvas'); copia.width = cv.width; copia.height = cv.height; copia.className = cv.className; copia.setAttribute('aria-label', cv.getAttribute('aria-label') ?? ''); copia.getContext('2d').drawImage(cv, 0, 0); cacheMini.set(clave, copia); if (cacheMini.size > 80) cacheMini.delete(cacheMini.keys().next().value); }
     } catch { /* the generic doodle stays */ }
     card.classList.remove('cargando');
   }
@@ -598,7 +678,8 @@ async function regenerar() {
   try {
     if (S.plantilla === 'historia' && S.series.length === 1 && !S.analisis) { S.analisis = await post('/api/analizar', {series: S.series.map(limpio)}); if (S.analisis.ok && !S.sel) S.sel = Object.fromEntries(S.analisis.momentos.map((m) => [m.id, m.seleccionado])); }
     const momentos = (S.analisis?.momentos ?? []).filter((m) => S.sel?.[m.id]).map((m) => ({tipo: m.tipo, ancla: m.ancla, etiqueta: (S.etiquetas[m.id] || m.etiqueta).slice(0, 30)}));
-    const r = await post('/api/generar', {plantilla: S.plantilla, series: S.series.map(limpio), momentos, camara: S.camara, formato: S.formato, titulo: S.tituloEditado ? S.titulo : '', foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, resalta: S.resalta, vivo: S.vivo ? {render: 'final', alfa: true, minEntreRendersMin: 360} : null});
+    if (S.plantilla === 'dos_hitos' && !hitosListos()) { S.error = T('hitos_faltan'); S.spec = S.plano = null; S.informe = {errores: [], avisos: [], datos: [], cifras: []}; S.generando = false; $('#carga').hidden = true; mostrarVista(); pintarEstadoPasos(); return; }
+    const r = await post('/api/generar', {...extraHitos(), plantilla: S.plantilla, series: S.series.map(limpio), momentos, camara: S.camara, formato: S.formato, titulo: S.tituloEditado ? S.titulo : '', foco: S.foco, estiloMomento: S.estiloMomento, tema: S.tema, resalta: S.resalta, vivo: S.vivo ? {render: 'final', alfa: true, minEntreRendersMin: 360} : null});
     if (seq !== genSeq) return;
     if (r.spec) r.spec.idioma = L();
     Object.assign(S, {spec: r.spec, plano: conI(r.plano ?? null, r.spec), informe: r.informe, notas: r.notas ?? []});
@@ -674,7 +755,7 @@ async function estadoVivo() {
 try {
   const es = new EventSource('/api/eventos');
   es.addEventListener('trimestre', (e) => { const d = JSON.parse(e.data); aviso(T('ev_trimestre', {n: d.nombre, e: d.etiqueta})); if (S.paso === 0 && S.emp === d.ticker) elegirEmpresa(d.ticker); else if (S.paso === 0) cargarEmpresas(); });
-  es.addEventListener('serie', (e) => { const d = JSON.parse(e.data); aviso(T('ev_serie', {n: d.nombre ?? d.id})); if (S.series.some((s) => s.id === d.id)) { S.analisis = null; regenerar(); } });
+  es.addEventListener('serie', (e) => { const d = JSON.parse(e.data); aviso(T('ev_serie', {n: d.nombre ?? d.id})); cacheMini.clear(); if (S.series.some((s) => s.id === d.id)) { S.analisis = null; regenerar(); } });
 } catch {}
 $('#btnExperto').onclick = (e) => { const on = document.body.classList.toggle('exp'); e.currentTarget.setAttribute('aria-pressed', on); };
 const compilarManual = async (spec) => { const r = await post('/api/compilar', spec); return {r, plano: r.informe.ok ? conI(r.spec, spec) : null}; };

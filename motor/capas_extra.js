@@ -702,7 +702,7 @@ export function calcularDosHitos(capa, tab) {
       if (dd[s] < peor) { peor = dd[s]; sPeor = s; }
       ddMin[s] = peor;
     }
-    r.hitos.push({nombre, pedida: ms, fila: j, fecha: X[j], exacta: X[j] === ms, base, n, v, dd, ddMin, x: X.slice(j), pico: {s: pk, v: v[pk], x: X[j + pk]}, suelo: peor < 0 ? {s: sPeor, dd: peor, x: X[j + sPeor]} : null, ret: v[n - 1] - 100, ddFin: dd[n - 1], peor});
+    r.hitos.push({nombre, fuente: String(h?.fuente ?? "").trim(), pedida: ms, fila: j, fecha: X[j], exacta: X[j] === ms, base, n, v, dd, ddMin, x: X.slice(j), pico: {s: pk, v: v[pk], x: X[j + pk]}, suelo: peor < 0 ? {s: sPeor, dd: peor, x: X[j + sPeor]} : null, ret: v[n - 1] - 100, ddFin: dd[n - 1], peor});
   });
   if (r.errores.length) return r;
   if (r.hitos[0].fila === r.hitos[1].fila) { r.errores.push(`los dos hitos caen en la misma sesión (${isoDe(r.hitos[0].fecha)}); no hay nada que comparar.`); return r; }
@@ -1024,7 +1024,7 @@ export function validarExtra(capa, tab, donde) {
       if (idx.length !== 1) a.push(`${donde}: dos_hitos usa una sola serie; se usa la primera.`);
       const R = calcularDosHitos(capa, tab); R.errores.forEach((x) => e.push(`${donde}: ${x}`)); R.avisos.forEach((x) => a.push(`${donde}: ${x}`));
       if (R.errores.length) break;
-      R.hitos.forEach((h) => cifra({tipo: 'hito', hito: h.nombre, fecha: fmtFecha(h.fecha, 'dia'), base: h.base, sesiones: h.n - 1, retorno_pct: +h.ret.toFixed(4), caida_actual_pct: +h.ddFin.toFixed(4), peor_caida_pct: +h.peor.toFixed(4), fecha_peor_caida: h.suelo ? fmtFecha(h.suelo.x, 'dia') : null, maximo_base100: +h.pico.v.toFixed(4), fecha_maximo: fmtFecha(h.pico.x, 'dia')}));
+      R.hitos.forEach((h) => { if (!h.fuente) a.push(`${donde}: el hito «${h.nombre}» no declara fuente: la fecha y el nombre son una afirmación sin verificar.`); cifra({tipo: 'hito', hito: h.nombre, fuente: h.fuente || null, fecha: fmtFecha(h.fecha, 'dia'), base: h.base, sesiones: h.n - 1, retorno_pct: +h.ret.toFixed(4), caida_actual_pct: +h.ddFin.toFixed(4), peor_caida_pct: +h.peor.toFixed(4), fecha_peor_caida: h.suelo ? fmtFecha(h.suelo.x, 'dia') : null, maximo_base100: +h.pico.v.toFixed(4), fecha_maximo: fmtFecha(h.pico.x, 'dia')}); });
       if (R.corto != null) a.push(`${donde}: «${R.hitos[R.corto].nombre}» termina en la sesión ${R.hitos[R.corto].n - 1} y «${R.hitos[1 - R.corto].nombre}» sigue hasta la ${R.hitos[1 - R.corto].n - 1}; la parte sin la serie corta se sombrea «sin proyección» y no se proyecta nada.`);
       m.push(`${donde}: cada hito rebasa la serie a base 100 en el cierre de su fecha (valor ÷ valor del hito × 100) y las dos curvas se alinean por sesiones (filas con dato) desde el hito, no por fecha. Caída = valor ÷ máximo acumulado desde el hito − 1; retorno = valor ÷ valor del hito − 1. Eje de crecimiento ${R.escala === 'log' ? 'LOGARÍTMICO (máximo/mínimo > 5)' : 'lineal'}. Se calcula todo de la serie; no se proyecta nada.`);
       break;

@@ -38,7 +38,7 @@ const nombreSeguro = (n) => String(n).replace(/[^\w.\- ()áéíóúñÁÉÍÓÚ�
 
 const metaDe = (id) => metaSerie(path.join(RAIZ, 'datos', 'biblioteca', `${id}.csv`));   // .meta.json o procedencia de la instantánea data/
 const ficha = (e, idioma = 'es') => { const m = metaDe(e.id); return {id: e.id, nombre: e.nombre, categoria: e.categoria, unidad: m?.fuente?.unidad ?? e.unidad ?? '', frecuencia: e.frecuencia, fuente: e.fuente_original, url: m?.fuente?.url ?? null, licencia: licencia(e, idioma), salud: salud(e, m, Date.now(), idioma),
-  descargada: !!m, inicio: m?.inicio ?? null, fin: m?.fin ?? null, filas: m?.filas ?? null, etiquetas: e.etiquetas ?? [], nota: e.nota ?? null}; };
+  descargada: !!m, inicio: m?.inicio ?? null, fin: m?.fin ?? null, filas: m?.filas ?? null, etiquetas: e.etiquetas ?? [], nota: e.nota ?? null, licencia: e.licencia ?? ''}; };
 /** Descarga (historia completa) lo que falte de la biblioteca antes de usarlo: la persona nunca baja un archivo. */
 const asegurar = async (series) => { const cat = leerCatalogo(); for (const s of series ?? []) if (s.origen === 'biblioteca' && !metaDe(s.id)) { const en = cat.find((x) => x.id === s.id); if (en) await descargar(en); } };
 

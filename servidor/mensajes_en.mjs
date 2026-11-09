@@ -160,6 +160,7 @@ const REGLAS = [
   [/^serie (\d+) no existe \(hay (\d+)\)\.$/, 'series $1 does not exist (there are $2).'],
   [/^dos_hitos necesita exactamente 2 hitos en "hitos":\[\{"fecha":"AAAA-MM-DD","nombre":"…"\},…\] \(hay (\d+)\)\.$/, 'dos_hitos needs exactly 2 milestones in "hitos":[{"fecha":"YYYY-MM-DD","nombre":"…"},…] (there are $1).'],
   [/^dos_hitos necesita una serie diaria con muchos datos \(hay (\d+)\)\.$/, 'dos_hitos needs a daily series with many data points (there are $1).'],
+  [/^el hito «(.*?)» no declara fuente: la fecha y el nombre son una afirmación sin verificar.$/, 'the milestone "$1" declares no source: its date and name are an unverified claim.'],
   [/^dos_hitos necesita una serie diaria \(hay un dato cada (\d+) días\): las sesiones se cuentan por fila con dato\.$/, 'dos_hitos needs a daily series (there is one data point every $1 days): sessions are counted per row with data.'],
   [/^el hito (\d+) no tiene una fecha AAAA-MM-DD válida\.$/, 'milestone $1 does not have a valid YYYY-MM-DD date.'],
   [/^el hito «(.*?)» \((.*?)\) cae antes del primer dato \((.*?)\)\.$/, 'the milestone "$1" ($2) falls before the first data point ($3).'],
