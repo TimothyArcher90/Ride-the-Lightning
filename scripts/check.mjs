@@ -21,6 +21,7 @@ const SUITES = [
   {id: 'catalogo-ingles', archivo: 'prueba-catalogo-ingles.mjs', rapida: true},
   {id: 'ui-idioma', archivo: 'prueba-ui-idioma.mjs', rapida: true},
   {id: 'paises', archivo: 'prueba-paises.mjs', rapida: true},
+  {id: 'loess', archivo: 'prueba-loess.mjs', rapida: true},
   // pesadas (≈ 2-3 min cada una: renderizan decenas de escenas); van de más lenta a más rápida para que con --jobs el reparto sea parejo
   {id: 'plantillas', archivo: 'prueba-plantillas.mjs'},
   {id: 'calidad', archivo: 'prueba-calidad.mjs'},

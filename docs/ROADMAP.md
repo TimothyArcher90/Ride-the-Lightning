@@ -85,7 +85,7 @@ Source: [research/OPEN_SOURCE_SURVEY.md](research/OPEN_SOURCE_SURVEY.md) (permis
 - [x] 6. Lines: `curveStep` for rate-like series and opt-in `monotoneX` for sparse series (d3-shape, ISC); always declared on screen. *Done 2026-11-04: `curva: "escalon"` (stepAfter) / `"monotono"`, opt-in per layer, default stays linear; tested for no overshoot.*
 - [x] 7. Long lines: per-pixel-column min/max decimation (own code) keeping every extreme exactly. *Done 2026-11-08: `motor/decimar.js`, used by `linea` (see INTEGRATION_LOG, 2026-11-08).*
 - [x] 8. Treemap: d3-hierarchy `resquarify` (ISC) for quarter-to-quarter stability (also unblocks item 18 above) + semantic colors instead of one hue per cell. *Done 2026-11-04: color = share of the total (viridis), because category tables carry no cost/benefit semantics; `resquarify` is on by default when every row has `anterior` (mean displacement 16 px vs 142 px).*
-- [ ] 9. New models inspired by RAWGraphs (Apache-2.0): beeswarm (dodge), ridgeline, streamgraph.
+- [x] 9. New models inspired by RAWGraphs (Apache-2.0): beeswarm (dodge), ridgeline, streamgraph. Done 2026-11-09: `enjambre`, `cordillera`, `corriente` (own code, motor/capas_distribucion.js).
 - [ ] 10. Spikes: 2x supersampled render, temporal sub-frame blur, declared LOESS trend (d3-regression, BSD-3).
 - [x] 11. Create `THIRD_PARTY_LICENSES.md` (named [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)) and a test that fails if a vendored file lacks its license header.
 
