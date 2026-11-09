@@ -51,7 +51,7 @@ export const fuente = (env, rol, peso = 600, mono = false) => fuenteCss(peso, ti
 /** Rejilla: márgenes laterales de 72 px (6,7 % del ancho vertical) y área útil que respeta la zona segura. */
 export function margenes(env) {
   const {W, H} = env, vert = H > W, m = Math.round(W * (vert ? 0.0667 : 0.0417));
-  return {m, x0: m, x1: vert ? Math.round(W * ZONA.x) - 6 : W - m, y0: Math.round(H * (vert ? 0.26 : 0.24)), y1: Math.round(H * (vert ? 0.86 : 0.88)), pieY: H - Math.round(H * (vert ? 0.03 : 0.045))};
+  return {m, x0: m, x1: vert ? Math.round(W * ZONA.x) - 6 : W - m, y0: Math.round(H * (vert ? 0.22 : 0.24)), y1: Math.round(H * (vert ? 0.875 : 0.88)), pieY: H - Math.round(H * (vert ? 0.03 : 0.045))};
 }
 
 // ── Contraste (WCAG 2.1) ────────────────────────────────────────────────────────────────────────────────────────

@@ -17,8 +17,8 @@ import {t as tr, registrar} from './idioma.js';   // «tr»: en las capas «t» 
 
 // Textos fijos que dibujan las capas base (es = original, en = versión inglesa). Se leen con tr('c.clave', {vars}).
 registrar('c', {
-  curva_escalon: {es: 'ESCALONES: EL VALOR SE MANTIENE HASTA EL SIGUIENTE DATO', en: 'STEPS: THE VALUE HOLDS UNTIL THE NEXT DATA POINT'},
-  curva_suave: {es: 'CURVA SUAVIZADA: SOLO UNE LOS DATOS', en: 'SMOOTHED CURVE: IT ONLY JOINS THE DATA POINTS'},
+  curva_escalon: {es: 'Escalones: el valor se mantiene hasta el siguiente dato', en: 'Steps: the value holds until the next data point'},
+  curva_suave: {es: 'Curva suavizada: solo une los datos', en: 'Smoothed curve: it only joins the data points'},
   r2: {es: 'R² = {r2} · {n} datos', en: 'R² = {r2} · {n} data points'},
   cifras_en: {es: 'CIFRAS EN {un}', en: 'FIGURES IN {un}'},
   otras_partes: {es: 'Otras {n} partes', en: 'Other {n} parts'},
@@ -46,7 +46,9 @@ function lineasCabeza(ctx, nombre, vert, W) {
 export const Z = {imagen: 5, zona: 8, sankey: 10, donut: 10, cascada: 10, pendiente: 10, bump: 10, treemap: 10, waffle: 10, lollipop: 10, divergente: 10, linea: 10, barras: 10, carrera: 10, dispersion: 10, calor: 10, llamada: 20, contador: 25, titulo: 30, cortina: 40, sello: 50};
 
 function caja(env, capa, def) {
-  const c = capa.caja ?? def;
+  let c = capa.caja ?? def;
+  // vertical sin contador: la gráfica sube hasta pegarse al título (sin el hueco que dejaba el contador) y gana ese alto; con contador, la caja no se toca
+  if (!capa.caja && env.H > env.W && c[1] > 0.25 && c[1] < 0.4 && !env.capasTodas.some((k) => k.tipo === "contador")) { const y = 0.22, fin = Math.min(c[1] + c[3] + 0.05, capa.tipo === "pendiente" || capa.tipo === "bump" ? 0.82 : 0.875); c = [c[0], y, c[2], fin - y]; }
   return {x: c[0] * env.W, y: c[1] * env.H, w: c[2] * env.W, h: c[3] * env.H};
 }
 const CAJA_DEF = (env) => (env.H > env.W ? [0.16, 0.31, 0.55, 0.5] : [0.07, 0.25, 0.86, 0.58]);   // vertical: margen izquierdo para que las cifras del eje Y no salgan del cuadro
@@ -383,7 +385,7 @@ function barras(env, capa) {
   if (horiz) {
     ctx.font = fnt(600, 26 * u); const LW = Math.min(B.w * 0.38, Math.max(...orden.map((k) => ctx.measureText(etiqueta(k)).width)) + 20 * u);
     ctx.font = fnt(600, 26 * u, true); const VW = Math.max(...orden.flatMap((k) => idxs.map((si) => ctx.measureText(fmtNum(tab.series[si].y[k] ?? 0, fmtV)).width))) + 16 * u;
-    const x0 = B.x + LW, L = Math.max(40 * u, B.w - LW - VW), val = (v) => ((v - lo) / (hi - lo)) * L, rowH = Math.min(B.h / m, 120 * u), bh = (rowH * 0.64) / ng, y0 = B.y;
+    const x0 = B.x + LW, L = Math.max(40 * u, B.w - LW - VW), val = (v) => ((v - lo) / (hi - lo)) * L, rowH = Math.min(B.h / m, (vert ? 160 : 120) * u), bh = (rowH * 0.64) / ng, y0 = B.y;
     for (const v of ticksNum(lo, hi, Math.max(2, Math.floor(L / (150 * u))))) { const x = x0 + val(v); ctx.strokeStyle = rgba(PALETA.piedra, 0.1); ctx.lineWidth = u; ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y0 + rowH * m); ctx.stroke(); marcaX(env, fmtNum(v, {decimales: decTicks(pasoT)}), x, y0 + rowH * m + 40 * u, fT, PALETA.piedraOscura); }   // (pasoT sale de ty; con pocas marcas basta)
     reg(env, 'eje-x', [x0 - 30 * u, y0 + rowH * m + 6 * u, x0 + L + 30 * u, y0 + rowH * m + 56 * u], capa.id);
     const z = x0 + val(0);
@@ -447,7 +449,7 @@ function carrera(env, capa) {
   const [t0, t1] = capa.t ?? [0.5, 10];
   const ap = aparece(env, capa, t0); if (ap <= 0) return;
   const f = prog(t, t0, t1, ease.lin) * (n - 1), i0 = Math.min(n - 2, Math.floor(f)), k = f - i0, ke = ease.io2(k);   // el tiempo de los datos avanza a ritmo constante (no es movimiento de interfaz)
-  const S = tab.series.length, nVis = Math.max(2, Math.min(capa.top ?? 8, S)), fila = Math.min(vert ? 190 * u : 140 * u, Math.max(vert ? 112 * u : 84 * u, (B.h - (vert ? 70 * u : 0)) / nVis)), top = Math.max(2, Math.min(capa.top ?? 8, S, Math.floor((B.h - (vert ? 70 * u : 0)) / fila)));
+  const S = tab.series.length, nVis = Math.max(2, Math.min(capa.top ?? 8, S)), fila = Math.min(vert ? 240 * u : 140 * u, Math.max(vert ? 112 * u : 84 * u, (B.h - (vert ? 70 * u : 0)) / nVis)), top = Math.max(2, Math.min(capa.top ?? 8, S, Math.floor((B.h - (vert ? 70 * u : 0)) / fila)));
   const rango = (i) => {
     const o = tab.series.map((s, q) => ({q, v: s.y[i] ?? -Infinity})).sort((a, b) => b.v - a.v || a.q - b.q);
     const r = new Array(S); o.forEach((e, p) => (r[e.q] = p)); return r;
@@ -1351,7 +1353,7 @@ function bump(env, capa) {
   const nombreEnv = (nm, ancho) => envolverEntero(ctx, nm, ancho, 2) ?? envolver(ctx, nm, ancho, 2);
   const LW = vert ? B.w * 0.4 : Math.min(B.w * 0.26, Math.max(...L.idxs.map((si) => Math.max(...nombreEnv(tab.series[si].nombre, B.w * 0.26 - 28 * u).map((l) => ctx.measureText(l).width)))) + 28 * u);
   const x0 = B.x + LW + 30 * u, x1 = vert ? B.x + B.w - 24 * u : B.x + B.w - LW - 10 * u, paso = (x1 - x0) / (L.pts.length - 1);
-  const top = B.y + 80 * u, fila = Math.min(vert ? 112 * u : 86 * u, (B.h - 120 * u) / S), cyR = (r) => top + r * fila + fila / 2, cx = (q) => x0 + q * paso;
+  const top = B.y + 80 * u, fila = Math.min(vert ? 170 * u : 86 * u, (B.h - 120 * u) / S), cyR = (r) => top + r * fila + fila / 2, cx = (q) => x0 + q * paso;
   const rx = lerp(x0 - 20 * u, x1 + 20 * u, prog(t, t0, t1, CURVA.trazo)), rad = escalarFuente(20 * u) * 0.68;
   ctx.save(); ctx.globalAlpha *= ap;
   // años: solo los que caben (el primero y el último siempre)
@@ -1502,7 +1504,7 @@ function lollipop(env, capa) {
   const B = caja(env, capa, vert ? [0.0667, 0.26, 0.64, 0.6] : [0.05, 0.22, 0.9, 0.68]);
   const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const items = (capa._lp ??= [...tab.items].filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor)), total = items.reduce((a, x) => a + x.valor, 0), n = items.length;
-  const fila = Math.min(vert ? 118 * u : 120 * u, B.h / n), k = vert ? clamp(fila / (100 * u), 0.6, 1) : clamp(fila / (70 * u), 0.8, 1), fN = fnt(700, 31 * u * k), fV = fnt(800, 29 * u * k, true), fP = fnt(700, 24 * u * k, true);
+  const fila = Math.min(vert ? 160 * u : 120 * u, B.h / n), k = vert ? clamp(fila / (100 * u), 0.6, 1) : clamp(fila / (70 * u), 0.8, 1), fN = fnt(700, 31 * u * k), fV = fnt(800, 29 * u * k, true), fP = fnt(700, 24 * u * k, true);
   const pal = paletaCat(), vmax = items[0].valor, p = prog(t, t0, t1, CURVA.trazo) * n, y0 = B.y + (B.h - fila * n) / 2;
   ctx.font = fV; const wMax = Math.max(...items.map((it) => ctx.measureText(`${fmtNum(it.valor, tab.fmt)}  ·  ${pctTxt((it.valor / total) * 100)}`).width));
   ctx.font = fN; const nameW = vert ? 0 : Math.min(B.w * 0.3, Math.max(...items.map((it) => ctx.measureText(it.nombre).width)) + 28 * u);   // horizontal: nombre a la izquierda y el palo a la derecha, en UNA fila (fuentes más grandes y menos alto por fila)
@@ -1544,7 +1546,7 @@ function divergente(env, capa) {
   })());
   const S = L.filas.length; if (!S) return;
   const sN = escalarFuente(29 * u), sS = escalarFuente(20 * u), fN = fnt(700, 29 * u), fV = fnt(800, 30 * u, true), fS = fnt(500, 20 * u, true);
-  const sV = escalarFuente(30 * u), yN = sN + 4 * u, yBar = yN + 8 * u + sV * 0.75, yS = yBar + sV * 0.35 + 8 * u + sS, fila = Math.min(vert ? 170 * u : 130 * u, B.h / S);   // nombre · barra · «de → a»
+  const sV = escalarFuente(30 * u), yN = sN + 4 * u, yBar = yN + 8 * u + sV * 0.75, yS = yBar + sV * 0.35 + 8 * u + sS, fila = Math.min(vert ? 230 * u : 130 * u, B.h / S);   // nombre · barra · «de → a»
   const fmtP = (x) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(Math.abs(x) < 10 ? 1 : 0).replace('.', ',')} %`;
   ctx.font = fV; const wP = Math.max(...L.filas.map((f) => ctx.measureText(fmtP(f.pct)).width)) + 16 * u;
   const xa = B.x + (L.lo < 0 ? wP : 0) + 8 * u, xb = B.x + B.w - (L.hi > 0 ? wP : 0) - 8 * u, px = (v) => xa + ((v - L.lo) / ((L.hi - L.lo) || 1)) * (xb - xa), y0 = B.y + (B.h - fila * S) / 2, p = prog(t, t0, t1, CURVA.trazo) * S;

@@ -10,12 +10,12 @@ import {t as tr, registrar} from './idioma.js';
 import {rot, tam, med, fN, nota, aparece, paleta, cajaDef, cortarA, pctl, marcasHasta, uni, acento_, separar, ent, acortarNombres} from './capas_extra.js';
 
 registrar('cd', {
-  enjambre: {es: 'UN PUNTO POR FILA; LA POSICIÓN HORIZONTAL ES EL VALOR{log}. LA ALTURA SOLO SEPARA PUNTOS Y NO SIGNIFICA NADA. PUNTEADA: MEDIANA DE {n} FILAS.{u}', en: 'ONE DOT PER ROW; HORIZONTAL POSITION IS THE VALUE{log}. HEIGHT ONLY SEPARATES DOTS AND MEANS NOTHING. DOTTED: MEDIAN OF {n} ROWS.{u}'},
-  enj_log: {es: ' (ESCALA LOG: CADA MARCA ES ×10)', en: ' (LOG SCALE: EACH TICK IS ×10)'},
+  enjambre: {es: 'Un punto por fila; valor = posición horizontal{log}; la altura no significa nada. Punteada: mediana de {n}.{u}', en: 'One dot per row; value = horizontal position{log}; height means nothing. Dotted: median of {n}.{u}'},
+  enj_log: {es: ' (log: ×10 por marca)', en: ' (log: ×10 per tick)'},
   mediana: {es: 'MEDIANA {v}', en: 'MEDIAN {v}'},
-  cordillera: {es: 'CADA CRESTA: % DE LAS OBSERVACIONES DE ESE AÑO EN CADA UNO DE {nb} RANGOS DE VALORES (POLÍGONO DE FRECUENCIAS, SIN SUAVIZAR). MISMA ALTURA PARA TODAS LAS CRESTAS. MARCA BLANCA: MEDIANA DEL AÑO.{u}', en: 'EACH RIDGE: % OF THAT YEAR\'S OBSERVATIONS IN EACH OF {nb} VALUE RANGES (FREQUENCY POLYGON, NOT SMOOTHED). SAME HEIGHT SCALE FOR ALL RIDGES. WHITE MARK: THE YEAR\'S MEDIAN.{u}'},
-  cord_om: {es: ' ÚLTIMOS {n} AÑOS.', en: ' LAST {n} YEARS.'},
-  corriente: {es: 'EL GROSOR DE CADA FRANJA ES SU VALOR; LA LÍNEA BASE ESTÁ CENTRADA (NO PARTE DE 0), ASÍ QUE LA ALTURA SOBRE LA PANTALLA NO ES UN VALOR. LA BARRA DE ESCALA MIDE {v}.{u}', en: 'EACH BAND\'S THICKNESS IS ITS VALUE; THE BASELINE IS CENTERED (IT DOES NOT START AT 0), SO POSITION ON THE SCREEN IS NOT A VALUE. THE SCALE BAR MEASURES {v}.{u}'},
+  cordillera: {es: 'Cada cresta: % de datos del año en {nb} rangos, sin suavizar; misma altura en todas. Marca blanca: mediana.{u}', en: "Each ridge: % of the year's data in {nb} ranges, unsmoothed; same height scale for all. White mark: median.{u}"},
+  cord_om: {es: ' Últimos {n} años.', en: ' Last {n} years.'},
+  corriente: {es: 'El grosor de cada franja es su valor; la línea base está centrada, no parte de 0. Barra de escala: {v}.{u}', en: "Each band's thickness is its value; the baseline is centered, not starting at 0. Scale bar: {v}.{u}"},
   escala: {es: 'ESCALA', en: 'SCALE'},
 });
 export const TIPOS_DISTRIB = ['enjambre', 'cordillera', 'corriente'];
@@ -130,7 +130,7 @@ function corriente(env, capa) {
   const wLab = Math.min(B.w * 0.45, Math.max(...L.nom.map((q) => med(env, q, 26, 700))) + 34 * u), wSb = med(env, txtSb, 18, 800, true) + 34 * u;
   const x0 = B.x + wSb, x1 = B.x + B.w - wLab - 16 * u, y0 = B.y + S * 1.3, y1 = B.y + B.h - S * 2.6, yc = (y0 + y1) / 2, k = ((y1 - y0) / 2) / L.amp;
   const xa = tab.x[L.filas[0]], xb = tab.x[L.filas[L.m - 1]], px = (x) => x0 + ((x - xa) / (xb - xa)) * (x1 - x0), py = (v) => yc - v * k, reveal = prog(t, t0, t1, CURVA.trazo), xh = lerp(xa, xb, reveal);
-  nota(env, B, capa.nota ?? tr('cd.corriente', {v: `${txtSb}${fmt?.unidad ? ' ' + String(fmt.unidad).toUpperCase() : ''}`, u: ''}), id, ap);
+  nota(env, B, capa.nota ?? tr('cd.corriente', {v: `${txtSb}${fmt?.unidad ? ' ' + String(fmt.unidad) : ''}`, u: ''}), id, ap);
   ctx.save(); ctx.globalAlpha *= ap;
   const cum = (r, q) => { let v = L.base[r]; for (let z = 0; z < q; z++) v += L.vals[L.orden[z]][r]; return v; };
   ctx.save(); ctx.beginPath(); ctx.rect(x0 - 1, y0 - 4 * u, (x1 - x0) * reveal + 1, y1 - y0 + 8 * u); ctx.clip();

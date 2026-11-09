@@ -56,7 +56,7 @@ if (quiere('radar')) {
   const nom = {pib_pc: 'PIB per cápita', crec_pib: 'Crecimiento del PIB', inflacion: 'Inflación', desempleo: 'Desempleo', esperanza_vida: 'Esperanza de vida', exportaciones: 'Exportaciones / PIB', deuda_pib: 'Deuda pública / PIB'};
   const filas = claves.map((k) => { const v = Object.values(U[k]).map((q) => q.valor), c = U[k].COL.valor; return [nom[k], +(((v.filter((q) => q < c).length) / (v.length - 1)) * 100).toFixed(1)]; });
   const it = itemCsv('radar_colombia_percentil', 'concepto,valor\n' + filas.map((f) => f.join(',')).join('\n'), {nombre: 'Banco Mundial (WDI) y FMI (WEO), último dato de cada país; percentil calculado entre los países de la lista', url: 'https://data.worldbank.org/', obtenido: hoy}, {decimales: 0, unidad: 'Percentil entre países'});
-  await pieza('radar · Colombia entre 45 países (tabla)', {plantilla: 'radar_tabla', series: [it], titulo: 'Dónde está Colombia', nota: 'CADA EJE: PUESTO DE COLOMBIA ENTRE LOS PAÍSES CON DATO; 0 = EL MENOR VALOR, 100 = EL MAYOR. NO DICE SI ES BUENO O MALO.'});
+  await pieza('radar · Colombia entre 45 países (tabla)', {plantilla: 'radar_tabla', series: [it], titulo: 'Dónde está Colombia', nota: 'Cada eje: puesto de Colombia entre los países con dato (0 = menor, 100 = mayor); no dice si es bueno o malo.'});
 }
 
 // ── 2. ÁREA APILADA ─────────────────────────────────────────────────────────────────────────────────────────────

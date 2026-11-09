@@ -116,7 +116,7 @@ export async function construirExtras(formato = 'vertical', {idioma = 'es'} = {}
     const claves = Object.keys(nom).filter((k) => U[k]?.COL);
     const filas = claves.map((k) => { const v = Object.values(U[k]).map((q) => q.valor), c = U[k].COL.valor; return [nom[k], +(((v.filter((q) => q < c).length) / (v.length - 1)) * 100).toFixed(1)]; });
     const it = itemCsv('radar_colombia_percentil', 'concepto,valor\n' + filas.map((f) => f.join(',')).join('\n'), {nombre: T('Banco Mundial (WDI) y FMI (WEO), último dato de cada país; percentil calculado entre los países de la lista', 'World Bank (WDI) and IMF (WEO), latest data for each country; percentile calculated among the countries in the list'), url: 'https://data.worldbank.org/', obtenido: hoy}, {decimales: 0, unidad: T('Percentil entre países', 'Percentile among countries')});
-    G('radar', 'Radar', {plantilla: 'radar_tabla', series: [it], titulo: T('Dónde está Colombia', 'Where Colombia stands'), nota: T('CADA EJE: PUESTO DE COLOMBIA ENTRE LOS PAÍSES CON DATO; 0 = EL MENOR VALOR, 100 = EL MAYOR.', 'EACH AXIS: COLOMBIA\'S RANK AMONG COUNTRIES WITH DATA; 0 = LOWEST VALUE, 100 = HIGHEST.')});
+    G('radar', 'Radar', {plantilla: 'radar_tabla', series: [it], titulo: T('Dónde está Colombia', 'Where Colombia stands'), nota: T('Cada eje: puesto de Colombia entre los países con dato (0 = menor, 100 = mayor).', 'Each axis: rank of Colombia among countries with data (0 = lowest, 100 = highest).')});
   } catch (e) { omitidos.push('radar: ' + e.message); }
   // 2. área apilada
   if (ENERGIA.every(hay)) G('apilada', 'Área apilada', {plantilla: 'apilada', series: bib(...ENERGIA), titulo: T('De dónde sale la energía', 'Where the energy comes from')}); else omitidos.push('apilada: faltan series de energía');

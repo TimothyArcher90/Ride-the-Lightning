@@ -5,54 +5,54 @@
 // Tipografía: tamaños base de 1080 px de lado corto que pasan por el piso del sistema de diseño (motor/diseno.js).
 import {colorDivergente} from './escalas.js';
 import {PALETA, COLOR, TEMA, clamp, lerp, ease, prog, colorDe, mezcla, rgba, fmtNum, fmtSigno, fmtPct, fmtFecha, ticksNum, ticksFecha, etiquetaTick} from './nucleo.js';
-import {escalarFuente, fuenteCss, margenes, envolver, contraste, legible, CURVA, entrada as entradaDiseno} from './diseno.js';
+import {escalarFuente, fuenteCss, margenes, ZONA, envolver, envolverPalabras, contraste, legible, CURVA, entrada as entradaDiseno} from './diseno.js';
 import {envolverEntero, relajar1D} from './etiquetas.js';
 import {t as tr, registrar, idioma, MESES_CORTO} from './idioma.js';
 import {CAPAS_DISTRIB, TIPOS_DISTRIB, DISTRIB_CLASE, validarDistrib} from './capas_distribucion.js';   // ciclo de módulos a propósito: ese archivo solo se importa desde aquí   // «tr»: en las capas «t» es el tiempo
 
 // Textos dibujados por los modelos del visualizador universal (es = original, en = versión inglesa). Se leen con tr('ce.clave', {vars}).
 registrar('ce', {
-  radar_tabla: {es: 'ESCALA COMÚN DE TODOS LOS EJES: DE 0 A {esc}.{ant}', en: 'COMMON SCALE FOR ALL AXES: FROM 0 TO {esc}.{ant}'},
-  radar_ant: {es: ' LÍNEA PUNTEADA: VALOR ANTERIOR.', en: ' DOTTED LINE: PREVIOUS VALUE.'},
-  radar_serie: {es: 'CADA EJE VA DE 0 (MÍNIMO HISTÓRICO DE ESA SERIE) A 100 (SU MÁXIMO HISTÓRICO). EL PUNTO ES LA ÚLTIMA OBSERVACIÓN.', en: 'EACH AXIS RUNS FROM 0 (THAT SERIES\' HISTORICAL LOW) TO 100 (ITS HISTORICAL HIGH). THE DOT IS THE LATEST OBSERVATION.'},
-  uni: {es: ' UNIDAD: {u}.', en: ' UNIT: {u}.'},
-  apilada_pct: {es: 'CADA FRANJA ES EL % QUE REPRESENTA SOBRE EL TOTAL DE ESE MOMENTO: SIEMPRE SUMAN 100 %.', en: 'EACH BAND IS THE % IT REPRESENTS OF THAT MOMENT\'S TOTAL: THEY ALWAYS ADD UP TO 100%.'},
-  apilada_abs: {es: 'LAS FRANJAS SE APILAN: LA ALTURA TOTAL ES LA SUMA DE TODAS, EMPEZANDO EN 0.', en: 'THE BANDS ARE STACKED: THE TOTAL HEIGHT IS THE SUM OF ALL, STARTING AT 0.'},
+  radar_tabla: {es: 'Todos los ejes usan la misma escala: de 0 a {esc}.{ant}', en: 'All axes share one scale: from 0 to {esc}.{ant}'},
+  radar_ant: {es: ' Línea punteada: valor anterior.', en: ' Dotted line: previous value.'},
+  radar_serie: {es: 'Cada eje va de 0 (mínimo histórico de esa serie) a 100 (su máximo). El punto es el último dato.', en: "Each axis runs from 0 (that series' historical low) to 100 (its high). The dot is the latest value."},
+  uni: {es: ' Unidad: {u}.', en: ' Unit: {u}.'},
+  apilada_pct: {es: 'Cada franja es su % del total en ese momento; siempre suman 100 %.', en: 'Each band is its % of the total at that moment; they always add up to 100%.'},
+  apilada_abs: {es: 'Las franjas se apilan: la altura total es la suma de todas, desde 0.', en: 'Bands are stacked: total height is the sum of all, starting at 0.'},
   u_dia: {es: 'DÍA', en: 'DAY'}, u_semana: {es: 'SEMANA', en: 'WEEK'}, u_mes: {es: 'MES', en: 'MONTH'}, u_trimestre: {es: 'TRIMESTRE', en: 'QUARTER'}, u_anio: {es: 'AÑO', en: 'YEAR'},
-  velas_real: {es: 'CADA VELA = 1 {un}. VERDE: CIERRA POR ENCIMA DE DONDE ABRE; ROJA: POR DEBAJO.{log}', en: 'EACH CANDLE = 1 {un}. GREEN: CLOSES ABOVE WHERE IT OPENS; RED: BELOW.{log}'},
-  velas_log_real: {es: ' ESCALA LOGARÍTMICA: LA ALTURA ES PROPORCIONAL AL CAMBIO PORCENTUAL.', en: ' LOGARITHMIC SCALE: HEIGHT IS PROPORTIONAL TO THE PERCENTAGE CHANGE.'},
-  velas_cierres: {es: 'CADA VELA = 1 {un}, ARMADA CON CIERRES DIARIOS: ABRE = PRIMER CIERRE, CIERRA = ÚLTIMO CIERRE, LAS MECHAS SON EL MAYOR Y MENOR CIERRE (NO HAY EXTREMOS DEL DÍA).{log}', en: 'EACH CANDLE = 1 {un}, BUILT FROM DAILY CLOSES: OPEN = FIRST CLOSE, CLOSE = LAST CLOSE, WICKS ARE THE HIGHEST AND LOWEST CLOSE (NO INTRADAY EXTREMES).{log}'},
-  velas_log: {es: ' ESCALA LOGARÍTMICA.', en: ' LOGARITHMIC SCALE.'},
+  velas_real: {es: 'Cada vela = 1 {un}. Verde: cierra sobre su apertura; roja: bajo ella.{log}', en: 'Each candle = 1 {un}. Green: closes above its open; red: below.{log}'},
+  velas_log_real: {es: ' Escala log: la altura mide el cambio %.', en: ' Log scale: height tracks % change.'},
+  velas_cierres: {es: 'Cada vela = 1 {un} de cierres diarios; las mechas son el mayor y el menor cierre, no los extremos del día.{log}', en: 'Each candle = 1 {un} of daily closes; wicks are the highest and lowest close, not intraday extremes.{log}'},
+  velas_log: {es: ' Escala logarítmica.', en: ' Logarithmic scale.'},
   velas_o: {es: 'ABRE', en: 'OPEN'}, velas_h: {es: 'MÁXIMO', en: 'HIGH'}, velas_l: {es: 'MÍNIMO', en: 'LOW'}, velas_c: {es: 'CIERRA', en: 'CLOSE'},
   velas_o2: {es: 'PRIMER CIERRE', en: 'FIRST CLOSE'}, velas_h2: {es: 'MAYOR CIERRE', en: 'HIGHEST CLOSE'}, velas_l2: {es: 'MENOR CIERRE', en: 'LOWEST CLOSE'}, velas_c2: {es: 'ÚLTIMO CIERRE', en: 'LAST CLOSE'},
   f_diarios: {es: 'diarios', en: 'daily'}, f_semanales: {es: 'semanales', en: 'weekly'}, f_mensuales: {es: 'mensuales', en: 'monthly'}, f_trimestrales: {es: 'trimestrales', en: 'quarterly'}, f_anuales: {es: 'anuales', en: 'yearly'},
-  hist_ret: {es: 'CADA BARRA: % DE LOS {n} RETORNOS {per} (ENTRE FILAS CONSECUTIVAS) QUE CAEN EN ESE RANGO.{col}', en: 'EACH BAR: % OF THE {n} {per} RETURNS (BETWEEN CONSECUTIVE ROWS) THAT FALL IN THAT RANGE.{col}'},
-  hist_col: {es: ' LAS BARRAS DE LOS EXTREMOS AGRUPAN LAS COLAS.', en: ' THE BARS AT THE ENDS GROUP THE TAILS.'},
-  hist_niv: {es: 'CADA BARRA: % DE LAS {n} OBSERVACIONES QUE CAEN EN ESE RANGO DE VALORES. EJE Y: % DEL TOTAL.', en: 'EACH BAR: % OF THE {n} OBSERVATIONS THAT FALL IN THAT RANGE OF VALUES. Y AXIS: % OF TOTAL.'},
+  hist_ret: {es: 'Cada barra: % de los {n} retornos {per} que caen en ese rango.{col}', en: 'Each bar: % of the {n} {per} returns that fall in that range.{col}'},
+  hist_col: {es: ' Las barras de los extremos agrupan las colas.', en: ' The end bars group the tails.'},
+  hist_niv: {es: 'Cada barra: % de las {n} observaciones en ese rango. Eje Y: % del total.', en: 'Each bar: % of the {n} observations in that range. Y axis: % of total.'},
   mediana: {es: 'MEDIANA {v}', en: 'MEDIAN {v}'},
   ultimo_pct: {es: 'ÚLTIMO {v} · SUPERA AL {p} %', en: 'LATEST {v} · ABOVE {p}% OF VALUES'},
   antes: {es: 'ANTES', en: 'BEFORE'}, ahora: {es: 'AHORA', en: 'NOW'},
-  dumbbell: {es: 'CADA FILA UNE EL VALOR «{l0}» (PUNTO GRIS) CON EL «{l1}» (PUNTO DE COLOR) EN LA MISMA ESCALA{cero}. VERDE: SUBIÓ · ROJO: BAJÓ.{u}', en: 'EACH ROW JOINS THE "{l0}" VALUE (GRAY DOT) WITH THE "{l1}" VALUE (COLORED DOT) ON THE SAME SCALE{cero}. GREEN: ROSE · RED: FELL.{u}'},
-  dumbbell_cero: {es: ', QUE ARRANCA EN 0', en: ', WHICH STARTS AT 0'},
-  cal_ultimos: {es: ' MOSTRANDO LOS ÚLTIMOS {a} AÑOS DE {b}.', en: ' SHOWING THE LAST {a} YEARS OF {b}.'},
-  cal_mes_vert: {es: 'CADA CASILLA ES EL RETORNO DE ESE MES: ÚLTIMO CIERRE DEL MES ÷ ÚLTIMO CIERRE DEL MES ANTERIOR − 1, EN %. COLOR PLENO A ±{lim} %; MÁS ALLÁ SE SATURA.{aviso}{parcial}', en: "EACH CELL IS THAT MONTH'S RETURN: MONTH'S LAST CLOSE ÷ PREVIOUS MONTH'S LAST CLOSE − 1, IN %. FULL COLOR AT ±{lim}%; BEYOND THAT IT SATURATES.{aviso}{parcial}"},
-  cal_mes: {es: 'CADA CASILLA ES EL RETORNO DE ESE MES: ÚLTIMO CIERRE DEL MES ÷ ÚLTIMO CIERRE DEL MES ANTERIOR − 1. COLOR PLENO A ±{lim} %; MÁS ALLÁ SE SATURA.{aviso}{parcial}', en: "EACH CELL IS THAT MONTH'S RETURN: MONTH'S LAST CLOSE ÷ PREVIOUS MONTH'S LAST CLOSE − 1. FULL COLOR AT ±{lim}%; BEYOND THAT IT SATURATES.{aviso}{parcial}"},
-  cal_parcial: {es: ' EL ÚLTIMO MES ESTÁ INCOMPLETO.', en: ' THE LATEST MONTH IS INCOMPLETE.'},
-  cal_dia: {es: 'CADA CUADRO ES UN DÍA; COLOR = SU RETORNO RESPECTO AL CIERRE ANTERIOR. COLOR PLENO A ±{lim} %. COLUMNAS = SEMANAS.', en: "EACH SQUARE IS ONE DAY; COLOR = ITS RETURN VERSUS THE PREVIOUS CLOSE. FULL COLOR AT ±{lim}%. COLUMNS = WEEKS."},
-  agrupadas: {es: 'BARRAS DE LONGITUD PROPORCIONAL AL VALOR, TODAS EN LA MISMA ESCALA QUE ARRANCA EN 0. CADA COLOR ES UN MOMENTO.', en: 'BARS WITH LENGTH PROPORTIONAL TO THE VALUE, ALL ON THE SAME SCALE STARTING AT 0. EACH COLOR IS ONE POINT IN TIME.'},
+  dumbbell: {es: 'Cada fila une «{l0}» (gris) con «{l1}» (color), misma escala{cero}. Verde: subió; rojo: bajó.{u}', en: 'Each row joins "{l0}" (gray) with "{l1}" (color), same scale{cero}. Green: rose; red: fell.{u}'},
+  dumbbell_cero: {es: ', desde 0', en: ', from 0'},
+  cal_ultimos: {es: ' Últimos {a} de {b} años.', en: ' Last {a} of {b} years.'},
+  cal_mes_vert: {es: 'Retorno de cada mes: cierre ÷ cierre del mes previo − 1. Color pleno desde ±{lim} %.{aviso}{parcial}', en: "Each month's return: close ÷ previous month's close − 1. Full color from ±{lim}%.{aviso}{parcial}"},
+  cal_mes: {es: 'Cada casilla: retorno del mes (último cierre ÷ último cierre del mes anterior − 1). Color pleno desde ±{lim} %.{aviso}{parcial}', en: "Each cell: the month's return (last close ÷ previous month's last close − 1). Full color from ±{lim}%.{aviso}{parcial}"},
+  cal_parcial: {es: ' Último mes incompleto.', en: ' Latest month incomplete.'},
+  cal_dia: {es: 'Cada cuadro es un día; color = retorno frente al cierre anterior. Color pleno desde ±{lim} %. Columnas = semanas.', en: 'Each square is a day; color = return vs. the previous close. Full color from ±{lim}%. Columns = weeks.'},
+  agrupadas: {es: 'Barras proporcionales al valor, todas en la misma escala desde 0. Cada color es un momento.', en: 'Bars proportional to the value, all on one scale from 0. Each color is a point in time.'},
   meta: {es: 'META', en: 'TARGET'}, promedio: {es: 'PROMEDIO', en: 'AVERAGE'}, max_hist: {es: 'MÁXIMO HISTÓRICO', en: 'HISTORICAL HIGH'}, min_hist: {es: 'MÍNIMO HISTÓRICO', en: 'HISTORICAL LOW'}, mediana_n: {es: 'MEDIANA', en: 'MEDIAN'},
-  bullet: {es: 'BARRA: ÚLTIMO DATO. FONDO: HISTORIA DE LA SERIE EN TRES TRAMOS (MÍNIMO–P25, P25–P75, P75–MÁXIMO). RAYA BLANCA: LA META. LA ESCALA ARRANCA EN 0.', en: 'BAR: LATEST DATA POINT. BACKGROUND: THE SERIES\' HISTORY IN THREE RANGES (LOW–P25, P25–P75, P75–HIGH). WHITE LINE: THE TARGET. THE SCALE STARTS AT 0.'},
-  bandas: {es: 'BANDA CLARA: MÍNIMO A MÁXIMO DE CADA MES ENTRE {desde} Y {hasta}. BANDA OSCURA: PERCENTILES 25 A 75. LÍNEA PUNTEADA: MEDIANA. LÍNEA DE COLOR: {anio}, DATO REAL, SIN PROYECCIONES.{u}', en: 'LIGHT BAND: LOW TO HIGH FOR EACH MONTH BETWEEN {desde} AND {hasta}. DARK BAND: 25TH TO 75TH PERCENTILES. DOTTED LINE: MEDIAN. COLORED LINE: {anio}, ACTUAL DATA, NO PROJECTIONS.{u}'},
-  picto: {es: 'CADA CUADRO = {un}. LOS CUADROS INCOMPLETOS SON FRACCIONES EXACTAS DEL VALOR. EL % ES EL VALOR ENTRE LA SUMA DE TODAS LAS PARTES.{om}', en: 'EACH SQUARE = {un}. PARTIAL SQUARES ARE EXACT FRACTIONS OF THE VALUE. THE % IS THE VALUE DIVIDED BY THE SUM OF ALL PARTS.{om}'},
-  picto_om: {es: ' SE MUESTRAN LAS {n} MAYORES DE {m}.', en: ' SHOWING THE {n} LARGEST OF {m}.'},
-  ranking: {es: 'ORDEN DE MAYOR A MENOR. LA LONGITUD DE LA BARRA ES PROPORCIONAL AL VALOR{cero}.{om}', en: 'SORTED FROM LARGEST TO SMALLEST. BAR LENGTH IS PROPORTIONAL TO THE VALUE{cero}.{om}'},
-  ranking_cero: {es: ' Y ARRANCA EN 0', en: ' AND STARTS AT 0'},
-  ranking_om: {es: ' SE MUESTRAN {n} DE {m}.', en: ' SHOWING {n} OF {m}.'},
+  bullet: {es: 'Barra: último dato. Fondo: historia en tres tramos (mín–P25–P75–máx). Raya blanca: la meta. Escala desde 0.', en: 'Bar: latest value. Background: history in three ranges (low–P25–P75–high). White line: the target. Scale from 0.'},
+  bandas: {es: 'Banda clara: mín–máx de cada mes ({desde}–{hasta}); oscura: percentiles 25–75; punteada: mediana. Color: {anio}, dato real.{u}', en: 'Light band: monthly low–high ({desde}–{hasta}); dark: 25th–75th percentile; dotted: median. Color: {anio}, actual data.{u}'},
+  picto: {es: 'Cada cuadro = {un}; los incompletos son fracciones exactas. % = valor ÷ suma de las partes.{om}', en: 'Each square = {un}; partial ones are exact fractions. % = value ÷ sum of all parts.{om}'},
+  picto_om: {es: ' Se muestran las {n} mayores de {m}.', en: ' Showing the {n} largest of {m}.'},
+  ranking: {es: 'Orden de mayor a menor; la barra es proporcional al valor{cero}.{om}', en: 'Sorted largest to smallest; bar length is proportional to the value{cero}.{om}'},
+  ranking_cero: {es: ' y arranca en 0', en: ' and starts at 0'},
+  ranking_om: {es: ' Se muestran {n} de {m}.', en: ' Showing {n} of {m}.'},
 });
 // Textos del modelo «dos hitos» (dos_hitos). Todo lo que se dibuja pasa por tr('ch.clave', {vars}).
 registrar('ch', {
-  nota: {es: 'CADA HITO REBASA LA SERIE A BASE 100 EN EL CIERRE DE SU FECHA Y LAS DOS SE ALINEAN POR SESIONES DESDE EL HITO.{log}', en: 'EACH MILESTONE REBASES THE SERIES TO 100 AT THE CLOSE OF ITS DATE, AND BOTH ARE ALIGNED BY SESSIONS SINCE THE MILESTONE.{log}'},
-  nota_log: {es: ' ESCALA LOGARÍTMICA.', en: ' LOGARITHMIC SCALE.'},
+  nota: {es: 'Cada hito rebasa la serie a 100 en su fecha y las dos se alinean por sesiones desde el hito.{log}', en: 'Each milestone rebases the series to 100 on its date; both are aligned by sessions since the milestone.{log}'},
+  nota_log: {es: ' Escala log.', en: ' Log scale.'},
   panel_crec: {es: 'CRECIMIENTO, BASE 100', en: 'GROWTH, BASE 100'},
   panel_caida: {es: 'CAÍDA DESDE EL MÁXIMO', en: 'DRAWDOWN FROM PEAK'},
   sesion: {es: 'SESIÓN', en: 'SESSION'},
@@ -65,7 +65,7 @@ registrar('ch', {
   caida_hoy: {es: 'Caída hoy', en: 'Drawdown now'},
   peor_caida: {es: 'Peor caída', en: 'Worst drawdown'},
   kpi_peor: {es: 'PEOR CAÍDA {v}', en: 'WORST DRAWDOWN {v}'},
-  aviso: {es: 'COMPARACIÓN HISTÓRICA, NO UNA PROYECCIÓN.', en: 'HISTORICAL COMPARISON, NOT A FORECAST.'},
+  aviso: {es: 'Comparación histórica, no una proyección.', en: 'Historical comparison, not a forecast.'},
   hito_n: {es: 'Hito {n}', en: 'Milestone {n}'},
 });
 const mes3 = () => MESES_CORTO[idioma()];
@@ -129,11 +129,18 @@ function nombreEnLineas(env, s, ancho, base, peso = 700, maxL = 2) {
 }
 function lineasDe(env, s, ancho, base, peso, maxL, extra = 0) { const {ctx} = env; ctx.save(); ctx.font = F(env, peso, base); const r = envolver(ctx, s, ancho, maxL, {extra}); ctx.restore(); return r; }
 
-/** Nota de método/escala que se DECLARA en pantalla: va en la franja libre justo encima de la gráfica (hasta 3 líneas). */
+/** Nota de método/escala que se DECLARA en pantalla: va en la franja libre justo encima de la gráfica.
+ *  Frase normal (no todo en mayúsculas). En vertical: máx. 2 líneas y, como queda por encima de la zona segura (y < 43,75 % del alto), usa todo el ancho útil.
+ *  Si con la unidad al final pasa de 2 líneas, se omite la unidad (ya la dicen el eje o el subtítulo); la declaración de método nunca se recorta. */
 export function nota(env, B, texto, id, alpha = 1) {
   if (!texto) return;
-  const px = tam(env, 18), lh = px * 1.28, L = lineasDe(env, texto, B.w, 18, 500, env.H > env.W ? 6 : 3, 2);   // en vertical la caja es más estrecha: más líneas, para no cortar la declaración de escala con «…»
-  L.forEach((l, i) => rot(env, l, B.x, B.y - 16 * env.u - (L.length - 1 - i) * lh, 18, 500, rgba(PALETA.piedraClara, 0.9), 'left', `${id}:nota${i}`, {alpha, halo: false}));
+  const {ctx, u, W, H} = env, vert = H > W, px = tam(env, 18), lh = px * 1.28, maxL = vert ? 2 : 3;
+  const ancho = vert && B.y - 30 * u < ZONA.y * H ? Math.max(B.w, W - margenes(env).m - B.x) : B.w;
+  const nLin = (s) => { ctx.save(); ctx.font = F(env, 500, 18); const n = envolverPalabras(ctx, s, ancho).length; ctx.restore(); return n; };
+  let tx = String(texto);
+  if (nLin(tx) > maxL) { const sin = tx.replace(/\s*(Unidad|Unit): [^]*$/, ""); if (sin !== tx && nLin(sin) <= maxL) tx = sin; }
+  const L = lineasDe(env, tx, ancho, 18, 500, maxL, 1);   // como último recurso admite 1 línea más antes de acortar con «…»
+  L.forEach((l, i) => rot(env, l, B.x, B.y - (vert ? 30 : 16) * env.u - (L.length - 1 - i) * lh, 18, 500, rgba(PALETA.piedraClara, 0.9), "left", `${id}:nota${i}`, {alpha, halo: false}));
 }
 /** Opacidad de entrada escalonada del elemento i de n que arranca en t0 (curva de desaceleración, nunca lineal). */
 export const ent = (env, t0, i = 0, n = 1) => entradaDiseno(env.t, t0, i, n);
@@ -159,7 +166,7 @@ export function acortarNombres(ns) {
   }
   return r.map((q) => q.charAt(0).toUpperCase() + q.slice(1));
 }
-export const uni = (fmt) => (fmt?.unidad ? tr('ce.uni', {u: String(fmt.unidad).toUpperCase()}) : '');
+export const uni = (fmt) => (fmt?.unidad ? tr('ce.uni', {u: String(fmt.unidad).trim()}) : '');
 export const fechaCorta = (ms, modo) => (modo === 'anio' ? fmtFecha(ms, 'anio') : fmtFecha(ms, 'mes'));
 
 // ═══ 1. RADAR ═══════════════════════════════════════════════════════════════════════════════════════════════════
@@ -368,7 +375,7 @@ function histograma(env, capa) {
   const mxS = Math.max(...L.share), yt = marcasHasta(mxS * 1.05, 4), etY = (v) => `${fN(v, {decimales: decDe(yt.ticks[1] - yt.ticks[0])})} %`, wEje = Math.max(...yt.ticks.map((v) => med(env, etY(v), 18, 500, true))) + 14 * u;
   const cab = S * 4.4, x0 = B.x + wEje, x1 = B.x + B.w, y0 = B.y + cab, y1 = B.y + B.h - S * 1.9, px = (v) => x0 + ((v - L.e0) / (L.paso * L.nb)) * (x1 - x0), py = (v) => y1 - (v / yt.top) * (y1 - y0), p = prog(t, t0, t1, CURVA.trazo);
   const per = frecuencia(L.paso2), xt = ticksNum(L.e0, L.e0 + L.paso * L.nb, Math.max(3, Math.floor((x1 - x0) / (med(env, '−4,5 %', 18, 500, true) * 1.9)))), etX = (v) => fN(v, {...fmt, prefijo: fmt.prefijo ?? '', decimales: L.ret ? decDe(L.paso) : (fmt.decimales ?? 'auto')});
-  nota(env, B, capa.nota ?? (L.ret ? tr('ce.hist_ret', {n: fN(L.n, {decimales: 0}), per: per.toUpperCase(), col: L.fuera0 + L.fuera1 ? tr('ce.hist_col') : ''}) : tr('ce.hist_niv', {n: fN(L.n, {decimales: 0})}) + uni(fmt)), capa.id ?? 'histograma', ap);
+  nota(env, B, capa.nota ?? (L.ret ? tr('ce.hist_ret', {n: fN(L.n, {decimales: 0}), per, col: L.fuera0 + L.fuera1 ? tr('ce.hist_col') : ''}) : tr('ce.hist_niv', {n: fN(L.n, {decimales: 0})}) + uni(fmt)), capa.id ?? 'histograma', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   yt.ticks.forEach((v) => { const y = py(v); ctx.strokeStyle = rgba(PALETA.piedra, v === 0 ? 0.3 : 0.07); ctx.lineWidth = 1 * u; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); rot(env, etY(v), x0 - 10 * u, y + S * 0.35, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'right', `${capa.id ?? 'histograma'}:y${v}`, {mono: true, tipo: 'eje-y'}); });
   const bw = (x1 - x0) / L.nb;
