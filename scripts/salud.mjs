@@ -79,15 +79,21 @@ else {
 const vivo = leer('catalogo/estado-vivo.json', null);
 if (!vivo) aviso('actualizador 24/7', 'sin catalogo/estado-vivo.json: el actualizador nunca ha corrido aquí (Iniciar actualizador 24-7.bat).');
 else {
-  const e = Object.entries(vivo), conError = e.filter(([, v]) => v.errores > 0), viejos = e.filter(([, v]) => v.ultimoExito && dias(v.ultimoExito) > 4);
+  // Umbrales por serie, no globales: una descarga «vieja» depende del intervalo de su adaptador (usgs_sismos baja cada 7 días a propósito) y un dato
+  // «estancado» depende de la frecuencia real de la serie (una anual solo avanza una vez al año: su último dato puede tener 11 meses y estar al día).
+  const {INTERVALO_MIN} = await import('../servidor/vivo.mjs'), porId = new Map(cat.map((s) => [s.id, s]));
+  const diasIntervalo = (id) => { const a = porId.get(id)?.adaptador; return (INTERVALO_MIN[a] ?? 1440) / 1440; };
+  const umbralExito = (id) => Math.max(4, diasIntervalo(id) * 2 + 1);
+  const diasFrecuencia = (id) => { const f = (porId.get(id)?.frecuencia ?? '').toLowerCase(); return f.startsWith('anual') ? 460 : f.startsWith('trimestral') ? 150 : f.startsWith('mensual') ? 75 : f.startsWith('semanal') ? 30 : 45; };
+  const e = Object.entries(vivo), conError = e.filter(([, v]) => v.errores > 0), viejos = e.filter(([k, v]) => v.ultimoExito && dias(v.ultimoExito) > umbralExito(k));
   const ultima = e.map(([, v]) => v.ultimoIntento).filter(Boolean).sort().pop();
   ultima && dias(ultima) <= 2 ? ok('actualizador 24/7', `última pasada hace ${dias(ultima).toFixed(1)} días, ${e.length} series vivas`) : aviso('actualizador 24/7', `última pasada ${ultima ? 'hace ' + dias(ultima).toFixed(0) + ' días' : 'desconocida'}: el PC estuvo apagado o el actualizador no corre.`);
   conError.length ? aviso('series vivas con errores', `${conError.length}: ${conError.slice(0, 4).map(([k, v]) => `${k} (${v.errores})`).join(', ')}`) : ok('series vivas sin errores');
   // unas pocas atrasadas son normales (series anuales, fuentes lentas); si pasan del 10 % es que una FUENTE entera dejó de responder o cambió de formato
-  const msgV = `${viejos.length} sin una descarga buena en más de 4 días (p. ej. ${viejos.slice(0, 4).map(([k]) => k).join(', ')}): ¿la fuente cambió de formato o dejó de responder?`;
+  const msgV = `${viejos.length} sin una descarga buena en más de su intervalo de actualización (p. ej. ${viejos.slice(0, 4).map(([k]) => k).join(', ')}): ¿la fuente cambió de formato o dejó de responder?`;
   viejos.length > e.length * 0.1 ? mal('series vivas sin éxito reciente', msgV) : viejos.length ? aviso('series vivas sin éxito reciente', msgV) : ok('series vivas con descarga reciente');
-  const estancadas = e.filter(([, v]) => v.fin && v.ultimoCambio && dias(v.ultimoCambio) > 45 && dias(v.fin) > 45);
-  estancadas.length ? aviso('series que no avanzan', `${estancadas.length} sin dato nuevo en más de 45 días (p. ej. ${estancadas.slice(0, 3).map(([k]) => k).join(', ')}): pueden estar discontinuadas.`) : ok('series vivas avanzan');
+  const estancadas = e.filter(([k, v]) => v.fin && v.ultimoCambio && dias(v.ultimoCambio) > diasFrecuencia(k) && dias(v.fin) > diasFrecuencia(k));
+  estancadas.length ? aviso('series que no avanzan', `${estancadas.length} sin dato nuevo según su frecuencia (anuales 460 días, trimestrales 150, mensuales 75, el resto 45) (p. ej. ${estancadas.slice(0, 3).map(([k]) => k).join(', ')}): pueden estar discontinuadas.`) : ok('series vivas avanzan');
 }
 
 for (const [i, n, m] of filas) console.log(`${i} ${n}${m ? ' — ' + m : ''}`);
