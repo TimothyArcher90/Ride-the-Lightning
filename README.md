@@ -1,7 +1,7 @@
 # ⚡ Ride the Lightning
 
 **A universal, local studio that turns real, sourced data into broadcast-quality animated charts — for YouTube, Reels, Shorts and Premiere.**
-Every number on screen comes from a verifiable row of data. 28 chart models · 72 countries · SEC filings for US-listed companies · 4,400+ ready-to-use series.
+Every number on screen comes from a verifiable row of data. 31 chart models · 72 countries · SEC filings for US-listed companies · 4,400+ ready-to-use series.
 
 <p align="center"><img src="examples/video/README.gif" alt="Ride the Lightning sample animation" width="720"></p>
 
@@ -87,7 +87,7 @@ Highlights
 
 ## Chart models
 
-28 models (30 ids counting variants such as stacked 100 % and returns histogram) in four groups — see [docs/MODELS.md](docs/MODELS.md) for inputs, selection rules, honesty notes and images of each.
+31 models (33 ids counting variants such as stacked 100 % and returns histogram) in four groups — see [docs/MODELS.md](docs/MODELS.md) for inputs, selection rules, honesty notes and images of each.
 
 | Group | Models (id) |
 |---|---|
@@ -166,7 +166,7 @@ Enforced by the compiler, not by good intentions.
 
 ## Professional output
 
-A single design system ([`motor/diseno.js`](motor/diseno.js)) drives all 28 models in both formats:
+A single design system ([`motor/diseno.js`](motor/diseno.js)) drives all 31 models in both formats:
 
 - **Type scale with enforced minimums** (vertical 1080 px wide: labels ≥ 40 px, axes/units ≥ 32, footer ≥ 28), WCAG contrast ≥ 4.5:1.
 - **Mandatory source footer** on every piece: *"Source: <name> · <date of last data point> · RTL"*.
@@ -209,7 +209,7 @@ npm run gallery
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Using the studio, step by step |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layers, directory map, tests |
 | [docs/SPEC_REFERENCE.md](docs/SPEC_REFERENCE.md) | The spec format and every layer |
-| [docs/MODELS.md](docs/MODELS.md) | The 28 chart models with images and rules |
+| [docs/MODELS.md](docs/MODELS.md) | The 31 chart models with images and rules |
 | [docs/EXAMPLES.md](docs/EXAMPLES.md) | The 15 examples and how to regenerate them |
 | [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) · [DATA_FORMAT.md](docs/DATA_FORMAT.md) · [COUNTRIES.md](docs/COUNTRIES.md) · [data-verification.md](docs/data-verification.md) | Sources, formats, country coverage, verification |
 | [docs/QUARTERLY_REPORTS.md](docs/QUARTERLY_REPORTS.md) | SEC company library and the filing watcher |

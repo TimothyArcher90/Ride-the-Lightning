@@ -57,11 +57,12 @@ export function reglasExtra(series, {partes = null, haAnterior = false} = {}, ad
     if (frec === 'anual' && tend && tend.puntos >= 15) add('barras_decada', 'Serie anual con tendencia: una barra por década (más el último dato) desde cero. Se lee de un vistazo cuánto ha crecido o caído en cada década, sin ruido anual.');
     if (oscila && frec !== 'anual') add('bullet', 'El último dato frente a su rango histórico y a su mediana: un medidor que responde «¿está alto o bajo?».');
     if (oscila && muchas && frec !== 'anual') add('histograma', 'En qué valores ha pasado más tiempo la serie, con la mediana y el último dato marcados.');
+    if (frec === 'diaria' && tend && tend.puntos >= 750 && !tend.sostenida) add('cordillera', 'Dato diario con 3 o más años: una cresta por año enseña cómo cambia la FORMA de la distribución (no solo el promedio) con el tiempo.');
     if (frec === 'diaria' && !precio) add('retornos', 'Cómo se distribuyen los cambios entre un dato y el siguiente.');
     return;
   }
   if (fase === 'pre') {
-    if (n >= 2 && n <= 8 && misma && EXTENSIVA([...unidades][0])) { add('apilada', 'Son partes de un mismo total (misma unidad): el área apilada enseña cuánto aporta cada una y cómo cambia el total.'); add('apilada100', 'El mismo reparto como % del total: se ve qué fuente gana o pierde peso aunque el total crezca.'); }
+    if (n >= 2 && n <= 8 && misma && EXTENSIVA([...unidades][0])) { add('apilada', 'Son partes de un mismo total (misma unidad): el área apilada enseña cuánto aporta cada una y cómo cambia el total.'); add('apilada100', 'El mismo reparto como % del total: se ve qué fuente gana o pierde peso aunque el total crezca.'); if (n >= 3) add('corriente', 'Las mismas partes como una corriente con la línea base centrada: se ve cuándo gana o pierde peso cada una; el grosor es el valor y una barra de escala lo mide.'); }
     return;
   }
   if (fase === 'mid') {

@@ -91,6 +91,21 @@ const REGLAS = [
   // ── trimestres (notas del reporte) ──
   [/^Los ingresos se desglosan por «(.*?)» \(suman los ingresos reportados con una diferencia menor a 0,5 %\)\.$/, 'Revenue is broken down by "$1" (it adds up to the reported revenue with a difference under 0.5%).'],
   // ── capas del visualizador universal (motor/capas_extra.js · validarExtra) ──
+  // distribución (motor/capas_distribucion.js)
+  [/^el enjambre necesita al menos 8 filas para ser una distribución \(hay (.*?)\)\.$/, 'the beeswarm needs at least 8 rows to be a distribution (there are $1).'],
+  [/^la escala logarítmica no admite valores ≤ 0\.$/, 'the logarithmic scale does not accept values ≤ 0.'],
+  [/^un punto por fila; posición horizontal = valor \(logarítmica si el mayor supera 30 veces el menor, y se declara\)\. La posición vertical solo separa puntos y no significa nada; se declara\. Se etiquetan el menor, el mayor y el resaltado\.$/, 'one dot per row; horizontal position = value (logarithmic if the largest exceeds 30 times the smallest, and this is stated). Vertical position only separates dots and means nothing; this is stated. The smallest, the largest and the highlighted one are labelled.'],
+  [/^la cordillera agrupa por año y necesita datos con fecha\.$/, 'the ridgeline groups by year and needs dated data.'],
+  [/^hacen falta al menos 3 años con (.*?) o más observaciones \(hay (.*?)\)\.$/, 'at least 3 years with $1 or more observations are needed (there are $2).'],
+  [/^para cada uno de los últimos (.*?) años, polígono de frecuencias de (.*?) rangos iguales entre el mínimo y el máximo de lo mostrado; altura = % de las observaciones de ese año, con la misma escala para todos \(sin suavizado\)\. Marca blanca = mediana exacta del año\.$/, 'for each of the last $1 years, a frequency polygon of $2 equal ranges between the minimum and maximum of what is shown; height = % of that year\'s observations, on the same scale for all (not smoothed). White mark = the exact median of the year.'],
+  [/^se muestran los últimos (.*?) años de (.*?)\.$/, 'showing the last $1 years of $2.'],
+  [/^la cordillera usa una sola serie; se usa la primera\.$/, 'the ridgeline uses a single series; the first one is used.'],
+  [/^la corriente necesita de 3 a 8 series \(hay (.*?)\)\.$/, 'the stream needs 3 to 8 series (there are $1).'],
+  [/^las series tienen unidades distintas \((.*?)\): solo se pueden apilar magnitudes de la misma unidad\.$/, 'the series have different units ($1): only quantities of the same unit can be stacked.'],
+  [/^hay valores negativos; una corriente solo representa partes positivas de un total\.$/, 'there are negative values; a stream only represents positive parts of a total.'],
+  [/^solo (.*?) momentos tienen todas las series con dato\.$/, 'only $1 points have data in all the series.'],
+  [/^se usan (.*?) de (.*?) momentos \(solo aquellos en que TODAS las series tienen dato\)\.$/, '$1 of $2 points are used (only those where ALL the series have data).'],
+  [/^área apilada con línea base «wiggle» \(centrada, Byron & Wattenberg 2008\): el grosor de cada franja es su valor exacto, pero la posición vertical no es un valor; una barra de escala lo declara\. Orden de dentro afuera según el momento del pico de cada serie\.$/, 'stacked area with a "wiggle" baseline (centered, Byron & Wattenberg 2008): each band\'s thickness is its exact value, but vertical position is not a value; a scale bar states this. Inside-out order by the peak time of each series.'],
   [/^(\w+) no usa tablas de flujos\.$/, '$1 does not use flows tables.'],
   [/^(\w+) necesita una serie de tiempo, y estos datos son una tabla de categorías\.$/, '$1 needs a time series, and this data is a categories table.'],
   [/^el radar necesita de 3 a 8 series \(hay (\d+)\)\.$/, 'the radar needs 3 to 8 series (there are $1).'],

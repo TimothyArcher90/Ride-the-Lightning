@@ -22,6 +22,9 @@ registrar('pe', {
   bandas: {es: 'Para cada mes, mínimo, máximo y percentiles 25 y 75 de los años anteriores; encima el año elegido (por defecto el último con datos). No se proyecta nada.', en: 'For each month, the minimum, maximum and 25th and 75th percentiles of the previous years; on top, the chosen year (by default the latest with data). Nothing is projected.'},
   pictograma: {es: 'Cada cuadro vale una unidad redonda elegida para que la parte mayor quepa en una fila; se declara en pantalla y los cuadros incompletos son fracciones exactas.', en: 'Each square is worth a round unit chosen so the largest part fits in one row; this is stated on screen and partial squares are exact fractions.'},
   ranking: {es: 'Barras ordenadas de mayor a menor, proporcionales al valor y desde 0. El código sale del texto anterior a « · » en el concepto; no se usan banderas.', en: 'Bars sorted from largest to smallest, proportional to the value and starting at 0. The code comes from the text before " · " in the concept; no flags are used.'},
+  enjambre: {es: 'Un punto por fila sobre una sola escala (logarítmica si el mayor supera 30 veces el menor, y se declara). La altura solo separa puntos y no significa nada; se declara. Se etiquetan el menor, el mayor y el resaltado.', en: 'One dot per row on a single scale (logarithmic if the largest exceeds 30 times the smallest, and this is stated). Height only separates dots and means nothing; this is stated. The smallest, the largest and the highlighted one are labelled.'},
+  cordillera: {es: 'Para cada año, el % de las observaciones en cada rango de valores (polígono de frecuencias, sin suavizar), con la misma escala de altura para todos los años y la mediana marcada.', en: "For each year, the % of observations in each range of values (frequency polygon, not smoothed), with the same height scale for every year and the median marked."},
+  corriente: {es: 'Área apilada con línea base centrada: el grosor de cada franja es su valor exacto, pero la posición vertical no es un valor; una barra de escala lo declara. Solo se usan los momentos en que todas las series tienen dato.', en: "Stacked area with a centered baseline: each band's thickness is its exact value, but vertical position is not a value; a scale bar states this. Only the points at which every series has data are used."},
   e_desconocida: {es: 'Plantilla extra desconocida: {p}', en: 'Unknown extra template: {p}'},
   dos_hitos: {es: 'Cada hito rebasa la serie a base 100 en el cierre de su fecha y las dos curvas se alinean por sesiones desde el hito. El eje es logarítmico si el máximo supera 5 veces el mínimo. Las fechas-hito y sus nombres los pone quien arma la pieza: confírmalas con una fuente primaria antes de publicar.', en: 'Each milestone rebases the series to 100 at the close of its date and the two curves are aligned by sessions since the milestone. The axis is logarithmic when the maximum exceeds 5 times the minimum. The milestone dates and names are set by whoever builds the piece: confirm them against a primary source before publishing.'},
   e_hitos: {es: 'dos_hitos necesita "hitos": dos fechas AAAA-MM-DD con su nombre, por ejemplo [{"fecha":"2008-09-15","nombre":"…"},{"fecha":"2020-03-11","nombre":"…"}]. Las fechas son afirmaciones: confírmalas con una fuente primaria.', en: 'dos_hitos needs "hitos": two YYYY-MM-DD dates with their names, for example [{"fecha":"2008-09-15","nombre":"…"},{"fecha":"2020-03-11","nombre":"…"}]. The dates are claims: confirm them against a primary source.'},
@@ -46,19 +49,22 @@ export const PLANTILLAS_EXTRA = [
   {id: 'bandas', nombre: 'Este año contra el rango histórico', descripcion: 'Para cada mes, una banda con el mínimo–máximo y los percentiles 25–75 de los años anteriores, y encima la línea del año. Sin proyecciones.', necesita: {min: 1, max: 1}, ayuda: 'Elige 1 serie mensual (o diaria) con al menos 5 años.'},
   {id: 'pictograma', datos: 'categorias', nombre: 'Cada cuadro = una cantidad', descripcion: 'Filas de cuadros donde cada cuadro vale una cantidad declarada; los incompletos son fracciones exactas. Para «cuánto es esto» de forma concreta.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías (concepto, valor).'},
   {id: 'ranking_pais', datos: 'categorias', nombre: 'Ranking con códigos (países o empresas)', descripcion: 'Barras ordenadas de mayor a menor con el código ISO o ticker en una ficha (sin banderas). Si resaltas uno que no está en los primeros, aparece abajo con su puesto real.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías; escribe el concepto como «COL · Colombia» para mostrar el código.'},
+  {id: 'enjambre_pais', datos: 'categorias', nombre: '¿Cómo se reparte entre países? (enjambre)', descripcion: 'Un punto por país (o empresa) sobre una sola escala: se ve de golpe dónde está el montón, los extremos y un país resaltado. Con la mediana marcada.', necesita: {min: 1, max: 1}, ayuda: 'Necesita una tabla de categorías con al menos 8 filas; escribe el concepto como «COL · Colombia» para mostrar el código.'},
+  {id: 'cordillera', nombre: 'La distribución año a año (cordillera)', descripcion: 'Una cresta por año con la distribución de los valores diarios: se ve cómo cambia la forma (no solo el promedio) con el tiempo. Sin suavizar; con la mediana de cada año.', necesita: {min: 1, max: 1}, ayuda: 'Elige 1 serie diaria con al menos 3 años de datos.'},
+  {id: 'corriente', nombre: 'Composición como corriente (streamgraph)', descripcion: 'Área apilada con la línea base centrada: las franjas fluyen como un río y se ve cuándo gana o pierde peso cada parte. El grosor es el valor; una barra de escala lo mide.', necesita: {min: 3, max: 8}, ayuda: 'Elige de 3 a 8 datos de la misma unidad (partes de un total).'},
   {id: 'dos_hitos', nombre: 'Dos hitos, la misma serie', descripcion: 'Una serie diaria vista desde dos fechas-hito: cada hito rebasa la serie a base 100 en su cierre y las dos curvas se alinean por sesiones desde el hito. Con caída desde el máximo, tabla viva y dos cifras finales. Pide "hitos" (dos fechas con nombre).', necesita: {min: 1, max: 1}, ayuda: 'Elige 1 serie diaria y rellena las 2 fechas-hito, cada una con su fuente.'},
 ];
 
 export const IDS_EXTRA = new Set(PLANTILLAS_EXTRA.map((p) => p.id));
 /** Qué `uso` declarar en la tabla de categorías de cada plantilla (evita las reglas del anillo, p. ej. «sin negativos» en el dumbbell). */
-export const USO_EXTRA = {radar_tabla: 'radar', dumbbell: 'dumbbell', pictograma: 'pictograma', ranking_pais: 'ranking'};
+export const USO_EXTRA = {radar_tabla: 'radar', dumbbell: 'dumbbell', pictograma: 'pictograma', ranking_pais: 'ranking', enjambre_pais: 'ranking'};
 /** Plantillas que comparan series entre sí: se alinean desde la primera fecha en que todas tienen dato. */
-export const COMUN_EXTRA = ['apilada', 'apilada100', 'agrupadas', 'dumbbell_series'];
+export const COMUN_EXTRA = ['apilada', 'apilada100', 'agrupadas', 'dumbbell_series', 'corriente'];
 
 /** Genera {duracion, capas, notas} para una plantilla extra. `c`: {datos, tab, titulo, camara, formato, entrada, CAMARAS}. */
 export function generarExtra(plantilla, c) {
   const {titulo, camara, formato, entrada = {}, tab, CAMARAS} = c, P = CAMARAS[camara] ?? CAMARAS.documental, vert = formato === 'vertical';
-  const dib = Math.max(4, Math.min(8, P.dibujo + (['apilada', 'apilada100', 'velas', 'calendario', 'bandas'].includes(plantilla) ? 1 : 0))), dur = +(1 + dib + 3.2).toFixed(1);
+  const dib = Math.max(4, Math.min(8, P.dibujo + (['apilada', 'apilada100', 'corriente', 'cordillera', 'velas', 'calendario', 'bandas'].includes(plantilla) ? 1 : 0))), dur = +(1 + dib + 3.2).toFixed(1);
   const base = {datos: 'd', id: 'g1', t: [0.9, +(0.9 + dib).toFixed(2)]}, notas = [];
   let capa;
   if (plantilla === 'dos_hitos') {   // temporización propia: trazo largo + espera con la tabla viva + dos cifras finales (todo texto ≥ 3 s en pantalla)
@@ -85,6 +91,9 @@ export function generarExtra(plantilla, c) {
     case 'bandas': capa = {tipo: 'bandas', ...base, ...(entrada.anio ? {anio: entrada.anio} : {})}; notas.push(t('pe.bandas')); break;
     case 'pictograma': capa = {tipo: 'pictograma', ...base}; notas.push(t('pe.pictograma')); break;
     case 'ranking_pais': capa = {tipo: 'ranking', ...base, ...(entrada.resalta ? {resalta: entrada.resalta} : {})}; notas.push(t('pe.ranking')); break;
+    case 'enjambre_pais': capa = {tipo: 'enjambre', ...base, ...(entrada.resalta ? {resalta: entrada.resalta} : {}), ...(entrada.escala ? {escala: entrada.escala} : {})}; notas.push(t('pe.enjambre')); break;
+    case 'cordillera': capa = {tipo: 'cordillera', ...base, ...(entrada.maxFilas ? {maxFilas: entrada.maxFilas} : {}), series: [0]}; notas.push(t('pe.cordillera')); break;
+    case 'corriente': capa = {tipo: 'corriente', ...base}; notas.push(t('pe.corriente')); break;
     default: throw new Error(t('pe.e_desconocida', {p: plantilla}));
   }
   if (entrada.color) capa.color = entrada.color;

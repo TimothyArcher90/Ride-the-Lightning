@@ -1,6 +1,6 @@
 # Chart model catalogue
 
-Ride the Lightning ships **28 chart models** (plus a few variants). Every image below is a real final frame rendered from real data with `npm run gallery` (see [EXAMPLES.md](EXAMPLES.md)); horizontal is 16:9, vertical is 9:16 for reels (with the platform safe zone respected).
+Ride the Lightning ships **31 chart models** (plus a few variants). Every image below is a real final frame rendered from real data with `npm run gallery` (see [EXAMPLES.md](EXAMPLES.md)); horizontal is 16:9, vertical is 9:16 for reels (with the platform safe zone respected).
 
 > **Language note.** The text *inside* the charts (titles, notes, source line) is Spanish: that is the output language of the engine and of the channel it was built for. The repository, the docs and the code comments are English.
 
@@ -8,9 +8,10 @@ Ride the Lightning ships **28 chart models** (plus a few variants). Every image 
 
 | Your data looks like… | Use |
 |---|---|
-| One series over time | `historia`, `bandas`, `histograma`, `velas`, `calendario` |
+| One series over time | `historia`, `bandas`, `histograma`, `cordillera`, `velas`, `calendario` |
 | One daily series seen from **two dates** (two events, same index) | `dos_hitos` (alias `two_milestones`) |
-| Several series, **same unit**, over time | `comparar`, `apilada`, `carrera`, `agrupadas`, `bump` |
+| Several series, **same unit**, over time | `comparar`, `apilada`, `corriente`, `carrera`, `agrupadas`, `bump` |
+| **Distribution**: how values are spread (across countries, or year by year) | `enjambre` (one dot per country), `cordillera` (one ridge per year), `histograma` |
 | Several series, **different units** | `comparar` (indexed to 100, declared), `pendiente`, `divergente`, `panel`, `correlacion`, `radar`, `bullet` |
 | Parts of a total at one moment (a table) | `donut`, `treemap`, `waffle`, `lollipop`, `pictograma` |
 | Money flowing through stages | `sankey`, `cascada` |
@@ -148,6 +149,27 @@ When: “is this year normal?” for monthly data. Needs: 1 series with ≥ 5 ye
 | Horizontal | Vertical |
 |---|---|
 | ![](gallery/bandas-h.png) | ![](gallery/bandas-v.png) |
+
+### `enjambre` — beeswarm: how a quantity is spread across countries or companies
+When: "where does Colombia sit among 70 countries?" Needs: a categories table with ≥ 8 rows (`COL · Colombia` style concepts show the code). Declares: one dot per row on a single horizontal scale (logarithmic, and announced, when the largest is over 30× the smallest); vertical position only separates dots and means nothing; dotted line = exact median. Labels the smallest, the largest and the highlighted row (`resalta`). Template `enjambre_pais`.
+
+| Horizontal | Vertical |
+|---|---|
+| ![](gallery/enjambre-h.png) | ![](gallery/enjambre-v.png) |
+
+### `cordillera` — ridgeline: a daily series' distribution, year by year
+When: "how did the SHAPE of the values change, not just the average?" Needs: 1 daily series with ≥ 3 years (≥ 20 observations per year). Declares: each ridge is the % of that year's observations in each of 40 equal ranges (frequency polygon, **not smoothed**), the same height scale for every ridge, white mark = exact median; the last 12 years are shown and the screen says so. Template `cordillera`.
+
+| Horizontal | Vertical |
+|---|---|
+| ![](gallery/cordillera-h.png) | ![](gallery/cordillera-v.png) |
+
+### `corriente` — streamgraph: a stacked area with a centered baseline
+When: the `apilada` use case when the *flow* of the parts matters more than reading the total. Needs: 3–8 series of the same unit, all positive. Declares: band thickness is the exact value; the baseline is centered (a "wiggle" baseline after Byron & Wattenberg 2008, own implementation), so vertical position is NOT a value and a scale bar measures the unit. Inside-out ordering by peak time. Template `corriente`.
+
+| Horizontal | Vertical |
+|---|---|
+| ![](gallery/corriente-h.png) | ![](gallery/corriente-v.png) |
 
 ### `dos_hitos` — one series, two milestones (alias `two_milestones`)
 When: "what did the same index do after event A versus after event B?". Needs: **1 daily series** and `hitos`: two `AAAA-MM-DD` dates with a name each (the template refuses to run without them, so it is not in the studio's template list: use a spec, the CLI or the MCP). Declares: each milestone rebases the series to 100 at the close of its date; the two curves are aligned by trading sessions since the milestone (not by calendar date); log axis when max/min > 5 (`escala` forces `lineal` or `log`); where the shorter series ends the screen shades "no projection". Shows: tip labels (name + date), session counter, peak and trough annotations, drawdown from the running maximum, a live table (return, drawdown now, worst drawdown) and two final figures. Every figure is computed from the series and listed in the compiler report; the milestone dates and names are **claims to confirm against a primary source**. In 9:16 the names sit in a legend above the chart (the 40 px name floor leaves no gutter at the line tip).

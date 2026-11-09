@@ -89,7 +89,7 @@ export async function construirModelos(formato = 'vertical', {camara = 'dinamico
 }
 
 // ── los 12 modelos del visualizador universal (radar, apilada, velas, histograma, dumbbell, calendario, agrupadas, bullet, bandas, pictograma, ranking, dos_hitos) ──
-export const MODELOS_EXTRA = ['radar', 'apilada', 'velas', 'histograma', 'dumbbell', 'calendario', 'agrupadas', 'bullet', 'bandas', 'pictograma', 'ranking', 'dos_hitos'];
+export const MODELOS_EXTRA = ['radar', 'apilada', 'velas', 'histograma', 'dumbbell', 'calendario', 'agrupadas', 'bullet', 'bandas', 'pictograma', 'ranking', 'dos_hitos', 'enjambre', 'cordillera', 'corriente'];
 const ENERGIA = ['coal', 'oil', 'gas', 'hydro', 'nuclear'].map((k) => `ow_global_energy_substitution_${k}_twh`);
 const sec = (tk) => { const f = path.join(RAIZ, 'datos', 'trimestres', tk, 'serie.csv'); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').trim().split('\n').slice(1).map((l) => l.split(',')) : null; };
 
@@ -162,9 +162,13 @@ export async function construirExtras(formato = 'vertical', {idioma = 'es'} = {}
     const filas = Object.entries(P.ultimos.pib_pc).sort((a, b) => b[1].valor - a[1].valor).map(([iso, d]) => `${NOMBRE[iso] ? `${iso} · ${NOMBRE[iso]}` : iso},${d.valor}`);
     const it = itemCsv('ranking_pib_pc', 'concepto,valor\n' + filas.join('\n'), fuente, {prefijo: 'US$ ', decimales: 0, unidad: T('US$ corrientes por habitante', 'current US$ per capita')});
     G('ranking', 'Ranking', {plantilla: 'ranking_pais', series: [it], resalta: 'COL', titulo: T('PIB por habitante', 'GDP per capita')});
+    G('enjambre', 'Enjambre', {plantilla: 'enjambre_pais', series: [it], resalta: 'COL', titulo: T('PIB por habitante: dónde está Colombia', 'GDP per capita: where Colombia stands')});
   } catch (e) { omitidos.push('ranking: ' + e.message); }
   // 12. dos hitos: el índice amplio del dólar (Fed, dominio público) visto desde dos fechas-hito. Las fechas son afirmaciones: confirmarlas con una fuente primaria antes de publicar.
   if (hay('fred_dtwexbgs')) G('dos_hitos', 'Dos hitos', {plantilla: 'dos_hitos', series: bib('fred_dtwexbgs'), titulo: T('El dólar tras dos choques', 'The broad dollar after two shocks'), hitos: HITOS_DOLAR(en)}); else omitidos.push('dos_hitos: falta fred_dtwexbgs');
+  // 13-14. cordillera (bono a 10 años, diario, desde 2010) y corriente (energía mundial por fuente)
+  if (hay('fred_dgs10')) G('cordillera', 'Cordillera', {plantilla: 'cordillera', series: bib('fred_dgs10'), titulo: T('El bono del Tesoro, año a año', 'The Treasury yield, year by year')}, (sp) => { sp.datos.d.desde = '2010-01-01'; }); else omitidos.push('cordillera: falta fred_dgs10');
+  if (ENERGIA.every(hay)) G('corriente', 'Corriente', {plantilla: 'corriente', series: bib(...ENERGIA), titulo: T('La energía como un río', 'Energy as a river')}, (sp) => { sp.datos.d.desde = '1900-01-01'; }); else omitidos.push('corriente: faltan series de energía');
   return {modelos: out, omitidos};
 }
 /** Hitos del ejemplo del dólar (15-sep-2008 y 11-mar-2020). Fechas VERIFICADAS el 2026-11-08 contra fuente oficial (campo `fuente` de cada hito); los nombres son rótulos, no cifras. */

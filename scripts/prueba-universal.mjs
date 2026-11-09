@@ -156,6 +156,17 @@ if (quiere('ranking')) {
   await pieza('ranking · inflación', {plantilla: 'ranking_pais', series: [itemCsv('ranking_inflacion', 'concepto,valor\n' + inf.join('\n'), {...fuente, url: 'https://data.worldbank.org/indicator/FP.CPI.TOTL.ZG'}, {sufijo: ' %', decimales: 1, unidad: '% anual'})], resalta: 'COL', titulo: 'Inflación por país'});
 }
 
+// ── 13. DISTRIBUCIÓN: enjambre, cordillera, corriente (2026-11-09) ───────────────────────────────────────
+if (quiere('distribucion')) {
+  console.log('\n13) Distribución: enjambre, cordillera, corriente');
+  const P = paisesUltimos(), fuente = {nombre: 'Banco Mundial — World Development Indicators (último dato de cada país)', url: 'https://data.worldbank.org/indicator/NY.GDP.PCAP.CD', obtenido: hoy, licencia: 'CC BY 4.0'};
+  const filas = Object.entries(P.ultimos.pib_pc).sort((a, b) => b[1].valor - a[1].valor).map(([iso, d]) => `${iso} · ${NOMBRE_PAIS[iso] ?? iso},${d.valor}`);
+  await pieza('enjambre · PIB per cápita (Colombia resaltada)', {plantilla: 'enjambre_pais', series: [itemCsv('enjambre_pib_pc', 'concepto,valor\n' + filas.join('\n'), fuente, {prefijo: 'US$ ', decimales: 0, unidad: 'US$ corrientes por habitante'})], resalta: 'COL', titulo: 'PIB por habitante'});
+  await pieza('enjambre · pocas filas (debe fallar)', {plantilla: 'enjambre_pais', series: [itemCsv('enjambre_pocas', 'concepto,valor\n' + filas.slice(0, 5).join('\n'), fuente, {decimales: 0})], titulo: 'Pocas filas'}, {esperar: 'error'});
+  if (hay('fred_dgs10')) await pieza('cordillera · bono a 10 años desde 2010', {plantilla: 'cordillera', series: bib('fred_dgs10'), titulo: 'El bono del Tesoro, año a año'}, {ajuste: (s) => { s.datos.d.desde = '2010-01-01'; }});
+  if (ENERGIA.every(hay)) { await pieza('corriente · energía mundial por fuente', {plantilla: 'corriente', series: bib(...ENERGIA), titulo: 'La energía como un río'}, {ajuste: (s) => { s.datos.d.desde = '1900-01-01'; }}); let corto = false; try { generar({plantilla: 'corriente', series: bib(...ENERGIA.slice(0, 2)), titulo: 'Dos', formato: 'horizontal'}); } catch { corto = true; } ok(corto, 'corriente · con 2 series la plantilla se niega'); }
+}
+
 // ── visualizador autónomo ───────────────────────────────────────────────────────────────────────────────────────
 if (!SOLO.length) {
   console.log('\n12) El visualizador recomienda los modelos nuevos');

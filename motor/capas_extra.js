@@ -7,7 +7,8 @@ import {colorDivergente} from './escalas.js';
 import {PALETA, COLOR, TEMA, clamp, lerp, ease, prog, colorDe, mezcla, rgba, fmtNum, fmtSigno, fmtPct, fmtFecha, ticksNum, ticksFecha, etiquetaTick} from './nucleo.js';
 import {escalarFuente, fuenteCss, margenes, envolver, contraste, legible, CURVA, entrada as entradaDiseno} from './diseno.js';
 import {envolverEntero, relajar1D} from './etiquetas.js';
-import {t as tr, registrar, idioma, MESES_CORTO} from './idioma.js';   // «tr»: en las capas «t» es el tiempo
+import {t as tr, registrar, idioma, MESES_CORTO} from './idioma.js';
+import {CAPAS_DISTRIB, TIPOS_DISTRIB, DISTRIB_CLASE, validarDistrib} from './capas_distribucion.js';   // ciclo de módulos a propósito: ese archivo solo se importa desde aquí   // «tr»: en las capas «t» es el tiempo
 
 // Textos dibujados por los modelos del visualizador universal (es = original, en = versión inglesa). Se leen con tr('ce.clave', {vars}).
 registrar('ce', {
@@ -69,33 +70,33 @@ registrar('ch', {
 });
 const mes3 = () => MESES_CORTO[idioma()];
 
-export const TIPOS_EXTRA = ['radar', 'apilada', 'velas', 'histograma', 'dumbbell', 'calendario', 'agrupadas', 'bullet', 'bandas', 'pictograma', 'ranking', 'dos_hitos'];
+export const TIPOS_EXTRA = ['radar', 'apilada', 'velas', 'histograma', 'dumbbell', 'calendario', 'agrupadas', 'bullet', 'bandas', 'pictograma', 'ranking', 'dos_hitos', ...TIPOS_DISTRIB];
 /** Qué clase de dato consume cada capa: serie de tiempo, tabla de categorías, o ambas. */
-export const EXTRA_CLASE = {radar: 'ambas', apilada: 'serie', velas: 'serie', histograma: 'serie', dumbbell: 'ambas', calendario: 'serie', agrupadas: 'serie', bullet: 'serie', bandas: 'serie', pictograma: 'categorias', ranking: 'categorias', dos_hitos: 'serie'};
+export const EXTRA_CLASE = {radar: 'ambas', apilada: 'serie', velas: 'serie', histograma: 'serie', dumbbell: 'ambas', calendario: 'serie', agrupadas: 'serie', bullet: 'serie', bandas: 'serie', pictograma: 'categorias', ranking: 'categorias', dos_hitos: 'serie', ...DISTRIB_CLASE};
 
 // ── utilidades ─────────────────────────────────────────────────────────────────────────────────────────────────
 /** fmtNum que escribe el cero como «0» (con 'auto' daba «0,000000») y no deja que un valor casi nulo salga como «−0,0». */
-const fN = (v, f = {}) => { if (v === 0 || (typeof f.decimales === 'number' && Math.abs(v) < Math.pow(10, -f.decimales) / 2)) return fmtNum(0, {...f, decimales: 0}); return fmtNum(v, f); };
-const tam = (env, base) => escalarFuente(base) * env.u;                      // tamaño final en px de un rol (con piso de legibilidad)
+export const fN = (v, f = {}) => { if (v === 0 || (typeof f.decimales === 'number' && Math.abs(v) < Math.pow(10, -f.decimales) / 2)) return fmtNum(0, {...f, decimales: 0}); return fmtNum(v, f); };
+export const tam = (env, base) => escalarFuente(base) * env.u;                      // tamaño final en px de un rol (con piso de legibilidad)
 const F = (env, peso, base, mono = false) => fuenteCss(peso, tam(env, base), mono);
-const aparece = (env, capa, t0) => prog(env.t, (capa.aparece ?? t0 - 0.5), (capa.aparece ?? t0 - 0.5) + 0.5, ease.out3);
-const paleta = () => [TEMA.nombre === 'harris' ? COLOR.amarillo : COLOR.oro, COLOR.teal, COLOR.purpura, COLOR.verde, COLOR.rojo, PALETA.piedra, COLOR.amarillo, COLOR.rosa];
-const pctl = (s, p) => { if (!s.length) return null; const i = (s.length - 1) * p, a = Math.floor(i), b = Math.ceil(i); return s[a] + (s[b] - s[a]) * (i - a); };
+export const aparece = (env, capa, t0) => prog(env.t, (capa.aparece ?? t0 - 0.5), (capa.aparece ?? t0 - 0.5) + 0.5, ease.out3);
+export const paleta = () => [TEMA.nombre === 'harris' ? COLOR.amarillo : COLOR.oro, COLOR.teal, COLOR.purpura, COLOR.verde, COLOR.rojo, PALETA.piedra, COLOR.amarillo, COLOR.rosa];
+export const pctl = (s, p) => { if (!s.length) return null; const i = (s.length - 1) * p, a = Math.floor(i), b = Math.ceil(i); return s[a] + (s[b] - s[a]) * (i - a); };
 const pasoMediano = (x) => { const d = []; for (let k = 1; k < x.length; k++) d.push(x[k] - x[k - 1]); d.sort((a, b) => a - b); return d[Math.floor(d.length / 2)] || 1; };
-const DIA = 86400000;
-const cajaDef = (env, capa) => {
+export const DIA = 86400000;
+export const cajaDef = (env, capa) => {
   if (capa.caja) { const c = capa.caja; return {x: c[0] * env.W, y: c[1] * env.H, w: c[2] * env.W, h: c[3] * env.H}; }
   const m = margenes(env); return {x: m.x0, y: m.y0, w: m.x1 - m.x0, h: m.y1 - m.y0};
 };
-const decDe = (paso) => (paso >= 1 ? 0 : Math.min(4, Math.ceil(-Math.log10(paso) - 1e-9)));
-const pTxt = (x, dec = 1) => fN(x, {decimales: dec, sufijo: ' %'});
+export const decDe = (paso) => (paso >= 1 ? 0 : Math.min(4, Math.ceil(-Math.log10(paso) - 1e-9)));
+export const pTxt = (x, dec = 1) => fN(x, {decimales: dec, sufijo: ' %'});
 const pSigno = (x, dec = 1) => fmtSigno(x, {decimales: dec, sufijo: ' %'});
 /** Cuántos decimales para un porcentaje: 1 si es pequeño, 0 si es grande (nunca «0 %» para algo que no es cero). */
 const decPct = (x) => (Math.abs(x) < 10 ? 1 : 0);
 const frecuencia = (pasoMs) => tr(pasoMs <= 4 * DIA ? 'ce.f_diarios' : pasoMs <= 10 * DIA ? 'ce.f_semanales' : pasoMs <= 45 * DIA ? 'ce.f_mensuales' : pasoMs <= 120 * DIA ? 'ce.f_trimestrales' : 'ce.f_anuales');
 
 /** Texto con halo del color del fondo y su caja REGISTRADA para la auditoría de choques. `base` = tamaño en la rejilla de 1080 px. */
-function rot(env, s, x, y, base, peso, color, align = 'left', id = null, o = {}) {
+export function rot(env, s, x, y, base, peso, color, align = 'left', id = null, o = {}) {
   const {ctx, u} = env, px = tam(env, base);
   ctx.save();
   ctx.font = fuenteCss(peso, px, !!o.mono); ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
@@ -112,9 +113,9 @@ function rot(env, s, x, y, base, peso, color, align = 'left', id = null, o = {})
   if ((o.alpha ?? 1) > 0.05 && o.reg !== false) env.registro.push({tipo: o.tipo ?? 'etiqueta', caja, id});
   return w;
 }
-const med = (env, s, base, peso = 600, mono = false) => { env.ctx.save(); env.ctx.font = F(env, peso, base, mono); const w = env.ctx.measureText(s).width; env.ctx.restore(); return w; };
+export const med = (env, s, base, peso = 600, mono = false) => { env.ctx.save(); env.ctx.font = F(env, peso, base, mono); const w = env.ctx.measureText(s).width; env.ctx.restore(); return w; };
 /** Acorta un NOMBRE (nunca una cifra) con «…» para que quepa en `ancho`. */
-function cortarA(env, s, ancho, base, peso = 700, mono = false) {
+export function cortarA(env, s, ancho, base, peso = 700, mono = false) {
   const {ctx} = env; ctx.save(); ctx.font = F(env, peso, base, mono);
   let r = String(s);
   if (ctx.measureText(r).width > ancho) { while (r.length > 3 && ctx.measureText(r + '…').width > ancho) r = r.slice(0, -1); r = r.trimEnd() + '…'; }
@@ -129,13 +130,13 @@ function nombreEnLineas(env, s, ancho, base, peso = 700, maxL = 2) {
 function lineasDe(env, s, ancho, base, peso, maxL, extra = 0) { const {ctx} = env; ctx.save(); ctx.font = F(env, peso, base); const r = envolver(ctx, s, ancho, maxL, {extra}); ctx.restore(); return r; }
 
 /** Nota de método/escala que se DECLARA en pantalla: va en la franja libre justo encima de la gráfica (hasta 3 líneas). */
-function nota(env, B, texto, id, alpha = 1) {
+export function nota(env, B, texto, id, alpha = 1) {
   if (!texto) return;
   const px = tam(env, 18), lh = px * 1.28, L = lineasDe(env, texto, B.w, 18, 500, env.H > env.W ? 6 : 3, 2);   // en vertical la caja es más estrecha: más líneas, para no cortar la declaración de escala con «…»
   L.forEach((l, i) => rot(env, l, B.x, B.y - 16 * env.u - (L.length - 1 - i) * lh, 18, 500, rgba(PALETA.piedraClara, 0.9), 'left', `${id}:nota${i}`, {alpha, halo: false}));
 }
 /** Opacidad de entrada escalonada del elemento i de n que arranca en t0 (curva de desaceleración, nunca lineal). */
-const ent = (env, t0, i = 0, n = 1) => entradaDiseno(env.t, t0, i, n);
+export const ent = (env, t0, i = 0, n = 1) => entradaDiseno(env.t, t0, i, n);
 
 function ticksLog10(a, b) {
   const out = [], e0 = Math.floor(Math.log10(a)), e1 = Math.ceil(Math.log10(b));
@@ -143,7 +144,7 @@ function ticksLog10(a, b) {
   return out;
 }
 /** Marcas «redondas» con la última ≥ máximo (para que el eje contenga todo el dato). */
-function marcasHasta(max, n = 5) {
+export function marcasHasta(max, n = 5) {
   const tk = ticksNum(0, max, n), paso = tk.length > 1 ? tk[1] - tk[0] : max || 1; let top = tk[tk.length - 1] ?? 0;
   while (top < max - 1e-9) { top += paso; tk.push(Math.round(top / paso) * paso); }
   return {ticks: tk, top: tk[tk.length - 1]};
@@ -158,8 +159,8 @@ export function acortarNombres(ns) {
   }
   return r.map((q) => q.charAt(0).toUpperCase() + q.slice(1));
 }
-const uni = (fmt) => (fmt?.unidad ? tr('ce.uni', {u: String(fmt.unidad).toUpperCase()}) : '');
-const fechaCorta = (ms, modo) => (modo === 'anio' ? fmtFecha(ms, 'anio') : fmtFecha(ms, 'mes'));
+export const uni = (fmt) => (fmt?.unidad ? tr('ce.uni', {u: String(fmt.unidad).toUpperCase()}) : '');
+export const fechaCorta = (ms, modo) => (modo === 'anio' ? fmtFecha(ms, 'anio') : fmtFecha(ms, 'mes'));
 
 // ═══ 1. RADAR ═══════════════════════════════════════════════════════════════════════════════════════════════════
 // Serie de tiempo: cada eje va de 0 (mínimo histórico de ESA serie) a 100 (su máximo histórico) y el punto es la última observación.
@@ -281,7 +282,7 @@ function apilada(env, capa) {
   ctx.restore();
 }
 /** Separa verticalmente rótulos que se pisarían: nadie queda a menos de `gap` del anterior ni fuera de [lo, hi]. */
-function separar(ys, gap, lo, hi) {
+export function separar(ys, gap, lo, hi) {
   const o = ys.map((y, i) => ({y, i})).sort((a, b) => a.y - b.y);
   let cur = lo; o.forEach((e) => { e.y = Math.max(e.y, cur); cur = e.y + gap; });
   let lim = hi; for (let i = o.length - 1; i >= 0; i--) { o[i].y = Math.min(o[i].y, lim); lim = o[i].y - gap; }
@@ -564,7 +565,7 @@ function bullet(env, capa) {
   });
   ctx.restore();
 }
-const acento_ = (capa) => colorDe(capa.color ?? 'oro', 0);
+export const acento_ = (capa) => colorDe(capa.color ?? 'oro', 0);
 
 // ═══ 9. SERIE CON BANDAS (rango histórico por mes del año) ═════════════════════════════════════════════════════
 // Para cada mes del calendario: mín–máx y P25–P75 de los años ANTERIORES; encima, la línea del año elegido. Nada se proyecta.
@@ -918,7 +919,7 @@ function dosHitos(env, capa) {
   ctx.restore();
 }
 
-export const CAPAS_EXTRA = {radar, apilada, velas, histograma, dumbbell, calendario, agrupadas, bullet, bandas, pictograma, ranking, dos_hitos: dosHitos};
+export const CAPAS_EXTRA = {radar, apilada, velas, histograma, dumbbell, calendario, agrupadas, bullet, bandas, pictograma, ranking, dos_hitos: dosHitos, ...CAPAS_DISTRIB};
 
 // ═══ VALIDACIÓN (la usa compilar.mjs): errores = no se dibuja; avisos y métodos = salen en el informe ═════════════
 /** Devuelve {errores[], avisos[], metodos[], cifras[]}. Se evalúa sobre la tabla ya cargada; nunca inventa nada. */
@@ -1029,7 +1030,7 @@ export function validarExtra(capa, tab, donde) {
       m.push(`${donde}: cada hito rebasa la serie a base 100 en el cierre de su fecha (valor ÷ valor del hito × 100) y las dos curvas se alinean por sesiones (filas con dato) desde el hito, no por fecha. Caída = valor ÷ máximo acumulado desde el hito − 1; retorno = valor ÷ valor del hito − 1. Eje de crecimiento ${R.escala === 'log' ? 'LOGARÍTMICO (máximo/mínimo > 5)' : 'lineal'}. Se calcula todo de la serie; no se proyecta nada.`);
       break;
     }
-    default: break;
+    default: { if (TIPOS_DISTRIB.includes(capa.tipo)) { const r = validarDistrib(capa, tab, donde); e.push(...r.errores); a.push(...r.avisos); m.push(...r.metodos); c.push(...r.cifras); } break; }
   }
   return {errores: e, avisos: a, metodos: m, cifras: c};
 }
