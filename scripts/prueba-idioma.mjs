@@ -126,6 +126,51 @@ console.log('\n3) Avisos, métodos y notas (compilador y plantillas) en inglés'
   else console.log(`  ${malos.size === 0 ? '✓' : '·'} ${malos.size} mensaje(s) del informe aún en español (con --sin-informe no cuentan como fallo)`);
   [...malos].slice(0, 12).forEach(([s, id]) => console.log(`       - [${id}] ${s}`));
 }
+// ── 4) mensajes del SERVIDOR (auditor de colisiones, errores de lectura de datos, SEC, procedencia, MCP) en inglés ──────────────
+{
+  console.log('\n4) Mensajes del servidor en inglés (auditor, datos, trimestres/SEC, catálogo, MCP)');
+  const fs = await import('node:fs'), path = await import('node:path'), {fileURLToPath} = await import('node:url');
+  const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const idiomaMod = await import('../motor/idioma.js');
+  const {auditarColisiones} = await import('../servidor/render.mjs');
+  await import('../servidor/catalogo.mjs'); await import('../servidor/datos.mjs'); await import('../servidor/trimestres.mjs'); await import('../servidor/xbrl.mjs');
+  const {leerTabla, indiceColumna} = await import('../servidor/datos.mjs');
+  const marc = (s) => [...String(s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
+  // a) cada clave de servidor tiene su par inglés, distinto del español, con los mismos {marcadores}, y sin español
+  const sinPar = [], espanola = [];
+  for (const [k, v] of Object.entries(idiomaMod.DICT)) {
+    if (!/^(cat|dat|tri|sec|aud|fx)\./.test(k)) continue;
+    const limpio = (s) => String(s ?? '').replace(/\{\w+\}/g, '').replace(/«[^»]*»|"[^"]*"/g, '').replace(/El Niño|La Niña|[\w.]+\.gov\.co/g, '');   // marcadores, citas y nombres propios no cuentan
+    if (!v.en?.trim() || (v.en === v.es && espanol(limpio(v.es)).length) || marc(v.en) !== marc(v.es)) sinPar.push(k);
+    const r = espanol(limpio(v.en)); if (r.length) espanola.push(`${k} → ${r.join(', ')}`);
+  }
+  ok(sinPar.length === 0, `${sinPar.length} clave(s) de servidor sin traducción inglesa válida${sinPar.length ? ': ' + sinPar.slice(0, 5).join(', ') : ''}`);
+  ok(espanola.length === 0, `${espanola.length} texto(s) de servidor en inglés que parecen español${espanola.length ? ': ' + espanola.slice(0, 3).join(' | ') : ''}`);
+  // b) el auditor de colisiones habla inglés con idioma = en y sigue en español sin él
+  const colision = (idioma) => ({version: 1, ...(idioma ? {idioma} : {}), ancho: 1920, alto: 1080, fps: 30, duracion: 2, capas: [{tipo: 'titulo', texto: 'First long title that sits on the frame', t: [0, 2]}, {tipo: 'titulo', texto: 'Second title that lands on the same place', t: [0, 2]}]});
+  const aEn = await auditarColisiones(compilar(colision('en')).spec, {paso: 1}), aEs = await auditarColisiones(compilar(colision(null)).spec, {paso: 1});
+  ok(aEn.problemas.length > 0 && aEs.problemas.length > 0, 'el caso de prueba provoca una colisión de textos');
+  ok(aEn.problemas.every((p) => espanol(p.mensaje).length === 0 && /cover each other|run[s]? off/.test(p.mensaje)), `auditor en inglés: «${(aEn.problemas[0]?.mensaje ?? '').slice(0, 80)}»`);
+  ok(aEs.problemas.every((p) => /se tapan|se sale del cuadro/.test(p.mensaje)), 'auditor en español (por defecto) sin cambios');
+  ok(idiomaMod.idioma() === 'es', 'el idioma global no se filtra tras auditar una pieza en inglés');
+  // c) errores de lectura de datos en inglés (y en español por defecto)
+  idiomaMod.fijarIdioma('en');
+  const errEn = []; for (const f of [() => leerTabla(path.join(RAIZ, 'no-existe.csv')), () => leerTabla(path.join(RAIZ, 'package.json').replace('package.json', 'LICENSE')), () => indiceColumna({columnas: ['a', 'b']}, 'zzz')]) { try { f(); } catch (e) { errEn.push(e.message); } }
+  idiomaMod.fijarIdioma('es');
+  const errEs = []; try { leerTabla(path.join(RAIZ, 'no-existe.csv')); } catch (e) { errEs.push(e.message); }
+  ok(errEn.length === 3 && errEn.every((m) => espanol(m.replace(/[A-Za-z]:\\\S+|\/\S+/g, '')).length === 0), `errores de datos en inglés: ${errEn.map((m) => '«' + m.slice(0, 40) + '»').join(' ')}`);
+  ok(/^No existe el archivo/.test(errEs[0] ?? ''), 'errores de datos en español por defecto sin cambios');
+  // d) barrido de código: ningún `new Error('texto en español')` ni `.describe('texto en español')` fijo en los módulos de servidor
+  const fugas = [];
+  for (const arch of ['servidor/datos.mjs', 'servidor/catalogo.mjs', 'servidor/trimestres.mjs', 'servidor/xbrl.mjs', 'servidor/render.mjs', 'servidor/mcp.mjs', 'servidor/fuentes_extra.mjs']) {
+    const src = fs.readFileSync(path.join(RAIZ, arch), 'utf8');
+    for (const m of src.matchAll(/(?:new Error|\.describe)\(\s*(['`])((?:(?!\1)[^\\\n]|\\.)*)\1/g)) {
+      const lit = m[2].replace(/\$\{[^}]*\}/g, ''); const linea = src.slice(0, m.index).split('\n').length;
+      if (DIACRITICOS.test(lit) || espanol(lit).length) fugas.push(`${arch}:${linea} «${lit.slice(0, 60)}»`);
+    }
+  }
+  ok(fugas.length === 0, `${fugas.length} cadena(s) fija(s) en español en errores/descripciones del servidor${fugas.length ? ':\n       - ' + fugas.slice(0, 12).join('\n       - ') : ''}`);
+}
 if (args.includes('--palabras')) console.log('\nPalabras dibujadas en inglés:\n' + [...PALABRAS].sort().join(' '));
 console.log(fallos ? `\n✗ ${fallos} comprobación(es) fallaron` : '\n✓ idioma: los modelos revisados no dibujan español en la versión inglesa');
 process.exit(fallos ? 1 : 0);

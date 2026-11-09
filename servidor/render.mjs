@@ -7,6 +7,7 @@ import {spawn, spawnSync} from 'node:child_process';
 import {chromium} from 'playwright-core';
 import {iniciarServidor} from './web.mjs';
 import {RAIZ} from './compilar.mjs';
+import {t as tx, registrar, conIdioma, idioma} from '../motor/idioma.js';
 
 const CANDIDATOS = [
   ['channel', 'msedge'], ['channel', 'chrome'],
@@ -19,7 +20,7 @@ export async function lanzarNavegador() {
     try { return await chromium.launch(tipo === 'channel' ? {channel: v, headless: true} : {executablePath: v, headless: true}); }
     catch (e) { fallos.push(`${v}: ${String(e.message).split('\n')[0]}`); }
   }
-  throw new Error('No encontré Edge ni Chrome para dibujar. ' + fallos.join(' | '));
+  throw new Error(tx('aud.sin_navegador', {l: fallos.join(' | ')}));
 }
 
 async function abrirPagina(spec, ancho, alto, puerto, navegador) {
@@ -51,9 +52,21 @@ export async function vistaPrevia(spec, tiempos, {dir, nombre = 'vista', escala 
 }
 
 // Nombres en español claro para quien no es técnico: los mensajes del auditor se dirigen a una persona, no a un programador.
-const HUMANO = {titulo: 'el título', contador: 'el contador del año', tarjeta: 'una tarjeta de anotación', 'eje-x': 'los números del eje horizontal', 'eje-y': 'los números del eje vertical', sello: 'el pie de fuente', etiqueta: 'una etiqueta'};
-const quien = (e) => { const id = e.id ? String(e.id).split(':').slice(-1)[0] : ''; return `${HUMANO[e.tipo] ?? e.tipo}${id && e.tipo !== 'titulo' ? ` («${id}»)` : ''}`; };
-const seg = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
+// Los mensajes siguen el idioma de la pieza (spec.idioma); en español salen EXACTAMENTE como antes.
+registrar('aud', {
+  titulo: {es: 'el título', en: 'the title'}, contador: {es: 'el contador del año', en: 'the year counter'}, tarjeta: {es: 'una tarjeta de anotación', en: 'an annotation card'},
+  'eje-x': {es: 'los números del eje horizontal', en: 'the numbers on the horizontal axis'}, 'eje-y': {es: 'los números del eje vertical', en: 'the numbers on the vertical axis'},
+  sello: {es: 'el pie de fuente', en: 'the source footer'}, etiqueta: {es: 'una etiqueta', en: 'a label'},
+  se_tapan: {es: '{a} y {b} se tapan entre el segundo {d} y el {h}. Acorta uno de los textos o haz que aparezcan en momentos distintos.', en: '{a} and {b} cover each other between second {d} and {h}. Shorten one of the texts or make them appear at different times.'},
+  se_sale: {es: '{a} se sale del cuadro entre el segundo {d} y el {h}. Acorta el texto.', en: '{a} runs off the frame between second {d} and {h}. Shorten the text.'},
+  zona: {es: '{a} invade la zona de la derecha donde TikTok e Instagram ponen sus botones (entre el segundo {d} y el {h}). Muévelo a la izquierda o acórtalo.', en: '{a} intrudes on the right-hand area where TikTok and Instagram place their buttons (between second {d} and {h}). Move it to the left or shorten it.'},
+  sin_navegador: {es: 'No encontré Edge ni Chrome para dibujar. {l}', en: 'Could not find Edge or Chrome to draw with. {l}'},
+  ffmpeg: {es: 'ffmpeg ({tipo}) terminó con código {code}: {err}', en: 'ffmpeg ({tipo}) exited with code {code}: {err}'},
+  forzar: {es: 'Hay textos que se tapan entre sí o se salen del cuadro: {l} Corrige la pieza (separa las anotaciones en el tiempo o acorta los textos) o usa «forzar».', en: 'Some texts cover each other or run off the frame: {l} Fix the piece (separate the annotations in time or shorten the texts) or use "forzar".'},
+});
+const HUMANO_CLAVES = new Set(['titulo', 'contador', 'tarjeta', 'eje-x', 'eje-y', 'sello', 'etiqueta']);
+const quien = (e) => { const id = e.id ? String(e.id).split(':').slice(-1)[0] : ''; return `${HUMANO_CLAVES.has(e.tipo) ? tx(`aud.${e.tipo}`) : e.tipo}${id && e.tipo !== 'titulo' ? ` («${id}»)` : ''}`; };
+const seg = (x) => String(Math.round(x * 10) / 10).replace('.', idioma() === 'en' ? '.' : ',');
 
 /**
  * Auditoría de textos (el equivalente al "revisar_proyecto" de Electric Eye): recorre la pieza cada 0,2 s y comprueba que
@@ -79,14 +92,15 @@ export async function auditarColisiones(spec, {paso = 0.2} = {}) {
         }
       }
     }
-    const problemas = [...ev.values()].map((e) => { const d = e.ts[0], h = e.ts[e.ts.length - 1], a = quien(e.a), b = e.b ? quien(e.b) : null; return {tipo: e.tipo, a, b, desde: d, hasta: h, mensaje: b ? `${a} y ${b} se tapan entre el segundo ${seg(d)} y el ${seg(h)}. Acorta uno de los textos o haz que aparezcan en momentos distintos.` : `${a} se sale del cuadro entre el segundo ${seg(d)} y el ${seg(h)}. Acorta el texto.`}; });
+    const en = (fn) => conIdioma(spec.idioma, fn);   // textos del auditor en el idioma de la pieza
+    const problemas = [...ev.values()].map((e) => en(() => { const d = e.ts[0], h = e.ts[e.ts.length - 1], a = quien(e.a), b = e.b ? quien(e.b) : null; return {tipo: e.tipo, a, b, desde: d, hasta: h, mensaje: b ? tx('aud.se_tapan', {a, b, d: seg(d), h: seg(h)}) : tx('aud.se_sale', {a, d: seg(d), h: seg(h)})}; }));
     // Zona segura de TikTok/Reels (regla 5 de Electric Eye): en vertical, nada de texto en la columna de botones (x ≥ 72 % del ancho desde y ≥ 43,75 % del alto).
     // Va aparte de `problemas`: es un aviso de diseño, no un choque de textos.
     const zona = new Map();
     if (H > W) for (const {t, registro} of cuadros) for (const A of registro) {
-            if (A.caja[2] > 0.722 * W + 2 && A.caja[3] > 0.4375 * H && A.caja[0] < W) { const k = `${A.tipo}:${A.id ?? ''}`; (zona.get(k) ?? zona.set(k, {a: quien(A), ts: []}).get(k)).ts.push(t); }
+            if (A.caja[2] > 0.722 * W + 2 && A.caja[3] > 0.4375 * H && A.caja[0] < W) { const k = `${A.tipo}:${A.id ?? ''}`; (zona.get(k) ?? zona.set(k, {a: en(() => quien(A)), ts: []}).get(k)).ts.push(t); }
     }
-    const zonaSegura = [...zona.values()].map((e) => ({a: e.a, desde: e.ts[0], hasta: e.ts[e.ts.length - 1], mensaje: `${e.a} invade la zona de la derecha donde TikTok e Instagram ponen sus botones (entre el segundo ${seg(e.ts[0])} y el ${seg(e.ts[e.ts.length - 1])}). Muévelo a la izquierda o acórtalo.`}));
+    const zonaSegura = [...zona.values()].map((e) => ({a: e.a, desde: e.ts[0], hasta: e.ts[e.ts.length - 1], mensaje: en(() => tx('aud.zona', {a: e.a, d: seg(e.ts[0]), h: seg(e.ts[e.ts.length - 1])}))}));
     return {ok: problemas.length === 0, problemas, zonaSegura, instantes: ts.length};
   } finally { await nav.close(); await srv.cerrar(); }
 }
@@ -121,7 +135,7 @@ async function pasada(spec, {tipo, salida, calidad, puerto, navegador, ancho, al
   ff.stdin.end();
   const code = await cerrado;
   await pag.close();
-  if (code !== 0) throw new Error(`ffmpeg (${tipo}) terminó con código ${code}: ${err.slice(-600)}`);
+  if (code !== 0) throw new Error(tx('aud.ffmpeg', {tipo, code, err: err.slice(-600)}));
   if (onProgreso) onProgreso({tipo, cuadro: total, total});
 }
 
@@ -136,7 +150,7 @@ export function sonda(archivo) {
  */
 export async function renderizar(spec, informe, {nombre, calidad = 'final', alfa = true, salidaDir = path.join(RAIZ, 'salidas'), onProgreso, forzar = false} = {}) {
   const aud = await auditarColisiones(spec);
-  if (!aud.ok && !forzar) throw new Error('Hay textos que se tapan entre sí o se salen del cuadro: ' + aud.problemas.slice(0, 4).map((p) => p.mensaje).join(' ') + ' Corrige la pieza (separa las anotaciones en el tiempo o acorta los textos) o usa «forzar».');
+  if (!aud.ok && !forzar) throw new Error(conIdioma(spec.idioma, () => tx('aud.forzar', {l: aud.problemas.slice(0, 4).map((p) => p.mensaje).join(' ')})));
   const base = (nombre ?? spec.titulo ?? 'grafica').replace(/[^\w.-]+/g, '_').slice(0, 60) || 'grafica';
   const dir = path.join(salidaDir, base);
   const v = siguienteVersion(dir, base), pref = path.join(dir, `${base}_v${v}`);

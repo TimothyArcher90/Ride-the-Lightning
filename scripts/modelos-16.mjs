@@ -167,5 +167,8 @@ export async function construirExtras(formato = 'vertical', {idioma = 'es'} = {}
   if (hay('fred_dtwexbgs')) G('dos_hitos', 'Dos hitos', {plantilla: 'dos_hitos', series: bib('fred_dtwexbgs'), titulo: T('El dólar tras dos choques', 'The broad dollar after two shocks'), hitos: HITOS_DOLAR(en)}); else omitidos.push('dos_hitos: falta fred_dtwexbgs');
   return {modelos: out, omitidos};
 }
-/** Hitos del ejemplo del dólar (15-sep-2008 y 11-mar-2020): fechas a CONFIRMAR con fuente primaria; los nombres son rótulos, no cifras. */
-export const HITOS_DOLAR = (en) => [{fecha: '2008-09-15', nombre: en ? 'Lehman filing' : 'Quiebra de Lehman'}, {fecha: '2020-03-11', nombre: en ? 'COVID pandemic' : 'Pandemia de COVID'}];
+/** Hitos del ejemplo del dólar (15-sep-2008 y 11-mar-2020). Fechas VERIFICADAS el 2026-11-08 contra fuente oficial (campo `fuente` de cada hito); los nombres son rótulos, no cifras. */
+export const HITOS_DOLAR = (en) => [
+  {fecha: '2008-09-15', nombre: en ? 'Lehman filing' : 'Quiebra de Lehman', fuente: 'FDIC: «On September 15, 2008, Lehman Brothers Holdings Inc. filed for bankruptcy» · https://www.fdic.gov/analysis/2011-01/orderly-liquidation-lehman-brothers-holdings-inc-under-dodd-frank-act'},
+  {fecha: '2020-03-11', nombre: en ? 'COVID pandemic' : 'Pandemia de COVID', fuente: 'WHO Director-General, media briefing of 11 March 2020: COVID-19 «can be characterized as a pandemic» · https://www.who.int/news-room/speeches/item/who-director-general-s-opening-remarks-at-the-media-briefing-on-covid-19---11-march-2020'},
+];

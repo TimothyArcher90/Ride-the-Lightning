@@ -30,7 +30,9 @@ export const PALETA = {
 };
 /** Nombres de color admitidos en las specs -> hex. */
 export const COLOR = {
-  oro: PALETA.oro, teal: PALETA.teal, purpura: '#A24FB0', piedra: PALETA.piedra, blanco: PALETA.blanco,
+  // `piedra` como COLOR DE SERIE es un tono más claro (#DDD8CE) que la piedra de texto (PALETA.piedra #CBC6BC): con la piedra de texto el par teal/piedra
+  // quedaba a ΔE2000 8,3 en protanopía (casi en el mínimo 8); con #DDD8CE son 12,5 y sigue siendo el neutro cálido de la marca (prueba-calidad §0d).
+  oro: PALETA.oro, teal: PALETA.teal, purpura: '#A24FB0', piedra: '#DDD8CE', blanco: PALETA.blanco,
   rosa: '#E4584A', amarillo: '#F2C230', rojo: '#D9534F', verde: '#4FB477',
 };
 /** Orden en que se asignan colores a las series que no declaran uno, y color del resplandor de fondo. Lo cambia el tema. */

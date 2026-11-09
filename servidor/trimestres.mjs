@@ -11,6 +11,28 @@ import crypto from 'node:crypto';
 import {RAIZ} from './compilar.mjs';
 import {detalleFiling, detalleTrimestre, www} from './xbrl.mjs';
 import {leerUniverso, buscarUniverso, actualizarUniverso} from './universo.mjs';
+import {t as tx, registrar} from '../motor/idioma.js';
+
+// Notas, motivos y errores de la biblioteca de trimestres: siguen el idioma activo (es por defecto). Las etiquetas de los nodos
+// («Ingresos», «Utilidad neta»…) quedan en español en los datos y se traducen al leer (glosario de motor/idioma.js).
+registrar('tri', {
+  o_basicos: {es: 'faltan datos básicos (ingresos, utilidad operativa, impuestos o utilidad neta)', en: 'basic data is missing (revenue, operating income, taxes or net income)'},
+  o_ingresos: {es: 'ingresos no positivos', en: 'non-positive revenue'},
+  o_bruta: {es: 'la utilidad operativa supera a la bruta (la fuente no cuadra con su propia estructura)', en: 'operating income exceeds gross profit (the source does not match its own structure)'},
+  n_opex: {es: 'Los gastos operativos reportados ({a} M) difieren de ingresos − costo de ventas − utilidad operativa ({b} M); se usa la resta, que es la que cuadra el diagrama.', en: 'Reported operating expenses ({a} M) differ from revenue − cost of sales − operating income ({b} M); the subtraction is used because it makes the diagram balance.'},
+  n_sin_detalle: {es: 'Detalle fino no disponible: {e}', en: 'Detailed breakdown unavailable: {e}'},
+  n_lineas_mas: {es: 'Las líneas de gasto reportadas suman más que los gastos operativos del diagrama; se muestran sin desglosar.', en: 'The reported expense lines add up to more than the diagram\'s operating expenses; they are shown without a breakdown.'},
+  n_sin_desglosar: {es: 'La fuente oficial resumida (XBRL «company facts») no desglosa {p} % de los gastos operativos (son líneas propias de la empresa). Se muestran juntos; el detalle fino se trae para los últimos trimestres.', en: 'The official summarized source (XBRL "company facts") does not break down {p}% of operating expenses (they are company-specific lines). They are shown together; the detailed breakdown is fetched for the latest quarters.'},
+  n_ingresos_por: {es: 'Los ingresos se desglosan por «{e}» (suman los ingresos reportados con una diferencia menor a 0,5 %).', en: 'Revenue is broken down by "{e}" (it adds up to the reported revenue with a difference under 0.5%).'},
+  n_sin_detalle_ahora: {es: 'Detalle fino no disponible ahora ({e}); se usa el resumen oficial.', en: 'Detailed breakdown not available right now ({e}); the official summary is used.'},
+  m_perdida_op: {es: 'pérdida operativa (el flujo solo representa trimestres con utilidad; usa la cascada)', en: 'operating loss (the flow only represents profitable quarters; use the waterfall)'},
+  m_perdida_neta: {es: 'pérdida neta (el flujo solo representa trimestres con utilidad; usa la cascada)', en: 'net loss (the flow only represents profitable quarters; use the waterfall)'},
+  e_indice: {es: 'índice diario {f}: {m}', en: 'daily index {f}: {m}'},
+  e_pendiente: {es: '{k}: la SEC ya publicó el {form} del {fin}, pero los datos estructurados aún no incluyen el trimestre; se reintenta en el próximo ciclo.', en: '{k}: the SEC has already published the {form} for {fin}, but the structured data does not include the quarter yet; it will be retried next cycle.'},
+  e_no_trimestre: {es: 'No hay trimestre {fin} de {k} en la biblioteca.', en: 'There is no quarter {fin} for {k} in the library.'},
+  e_sin_flujo_def: {es: 'no hay diagrama de flujo', en: 'there is no flow diagram'},
+  e_no_bolsa: {es: 'No encuentro «{k}» en la bolsa de EE. UU.', en: 'Cannot find "{k}" on the US stock exchange list.'},
+});
 
 export const DIR = path.join(RAIZ, 'datos', 'trimestres');
 const UA = process.env.RTL_SEC_UA ?? 'RideTheLightning/1.0 (herramienta local de graficas)';
@@ -28,8 +50,8 @@ async function sec(url, reintentos = 3) {
   for (let k = 0; k < reintentos; k++) {
     try {
       const r = await fetch(url, {headers: {'User-Agent': UA, 'Accept-Encoding': 'gzip, deflate'}, signal: AbortSignal.timeout(120000)});
-      if (r.status === 429 || r.status >= 500) { ultimo = new Error(`SEC respondió ${r.status}`); await dormir(3000 * (k + 1)); continue; }
-      if (!r.ok) throw new Error(`SEC respondió ${r.status} en ${url}`);
+      if (r.status === 429 || r.status >= 500) { ultimo = new Error(tx('sec.e_resp', {s: r.status})); await dormir(3000 * (k + 1)); continue; }
+      if (!r.ok) throw new Error(tx('sec.e_resp_url', {s: r.status, u: url}));
       return await r.json();
     } catch (e) { ultimo = e; await dormir(1500 * (k + 1)); }
   }
@@ -85,19 +107,19 @@ const mesFinAnual = (series) => {
 function construir(fin, S, pools = null, anual = null) {
   const pick = (lista) => { for (const c of lista) { const q = S[c]?.trimestrales.get(fin); if (q) return {c, ...q}; } return null; };
   const rev = pick(REV), cg = pick(COGS), op = pick(OPINC), tax = pick(TAX), net = pick(NET);
-  if (!rev || !op || !net || !tax) return {omitido: 'faltan datos básicos (ingresos, utilidad operativa, impuestos o utilidad neta)'};
-  if (!(rev.val > 0)) return {omitido: 'ingresos no positivos'};
+  if (!rev || !op || !net || !tax) return {omitido: tx('tri.o_basicos')};
+  if (!(rev.val > 0)) return {omitido: tx('tri.o_ingresos')};
   const notas = [], derivados = [], fuentes = [], usa = (x, rol) => { fuentes.push({rol, concepto: x.c, valor: x.val, derivado: x.derivado || undefined, nota: x.nota}); if (x.derivado) derivados.push(`${rol} (${x.nota})`); };
   usa(rev, 'Ingresos'); usa(op, 'Utilidad operativa'); usa(tax, 'Impuestos'); usa(net, 'Utilidad neta'); if (cg) usa(cg, 'Costo de ventas');
   const costo = cg && cg.val > 0 ? cg.val : 0, bruta = rev.val - costo;
-  if (bruta < op.val - Math.abs(bruta) * 0.001) return {omitido: 'la utilidad operativa supera a la bruta (la fuente no cuadra con su propia estructura)'};
+  if (bruta < op.val - Math.abs(bruta) * 0.001) return {omitido: tx('tri.o_bruta')};
   const opexTotal = bruta - op.val;
   // gastos operativos: contraste con lo reportado
   const rep = pick(OPEX_TOTAL) ?? (pick(COSTS_ALL) && cg ? {...pick(COSTS_ALL), val: pick(COSTS_ALL).val - cg.val, c: 'CostsAndExpenses − costo de ventas'} : null);
-  if (rep && Math.abs(rep.val - opexTotal) / opexTotal > 0.01) notas.push(`Los gastos operativos reportados (${(rep.val / 1e6).toFixed(0)} M) difieren de ingresos − costo de ventas − utilidad operativa (${(opexTotal / 1e6).toFixed(0)} M); se usa la resta, que es la que cuadra el diagrama.`);
+  if (rep && Math.abs(rep.val - opexTotal) / opexTotal > 0.01) notas.push(tx('tri.n_opex', {a: (rep.val / 1e6).toFixed(0), b: (opexTotal / 1e6).toFixed(0)}));
   // líneas de gasto: sin duplicar (SG&A excluye marketing y administración por separado)
   let lineas = [], det = null;
-  if (pools) { try { det = detalleTrimestre(pools, {fin, ingresos: rev.val, opexTotal, costoConceptos: COGS, anual}); } catch (e) { notas.push(`Detalle fino no disponible: ${e.message}`); } }
+  if (pools) { try { det = detalleTrimestre(pools, {fin, ingresos: rev.val, opexTotal, costoConceptos: COGS, anual}); } catch (e) { notas.push(tx('tri.n_sin_detalle', {e: e.message})); } }
   if (det?.avisos?.length) notas.push(...det.avisos);
   if (det?.lineas) {   // líneas del archivo XBRL completo del reporte (incluye las propias de la empresa): suman exactamente los gastos operativos
     lineas = det.lineas.map((l) => ({nombre: l.nombre, valor: l.valor}));
@@ -112,18 +134,18 @@ function construir(fin, S, pools = null, anual = null) {
   const otros = toma(LINEAS.otros); lineas.push(...otros);
   let suma = lineas.reduce((s, l) => s + l.valor, 0);
   if (suma > opexTotal * 1.005) { lineas = lineas.filter((l) => !otros.includes(l)); suma = lineas.reduce((s, l) => s + l.valor, 0); }
-  if (suma > opexTotal * 1.005) { lineas = []; suma = 0; notas.push('Las líneas de gasto reportadas suman más que los gastos operativos del diagrama; se muestran sin desglosar.'); }
+  if (suma > opexTotal * 1.005) { lineas = []; suma = 0; notas.push(tx('tri.n_lineas_mas')); }
   // si «otros gastos operativos» ya está entre las líneas, el resto se une a ella
   const resto = opexTotal - suma;
   if (resto > opexTotal * 0.005) {
     const share = resto / opexTotal, ya = lineas.find((l) => l.nombre === 'Otros gastos operativos');
     if (ya) ya.valor += resto; else lineas.push({nombre: share > 0.25 ? 'Gastos operativos sin desglosar' : 'Otros gastos operativos', valor: resto});
-    if (share > 0.25) notas.push(`La fuente oficial resumida (XBRL «company facts») no desglosa ${(share * 100).toFixed(0)} % de los gastos operativos (son líneas propias de la empresa). Se muestran juntos; el detalle fino se trae para los últimos trimestres.`);
+    if (share > 0.25) notas.push(tx('tri.n_sin_desglosar', {p: (share * 100).toFixed(0)}));
   }
   }
   // ingresos por producto o segmento (solo con detalle fino): el nodo «Ingresos» pasa a ser la suma de sus partes
   const segmentos = det?.ingresosPorLinea?.length ? det.ingresosPorLinea : null;
-  if (segmentos) { fuentes.push(...segmentos.map((s) => ({rol: `Ingresos · ${s.nombre}`, concepto: s.miembro, valor: s.valor, origen: 'XBRL completo del reporte'}))); notas.push(`Los ingresos se desglosan por «${(det.eje ?? '').split(':').pop().replace(/Axis$/, '')}» (suman los ingresos reportados con una diferencia menor a 0,5 %).`); }
+  if (segmentos) { fuentes.push(...segmentos.map((s) => ({rol: `Ingresos · ${s.nombre}`, concepto: s.miembro, valor: s.valor, origen: 'XBRL completo del reporte'}))); notas.push(tx('tri.n_ingresos_por', {e: (det.eje ?? '').split(':').pop().replace(/Axis$/, '')})); }
   // por debajo de la utilidad operativa: otros (no operativos) = utilidad neta + impuestos − utilidad operativa. Exacto por construcción.
   const otroNeto = net.val + tax.val - op.val;   // + = ingreso no operativo, − = gasto no operativo
   derivados.push('Utilidad bruta = ingresos − costo de ventas', 'Gastos operativos = utilidad bruta − utilidad operativa', 'Otros (no operativos) = utilidad neta + impuestos − utilidad operativa');
@@ -138,8 +160,8 @@ function construir(fin, S, pools = null, anual = null) {
   // Sankey: solo trimestres con utilidad (un flujo no puede ser negativo)
   let F = null, motivoSankey = null;
   const B = tax.val < 0 ? -tax.val : 0, T = tax.val > 0 ? tax.val : 0, netOp = net.val - B, E = op.val - netOp - T;   // E = gasto no operativo (si > 0)
-  if (!(op.val > 0)) motivoSankey = 'pérdida operativa (el flujo solo representa trimestres con utilidad; usa la cascada)';
-  else if (!(netOp > 0)) motivoSankey = 'pérdida neta (el flujo solo representa trimestres con utilidad; usa la cascada)';
+  if (!(op.val > 0)) motivoSankey = tx('tri.m_perdida_op');
+  else if (!(netOp > 0)) motivoSankey = tx('tri.m_perdida_neta');
   else {
     F = []; const f = (o, d, v, t) => { if (v > 1e-9) F.push({origen: o, destino: d, valor: Math.round(v), tipo: t ?? ''}); };
     const usados = new Set(['Ingresos', 'Utilidad bruta', 'Costo de ventas', 'Gastos operativos', 'Utilidad operativa', 'Utilidad antes de impuestos', 'Utilidad neta', 'Impuestos', 'Otros (no operativos)', 'Otros ingresos', 'Beneficio fiscal', ...lineas.map((l) => l.nombre)]);
@@ -187,7 +209,7 @@ export async function actualizarEmpresa(ticker, {forzar = false, desde = '2009-0
     let pools = null, anual = null, errDetalle = null;
     if (conDetalle.has(fin)) { try { ({pools = null, anual = null} = await poolsDe(e, fin, S)); } catch (err) { errDetalle = err.message; } }
     const r = construir(fin, S, pools, anual); const et = etiquetaTrimestre(fin, mesFin);
-    if (!r.omitido && errDetalle) r.notas.push(`Detalle fino no disponible ahora (${errDetalle}); se usa el resumen oficial.`);
+    if (!r.omitido && errDetalle) r.notas.push(tx('tri.n_sin_detalle_ahora', {e: errDetalle}));
     if (r.omitido) { omitidos.push({fin, etiqueta: et.etiqueta, motivo: r.omitido}); continue; }
     const pres = escala(r.ingresos), meta = (sha, filas, extra = {}) => JSON.stringify({
       id: `${ticker}_${fin}`, empresa: {ticker, nombre: e.nombre, cik: e.cik, entidad: datos.entityName}, periodo: {fin, ...et},
@@ -236,7 +258,7 @@ export async function vigilar({tickers = null} = {}) {
   let fallo = false;
   for (let d = 0; d < 3; d++) {
     const f = new Date(hoy.getTime() - d * DIA).toISOString().slice(0, 10).replace(/-/g, '');
-    try { const c = await presentadosEl(f); if (c) c.forEach((x) => ciks.add(x)); } catch (e) { fallo = true; errores.push(`índice diario ${f}: ${e.message}`); }
+    try { const c = await presentadosEl(f); if (c) c.forEach((x) => ciks.add(x)); } catch (e) { fallo = true; errores.push(tx('tri.e_indice', {f, m: e.message})); }
   }
   if (fallo && !ciks.size) return vigilarPorEmpresa({tickers, nuevos, errores});   // plan B: una petición por empresa destacada
   const lista = empresas().filter((e) => construidas().includes(e.ticker) && (!tickers || tickers.includes(e.ticker)));
@@ -265,7 +287,7 @@ async function vigilarPorEmpresa({tickers = null, nuevos = [], errores = []} = {
       const marca = (accn) => { const i2 = leerIndice(e.ticker); if (i2) { i2.ultimoVisto = accn; fs.writeFileSync(path.join(DIR, e.ticker, 'indice.json'), JSON.stringify(i2, null, 2)); } };
       if (res.nuevos.length) { nuevos.push({ticker: e.ticker, nombre: e.nombre, etiquetas: res.nuevos, publicado: ultimo.filed, form: ultimo.form}); marca(ultimo.accn); }
       else if (res.omitidos && (leerIndice(e.ticker)?.omitidos ?? []).some((o) => o.fin === ultimo.fin)) marca(ultimo.accn);   // ya está, pero no es representable (pérdida)
-      else errores.push(`${e.ticker}: la SEC ya publicó el ${ultimo.form} del ${ultimo.fin}, pero los datos estructurados aún no incluyen el trimestre; se reintenta en el próximo ciclo.`);
+      else errores.push(tx('tri.e_pendiente', {k: e.ticker, form: ultimo.form, fin: ultimo.fin}));
     } catch (err) { errores.push(`${e.ticker}: ${err.message}`); }
   }
   return {nuevos, errores};
@@ -274,9 +296,9 @@ async function vigilarPorEmpresa({tickers = null, nuevos = [], errores = []} = {
 /** Ficha lista para usar en una pieza: ruta, fuente y presentación del trimestre elegido. */
 export function itemTrimestre(ticker, fin, uso = 'sankey') {
   const idx = leerIndice(ticker), t = idx?.trimestres.find((x) => x.fin === fin);
-  if (!t) throw new Error(`No hay trimestre ${fin} de ${ticker} en la biblioteca.`);
+  if (!t) throw new Error(tx('tri.e_no_trimestre', {fin, k: ticker}));
   const ruta = uso === 'sankey' ? t.archivo : t.puente;
-  if (!ruta) throw new Error(`${idx.nombre} ${t.etiqueta}: ${t.motivoSankey ?? 'no hay diagrama de flujo'}.`);
+  if (!ruta) throw new Error(`${idx.nombre} ${t.etiqueta}: ${t.motivoSankey ?? tx('tri.e_sin_flujo_def')}.`);
   const meta = JSON.parse(fs.readFileSync(path.join(RAIZ, ruta + '.meta.json'), 'utf8')), p = meta.presentacion;
   return {origen: 'archivo', ruta, tabla: uso === 'sankey' ? 'flujos' : 'categorias', nombre: `${idx.nombre} · ${t.etiqueta}`, fuente: {nombre: meta.fuente.nombre, url: meta.fuente.url, obtenido: meta.fuente.obtenido, licencia: meta.fuente.licencia},
     divisor: p.divisor, prefijo: p.prefijo, sufijo: p.sufijo, decimales: p.decimales, unidad: p.unidad, trimestre: {ticker, fin, etiqueta: t.etiqueta, nombre: idx.nombre}, notasFuente: t.notas};
@@ -292,7 +314,7 @@ export function buscarEmpresas(q, limite = 40) {
 /** Baja los trimestres de una empresa si aún no están (los últimos 3 años; las destacadas, todo). Devuelve el índice. */
 export async function asegurarEmpresa(ticker) {
   if (leerIndice(ticker)) return leerIndice(ticker);
-  if (!empresas().some((e) => e.ticker === ticker)) { await actualizarUniverso().catch(() => {}); if (!empresas().some((e) => e.ticker === ticker)) throw new Error(`No encuentro «${ticker}» en la bolsa de EE. UU.`); }
+  if (!empresas().some((e) => e.ticker === ticker)) { await actualizarUniverso().catch(() => {}); if (!empresas().some((e) => e.ticker === ticker)) throw new Error(tx('tri.e_no_bolsa', {k: ticker})); }
   await actualizarEmpresa(ticker, esDestacada(ticker) ? {} : {desde: haceAnios(3)});
   return leerIndice(ticker);
 }

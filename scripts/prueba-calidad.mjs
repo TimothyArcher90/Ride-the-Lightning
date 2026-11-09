@@ -17,7 +17,7 @@ import {TIPO, ZONA, MOV, retardo, entrada, CURVA, contraste} from '../motor/dise
 import {PALETA, COLOR, TEMA, TEMAS_DISPONIBLES, aplicarTema, mezcla, ticksNum} from '../motor/nucleo.js';
 import {decimarPorColumna, decimaDesde} from '../motor/decimar.js';
 import {celdas} from '../motor/arbol.js';
-import {relajar1D} from '../motor/etiquetas.js';
+import {relajar1D, colocar2D} from '../motor/etiquetas.js';
 import {colorDivergente, colorSecuencial, DIV} from '../motor/escalas.js';
 
 const filtro = (process.argv[2] ?? '').split(',').filter(Boolean), soloFormato = process.argv[3];
@@ -190,6 +190,26 @@ console.log('\n0b) Escalas de color: contraste con el fondo y daltonismo');
       if (r.cabe) { for (let i = 0; i < n; i++) { if (r[o[i]] - it[o[i]].w / 2 < -1e-6 || r[o[i]] + it[o[i]].w / 2 > 800 + 1e-6) mal++; if (i && r[o[i]] - it[o[i]].w / 2 < r[o[i - 1]] + it[o[i - 1]].w / 2 + 10 - 1e-6) mal++; } }
     }
     ok(mal === 0, `etiquetas relajadas: 300 casos al azar fijo sin solapes ni salidas del límite (${mal} fallos)`);
+    // colocación 2-D: 200 escenas de semilla fija (6-12 anclas con 80 puntos de datos): determinista, dentro de la caja, sin etiquetas pisadas, y mejor que «siempre a la derecha»
+    {
+      let det = 0, fuera = 0, pis = 0, limpios = 0, ing = 0, choqIng = 0, choqNuevo = 0;
+      const sol = (a, b) => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
+      for (let k = 1; k <= 200; k++) {
+        const n = 6 + (k % 7), rnd = (i, m) => ((k * 7919 + i * 104729) % m), caja = [0, 0, 900, 600];
+        const it = Array.from({length: n}, (_, i) => ({x: 60 + rnd(i * 3 + 1, 780), y: 40 + rnd(i * 3 + 2, 520), w: 70 + rnd(i * 3 + 3, 110), h: 26, r: 7}));
+        const pts = Array.from({length: 80}, (_, i) => [rnd(i * 5 + 11, 900), rnd(i * 5 + 12, 600), 4]);
+        const a = colocar2D(it, {caja, puntos: pts}), b = colocar2D(it, {caja, puntos: pts});
+        if (JSON.stringify(a) !== JSON.stringify(b)) det++;
+        a.forEach((p, i) => { if (p.b[0] < -1e-6 || p.b[1] < -1e-6 || p.b[2] > 900 + 1e-6 || p.b[3] > 600 + 1e-6) fuera++; for (let j = i + 1; j < n; j++) if (sol(p.b, a[j].b) > 0) pis++; });
+        if (a.choques === 0) limpios++;
+        // referencia ingenua: todas a la derecha del ancla
+        const ing_ = it.map((q) => [q.x + 13, q.y - q.h / 2, q.x + 13 + q.w, q.y + q.h / 2]); let ci = 0; ing_.forEach((r, i) => { for (let j = i + 1; j < n; j++) if (sol(r, ing_[j]) > 0) ci++; for (const p of pts) if (p[0] > r[0] && p[0] < r[2] && p[1] > r[1] && p[1] < r[3]) ci++; });
+        choqIng += ci; choqNuevo += a.choques;
+      }
+      ok(det === 0, `colocación 2-D determinista: 200 escenas, dos corridas idénticas (${det} diferencias)`);
+      ok(fuera === 0 && pis === 0, `colocación 2-D: 200 escenas sin etiquetas pisadas (${pis}) ni fuera de la caja (${fuera})`);
+      ok(choqNuevo < choqIng * 0.35, `colocación 2-D: choques con datos/etiquetas ${choqNuevo} contra ${choqIng} de «siempre a la derecha»; ${limpios}/200 escenas sin ningún choque`);
+    }
   }
   // curvas de la línea (d3-shape): el escalón solo usa valores que existen y la curva monótona no se pasa del máximo ni del mínimo entre dos datos
   {
@@ -253,7 +273,7 @@ console.log('\n0d) Daltonismo: colores de serie de cada tema frente a las paleta
     const OKABE_ITO = ['#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7'];   // Okabe & Ito 2008 (sin el negro)
     const TOL_BRIGHT = ['#4477AA', '#EE6677', '#228833', '#CCBB44', '#66CCEE', '#AA3377', '#BBBBBB'];     // Paul Tol, «bright» (SRON, 2021)
     const minPar = (cols, f) => { let m = Infinity; for (let i = 0; i < cols.length; i++) for (let j = i + 1; j < cols.length; j++) m = Math.min(m, dE(f(1)(cols[i]), f(1)(cols[j]))); return m; };
-    const MIN = 8;   // ΔE2000 mínimo entre dos series: ~4× la diferencia apenas visible (≈ 2); las dos paletas de referencia llegan a 10-16
+    const MIN = 10;   // ΔE2000 mínimo entre dos series: ~5× la diferencia apenas visible (≈ 2); subido de 8 a 10 el 2026-11-08 tras aclarar la piedra de serie; las dos paletas de referencia llegan a 10-16
     for (const [nom, f] of Object.entries(tipos)) {
       const oi = minPar(OKABE_ITO, f), tol = minPar(TOL_BRIGHT, f);
       const peores = TEMAS_DISPONIBLES.map((tema) => { aplicarTema(tema); const cols = TEMA.orden.map((k) => COLOR[k]); return {tema, m: minPar(cols, f)}; }); aplicarTema('oscuro');

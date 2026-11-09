@@ -124,14 +124,14 @@ server.tool('estado_render', 'Estado de un render lanzado con exportar_video.', 
 
 // ── trimestres (SEC EDGAR): biblioteca de estados de resultados por Q + agente vigilante ───────────────────────────
 server.tool('listar_trimestres', 'Biblioteca de trimestres por empresa (SEC EDGAR, datos oficiales desde 2009). Sin «ticker» lista las empresas; con «ticker» (AMZN, AAPL…) sus trimestres y cuáles admiten Sankey. Si la empresa aún no está bajada, la baja.',
-  {ticker: z.string().optional(), buscar: z.string().optional().describe('Texto para buscar una empresa por nombre o ticker en TODA la bolsa de EE. UU.')}, async ({ticker, buscar}) => {
+  {ticker: z.string().optional(), buscar: z.string().optional().describe(LS === 'en' ? 'Text to search for a company by name or ticker across the WHOLE US stock exchange.' : 'Texto para buscar una empresa por nombre o ticker en TODA la bolsa de EE. UU.')}, async ({ticker, buscar}) => {
     if (!ticker) return texto(buscarEmpresas(buscar ?? ''));
     const t = ticker.toUpperCase();
     let i; try { i = await asegurarEmpresa(t); } catch (e) { return texto({error: e.message}); }
     return texto({ticker: t, nombre: i.nombre, actualizado: i.actualizado, trimestres: i.trimestres.map((x) => ({fin: x.fin, etiqueta: x.etiqueta, ingresos: x.ingresos, utilidadNeta: x.utilidadNeta, sankey: !!x.archivo, q4Calculado: x.q4Calculado, notas: x.notas})), omitidos: i.omitidos});
   });
 server.tool('generar_trimestre', 'Genera la spec de UN trimestre de una empresa (Sankey «de dónde viene y adónde va», o cascada) y la guarda en specs/. Luego usa vista_previa y exportar_video. «fin» = fecha de cierre (AAAA-MM-DD) o «ultimo».',
-  {idioma: IDI, ticker: z.string(), fin: z.string().default('ultimo'), uso: z.enum(['sankey', 'puente']).default('sankey'), formato: z.enum(['horizontal', 'vertical']).default('horizontal'), tema: z.enum(['oscuro', 'harris', 'carbon']).default('oscuro'), como_actual: z.boolean().default(false).describe('true = reemplaza la pieza que el usuario tiene abierta en el estudio (chat)')},
+  {idioma: IDI, ticker: z.string(), fin: z.string().default('ultimo'), uso: z.enum(['sankey', 'puente']).default('sankey'), formato: z.enum(['horizontal', 'vertical']).default('horizontal'), tema: z.enum(['oscuro', 'harris', 'carbon']).default('oscuro'), como_actual: z.boolean().default(false).describe(LS === 'en' ? 'true = replaces the piece the user has open in the studio (chat)' : 'true = reemplaza la pieza que el usuario tiene abierta en el estudio (chat)')},
   async (a) => {
     const t = a.ticker.toUpperCase(); let idx; try { idx = await asegurarEmpresa(t); } catch (e) { return texto({error: e.message}); }
     const trim = a.fin === 'ultimo' ? idx.trimestres.find((x) => (a.uso === 'sankey' ? x.archivo : true)) : idx.trimestres.find((x) => x.fin === a.fin);

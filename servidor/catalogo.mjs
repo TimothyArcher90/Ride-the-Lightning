@@ -8,6 +8,41 @@ import crypto from 'node:crypto';
 import {RAIZ} from './compilar.mjs';
 import {leerTabla, columnaFechas, columnaNumeros} from './datos.mjs';
 import {instalar as instalarExtra} from './fuentes_extra.mjs';
+import {t as tx, registrar} from '../motor/idioma.js';
+
+// Textos de errores y de procedencia (nota de fuente) de los adaptadores: siguen el idioma activo (es por defecto).
+registrar('cat', {
+  e_adaptador: {es: 'Adaptador desconocido: {a}', en: 'Unknown adapter: {a}'},
+  e_sin_filas: {es: '{id}: la descarga no trajo filas con valor', en: '{id}: the download returned no rows with a value'},
+  e_fred: {es: 'FRED no devolvió un CSV para {id}', en: 'FRED did not return a CSV for {id}'},
+  e_yahoo: {es: 'Yahoo no devolvió datos para {s}: {x}', en: 'Yahoo returned no data for {s}: {x}'},
+  e_pink_enlace: {es: 'No encontré el enlace al xlsx del Pink Sheet en la página del Banco Mundial.', en: 'Could not find the link to the Pink Sheet xlsx on the World Bank page.'},
+  e_pink_col: {es: 'Columna "{c}" no existe en el Pink Sheet.', en: 'Column "{c}" does not exist in the Pink Sheet.'},
+  e_wb_datos: {es: 'Banco Mundial no devolvió datos para {i}/{p}: {x}', en: 'World Bank returned no data for {i}/{p}: {x}'},
+  e_wb_pag: {es: 'Banco Mundial: {i}/{p} llegó paginado ({n} páginas); el adaptador no lo soporta.', en: 'World Bank: {i}/{p} came paginated ({n} pages); the adapter does not support that.'},
+  e_wb_nulos: {es: 'Banco Mundial: {i}/{p} no tiene ningún valor (solo nulos).', en: 'World Bank: {i}/{p} has no values (nulls only).'},
+  e_eurostat_rechazo: {es: 'Eurostat rechazó {d}: {x}', en: 'Eurostat rejected {d}: {x}'},
+  e_eurostat_filtros: {es: 'Eurostat {d}: faltan filtros para {l} (más de un valor posible).', en: 'Eurostat {d}: filters are missing for {l} (more than one possible value).'},
+  e_eurostat_vacio: {es: 'Eurostat {d} con {f} no devolvió ningún valor.', en: 'Eurostat {d} with {f} returned no values.'},
+  e_fiscal: {es: 'FiscalData no devolvió datos: {x}', en: 'FiscalData returned no data: {x}'},
+  e_socrata: {es: 'datos.gov.co no devolvió una lista: {x}', en: 'datos.gov.co did not return a list: {x}'},
+  e_trm: {es: 'TRM: datos.gov.co no devolvió filas.', en: 'TRM: datos.gov.co returned no rows.'},
+  e_owid: {es: 'OWID {s}: sin filas para "{e}"', en: 'OWID {s}: no rows for "{e}"'},
+  e_imf_sin: {es: 'FMI DataMapper no tiene {i} para {p}.', en: 'IMF DataMapper has no {i} for {p}.'},
+  e_imf_tope: {es: 'FMI DataMapper: {i}/{p} no tiene datos hasta {tope}.', en: 'IMF DataMapper: {i}/{p} has no data up to {tope}.'},
+  e_eurostat_resp: {es: 'Eurostat: respuesta inesperada para {d}.', en: 'Eurostat: unexpected response for {d}.'},
+  e_fiscal_campo: {es: 'FiscalData: el campo {c} no trae valores.', en: 'FiscalData: the field {c} has no values.'},
+  n_wb: {es: 'actualización de la API: {u} · años sin dato omitidos: {n}', en: 'API last updated: {u} · years with no data omitted: {n}'},
+  n_imf_desconocida: {es: 'desconocida', en: 'unknown'},
+  n_imf_ultima: {es: 'última modificación', en: 'last modified'},
+  n_imf_con: {es: 'INCLUYE años de proyección del WEO: rotularlos como estimación', en: 'INCLUDES WEO projection years: label them as estimates'},
+  n_imf_sin: {es: 'solo hasta {tope}; se excluyen {n} años de proyección', en: 'only up to {tope}; {n} projection years are excluded'},
+  n_imf_cola: {es: 'Los últimos años hasta {tope} pueden seguir siendo estimaciones del FMI.', en: 'The latest years up to {tope} may still be IMF estimates.'},
+  n_eurostat: {es: 'actualizado por Eurostat: {u} · periodos sin dato omitidos: {n}', en: 'updated by Eurostat: {u} · periods with no data omitted: {n}'},
+  n_eurostat_marcas: {es: ' · marcas de estado en la fuente: {f} (p = provisional, e = estimado)', en: ' · status flags in the source: {f} (p = provisional, e = estimated)'},
+  n_penny: {es: 'dato diario en dólares corrientes, tal como lo publica el Tesoro (cadena exacta, sin redondear)', en: 'daily figure in current dollars, as published by the Treasury (exact string, unrounded)'},
+  n_trm: {es: 'Tasa Representativa del Mercado (Superintendencia Financiera de Colombia). Fecha = inicio de vigencia; cada valor rige hasta su vigenciahasta.', en: 'Representative Market Rate (Colombian Financial Superintendency). Date = start of validity; each value holds until its vigenciahasta.'},
+});
 
 const UA = 'RideTheLightning/0.1 (investigacion local; contacto: david@macrowise.co)';
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -33,7 +68,7 @@ export const ADAPTADORES = {
   async fred({id}) {
     const url = `https://fred.stlouisfed.org/graph/fredgraph.csv?id=${encodeURIComponent(id)}`;
     const txt = await pedir(url);
-    if (!/^observation_date|^DATE/i.test(txt)) throw new Error(`FRED no devolvió un CSV para ${id}`);
+    if (!/^observation_date|^DATE/i.test(txt)) throw new Error(tx('cat.e_fred', {id}));
     const f = txt.trim().split(/\r?\n/).map((l) => l.split(','));
     return {columnas: ['fecha', id], filas: f.slice(1).map((r) => [r[0], r[1]]), url: `https://fred.stlouisfed.org/series/${id}`, urlDatos: url};
   },
@@ -54,7 +89,7 @@ export const ADAPTADORES = {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(simbolo)}?period1=-2208988800&period2=${Math.floor(Date.now() / 1000)}&interval=${intervalo}&includeAdjustedClose=false`;
     const j = JSON.parse(await pedir(url));
     const r = j.chart?.result?.[0];
-    if (!r) throw new Error(`Yahoo no devolvió datos para ${simbolo}: ${JSON.stringify(j.chart?.error)}`);
+    if (!r) throw new Error(tx('cat.e_yahoo', {s: simbolo, x: JSON.stringify(j.chart?.error)}));
     const cierre = r.indicators.quote[0][campo];
     const off = r.meta?.gmtoffset ?? 0;
     const filas = r.timestamp.map((t, i) => [new Date((t + off) * 1000).toISOString().slice(0, 10), cierre[i] ?? null]);
@@ -69,7 +104,7 @@ export const ADAPTADORES = {
     const iV = columna ? cab.indexOf(columna) : cab.length - 1;
     if (iE < 0 || iY < 0 || iV < 0) throw new Error(`Estructura inesperada en ${slug}: ${cab.join(' | ')}`);
     const filas = t.slice(1).filter((r) => r[iE] === entidad && r[iV] !== '').map((r) => [`${r[iY]}-01-01`, r[iV]]);
-    if (!filas.length) throw new Error(`OWID ${slug}: sin filas para "${entidad}"`);
+    if (!filas.length) throw new Error(tx('cat.e_owid', {s: slug, e: entidad}));
     return {columnas: ['fecha', cab[iV]], filas, url: `https://ourworldindata.org/grapher/${slug}`, urlDatos: url, anual: true};
   },
 
@@ -79,7 +114,7 @@ export const ADAPTADORES = {
     const wb = await (cache.pink ??= (async () => {
       const html = await pedir(pg);
       const url = [...html.matchAll(/https?:[^"'\s]*CMO-Historical-Data-Monthly\.xlsx/g)].map((m) => m[0])[0];
-      if (!url) throw new Error('No encontré el enlace al xlsx del Pink Sheet en la página del Banco Mundial.');
+      if (!url) throw new Error(tx('cat.e_pink_enlace'));
       const XLSX = (await import('xlsx')).default;
       return {url, libro: XLSX.read(await pedir(url, {texto: false}), {cellNF: true, raw: true}), XLSX};
     })());
@@ -88,7 +123,7 @@ export const ADAPTADORES = {
     const limpio = (s) => String(s ?? '').replace(/\s*\*+\s*$/, '').replace(/\s+/g, ' ').trim();
     let col = -1;
     for (let C = 1; C <= rg.e.c; C++) if (limpio(val(4, C)) === columna) col = C;
-    if (col < 0) throw new Error(`Columna "${columna}" no existe en el Pink Sheet.`);
+    if (col < 0) throw new Error(tx('cat.e_pink_col', {c: columna}));
     const filas = [];
     for (let R = 6; R <= rg.e.r; R++) {
       const m = String(val(R, 0) ?? '').match(/^(\d{4})M(\d{2})$/), v = val(R, col);
@@ -145,39 +180,39 @@ export const ADAPTADORES = {
   async worldbank({indicador, pais}) {
     const base = 'https://api.worldbank.org/v2', urlDatos = `${base}/country/${pais}/indicator/${indicador}?format=json&per_page=20000`;
     const j = JSON.parse(await pedir(urlDatos));
-    if (!Array.isArray(j) || !Array.isArray(j[1])) throw new Error(`Banco Mundial no devolvió datos para ${indicador}/${pais}: ${JSON.stringify(j?.[0]?.message ?? j).slice(0, 220)}`);
-    if (j[0].pages > 1) throw new Error(`Banco Mundial: ${indicador}/${pais} llegó paginado (${j[0].pages} páginas); el adaptador no lo soporta.`);
+    if (!Array.isArray(j) || !Array.isArray(j[1])) throw new Error(tx('cat.e_wb_datos', {i: indicador, p: pais, x: JSON.stringify(j?.[0]?.message ?? j).slice(0, 220)}));
+    if (j[0].pages > 1) throw new Error(tx('cat.e_wb_pag', {i: indicador, p: pais, n: j[0].pages}));
     const filas = j[1].filter((r) => r.value != null && r.date.length === 4).map((r) => [`${r.date}-01-01`, r.value]).sort((a, b) => a[0].localeCompare(b[0]));
-    if (!filas.length) throw new Error(`Banco Mundial: ${indicador}/${pais} no tiene ningún valor (solo nulos).`);
+    if (!filas.length) throw new Error(tx('cat.e_wb_nulos', {i: indicador, p: pais}));
     const ind = await ((cache.wbInd ??= {})[indicador] ??= pedir(`${base}/indicator/${indicador}?format=json`).then((t) => JSON.parse(t)[1]?.[0] ?? {}).catch((e) => { delete cache.wbInd[indicador]; throw e; }));   // metadatos del indicador: 1 petición por indicador y proceso (un fallo no queda en caché)
     const nombrePais = j[1][0].country.value;
     return {columnas: ['fecha', `${indicador}_${pais}`], filas, url: `https://data.worldbank.org/indicator/${indicador}?locations=${j[1][0].country.id}`, urlDatos, unidad: ind.unit || undefined,
-      notaFuente: `${ind.name ?? indicador} · ${nombrePais} (${pais}) · ${ind.source?.value ?? 'World Bank'} · actualización de la API: ${j[0].lastupdated} · años sin dato omitidos: ${j[1].length - filas.length}`};
+      notaFuente: `${ind.name ?? indicador} · ${nombrePais} (${pais}) · ${ind.source?.value ?? 'World Bank'} · ${tx('cat.n_wb', {u: j[0].lastupdated, n: j[1].length - filas.length})}`};
   },
   /** FMI · DataMapper (WEO), API sin clave. La API ignora el filtro de país y devuelve todos: se elige aquí. Por defecto se EXCLUYEN los años posteriores al año en curso menos uno (proyecciones del WEO); proyecciones:true los incluye. */
   async imf({indicador, pais, proyecciones = false}) {
     const base = 'https://www.imf.org/external/datamapper/api/v1', urlDatos = `${base}/${indicador}/${pais}`;
     const j = JSON.parse(await pedir(urlDatos));
     const serie = j.values?.[indicador]?.[pais];
-    if (!serie || !Object.keys(serie).length) throw new Error(`FMI DataMapper no tiene ${indicador} para ${pais}.`);
+    if (!serie || !Object.keys(serie).length) throw new Error(tx('cat.e_imf_sin', {i: indicador, p: pais}));
     const tope = new Date().getUTCFullYear() - 1;
     const todos = Object.entries(serie).filter(([a, v]) => typeof v === 'number' && a.length === 4).sort((a, b) => a[0].localeCompare(b[0]));
     const filas = todos.filter(([a]) => proyecciones || +a <= tope).map(([a, v]) => [`${a}-01-01`, v]);
-    if (!filas.length) throw new Error(`FMI DataMapper: ${indicador}/${pais} no tiene datos hasta ${tope}.`);
+    if (!filas.length) throw new Error(tx('cat.e_imf_tope', {i: indicador, p: pais, tope}));
     const meta = JSON.parse(await pedir(`${base}/indicators`)).indicators?.[indicador] ?? {};
     const etiquetaPais = JSON.parse(await pedir(`${base}/countries`)).countries?.[pais]?.label ?? pais;
     return {columnas: ['fecha', `${indicador}_${pais}`], filas, url: `https://www.imf.org/external/datamapper/${indicador}@WEO/${pais}`, urlDatos, unidad: meta.unit,
-      notaFuente: `${meta.label ?? indicador} · ${etiquetaPais} (${pais}) · ${meta.source ?? 'IMF'} · última modificación ${meta['last-modified'] ?? 'desconocida'} · ${proyecciones ? 'INCLUYE años de proyección del WEO: rotularlos como estimación' : `solo hasta ${tope}; se excluyen ${todos.length - filas.length} años de proyección`}. Los últimos años hasta ${tope} pueden seguir siendo estimaciones del FMI.`};
+      notaFuente: `${meta.label ?? indicador} · ${etiquetaPais} (${pais}) · ${meta.source ?? 'IMF'} · ${tx('cat.n_imf_ultima')} ${meta['last-modified'] ?? tx('cat.n_imf_desconocida')} · ${proyecciones ? tx('cat.n_imf_con') : tx('cat.n_imf_sin', {tope, n: todos.length - filas.length})}. ${tx('cat.n_imf_cola', {tope})}`};
   },
   /** Eurostat (JSON-stat 2.0, sin clave). Todas las dimensiones salvo el tiempo deben quedar fijadas por filtros. Soporta periodos mensuales (AAAA-MM), trimestrales (AAAA-Qn) y anuales (AAAA); los vacíos se omiten. */
   async eurostat({dataset, filtros = {}}) {
     const q = new URLSearchParams({format: 'JSON', lang: 'EN', ...filtros});
     const urlDatos = `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/${dataset}?${q}`;
     const j = JSON.parse(await pedir(urlDatos));
-    if (j.error) throw new Error(`Eurostat rechazó ${dataset}: ${JSON.stringify(j.error).slice(0, 220)}`);
-    if (!j.id || !j.dimension?.time) throw new Error(`Eurostat: respuesta inesperada para ${dataset}.`);
+    if (j.error) throw new Error(tx('cat.e_eurostat_rechazo', {d: dataset, x: JSON.stringify(j.error).slice(0, 220)}));
+    if (!j.id || !j.dimension?.time) throw new Error(tx('cat.e_eurostat_resp', {d: dataset}));
     const iT = j.id.indexOf('time'), libres = j.id.filter((d, i) => i !== iT && j.size[i] !== 1);
-    if (libres.length) throw new Error(`Eurostat ${dataset}: faltan filtros para ${libres.join(', ')} (más de un valor posible).`);
+    if (libres.length) throw new Error(tx('cat.e_eurostat_filtros', {d: dataset, l: libres.join(', ')}));
     const aFecha = (t) => {
       let m;
       if ((m = t.match(/^(\d{4})-(\d{2})$/))) return `${m[1]}-${m[2]}-01`;
@@ -192,10 +227,10 @@ export const ADAPTADORES = {
       filas.push([aFecha(t), v]);
       if (j.status?.[pos]) flags.add(`${j.status[pos]}`);
     }
-    if (!filas.length) throw new Error(`Eurostat ${dataset} con ${JSON.stringify(filtros)} no devolvió ningún valor.`);
+    if (!filas.length) throw new Error(tx('cat.e_eurostat_vacio', {d: dataset, f: JSON.stringify(filtros)}));
     const fijas = j.id.filter((d, i) => i !== iT).map((d) => `${j.dimension[d].label}: ${Object.values(j.dimension[d].category.label ?? {})[0] ?? Object.keys(j.dimension[d].category.index)[0]}`).join(' · ');
     return {columnas: ['fecha', `${dataset}_${filtros.geo ?? 'serie'}`], filas, url: `https://ec.europa.eu/eurostat/databrowser/view/${dataset}/default/table?lang=en`, urlDatos,
-      notaFuente: `${j.label} (${dataset}) · ${fijas} · actualizado por Eurostat: ${j.updated} · periodos sin dato omitidos: ${Object.keys(j.dimension.time.category.index).length - filas.length}${flags.size ? ` · marcas de estado en la fuente: ${[...flags].join(',')} (p = provisional, e = estimado)` : ''}`};
+      notaFuente: `${j.label} (${dataset}) · ${fijas} · ${tx('cat.n_eurostat', {u: j.updated, n: Object.keys(j.dimension.time.category.index).length - filas.length})}${flags.size ? tx('cat.n_eurostat_marcas', {f: [...flags].join(',')}) : ''}`};
   },
   /** Tesoro de EE. UU. · FiscalData, deuda al centavo (debt_to_penny), API sin clave. Diaria desde 1993-04-01. campo: tot_pub_debt_out_amt (deuda total), debt_held_public_amt o intragov_hold_amt (estos dos vienen vacíos en los primeros años: se omiten). */
   async tesoro({campo = 'tot_pub_debt_out_amt'}) {
@@ -203,14 +238,14 @@ export const ADAPTADORES = {
     let etiqueta = campo;
     for (let p = 1; p <= 50; p++) {
       const j = JSON.parse(await pedir(`${base}?format=json&sort=record_date&fields=record_date,${campo}&page%5Bsize%5D=10000&page%5Bnumber%5D=${p}`));
-      if (!Array.isArray(j.data)) throw new Error(`FiscalData no devolvió datos: ${JSON.stringify(j).slice(0, 220)}`);
+      if (!Array.isArray(j.data)) throw new Error(tx('cat.e_fiscal', {x: JSON.stringify(j).slice(0, 220)}));
       etiqueta = j.meta?.labels?.[campo] ?? etiqueta;
       for (const d of j.data) if (d[campo] != null && d[campo] !== 'null' && Number.isFinite(Number(d[campo]))) filas.push([d.record_date, d[campo]]);
       if (j.data.length < 10000) break;
     }
-    if (!filas.length) throw new Error(`FiscalData: el campo ${campo} no trae valores.`);
+    if (!filas.length) throw new Error(tx('cat.e_fiscal_campo', {c: campo}));
     return {columnas: ['fecha', campo], filas, url: 'https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/', urlDatos: `${base}?fields=record_date,${campo}&sort=record_date`, unidad: 'US$',
-      notaFuente: `Debt to the Penny · ${etiqueta} · dato diario en dólares corrientes, tal como lo publica el Tesoro (cadena exacta, sin redondear)`};
+      notaFuente: `Debt to the Penny · ${etiqueta} · ${tx('cat.n_penny')}`};
   },
   /** TRM de Colombia (certificada por la Superfinanciera) en datos.gov.co (Socrata, sin clave). La fecha es el INICIO de vigencia: un mismo valor rige hasta vigenciahasta (fines de semana y festivos); no se rellenan días. */
   async trm() {
@@ -218,16 +253,16 @@ export const ADAPTADORES = {
     for (let o = 0; o < 400000; o += 50000) {
       const q = new URLSearchParams({$select: 'valor,unidad,vigenciadesde', $order: 'vigenciadesde ASC', $limit: '50000', $offset: String(o)});
       const j = JSON.parse(await pedir(`${base}?${q}`));
-      if (!Array.isArray(j)) throw new Error(`datos.gov.co no devolvió una lista: ${JSON.stringify(j).slice(0, 220)}`);
+      if (!Array.isArray(j)) throw new Error(tx('cat.e_socrata', {x: JSON.stringify(j).slice(0, 220)}));
       for (const d of j) {
         if (d.unidad !== 'COP') throw new Error(`TRM: unidad inesperada "${d.unidad}" en ${d.vigenciadesde}`);
         if (d.valor != null && Number.isFinite(Number(d.valor))) filas.push([d.vigenciadesde.slice(0, 10), d.valor]);
       }
       if (j.length < 50000) break;
     }
-    if (!filas.length) throw new Error('TRM: datos.gov.co no devolvió filas.');
+    if (!filas.length) throw new Error(tx('cat.e_trm'));
     return {columnas: ['fecha', 'TRM_COP_por_USD'], filas, url: 'https://www.datos.gov.co/d/32sa-8pi3', urlDatos: base, unidad: 'COP por 1 US$',
-      notaFuente: 'Tasa Representativa del Mercado (Superintendencia Financiera de Colombia). Fecha = inicio de vigencia; cada valor rige hasta su vigenciahasta.'};
+      notaFuente: tx('cat.n_trm')};
   },
   /** CSV/XLSX público en una URL fija (Shiller, Banco Mundial, BoE…): se descarga tal cual y se lee con la ingesta común. */
   async archivo({url, extension = 'csv', hoja, filaEncabezado, colX, colY}) {
@@ -305,13 +340,13 @@ export function buscar(consulta = '', catalogo = null, idioma = 'es') {
 /** Descarga una entrada del catálogo (historia COMPLETA) y la guarda con su procedencia. */
 export async function descargar(entrada) {
   const ad = ADAPTADORES[entrada.adaptador];
-  if (!ad) throw new Error(`Adaptador desconocido: ${entrada.adaptador}`);
+  if (!ad) throw new Error(tx('cat.e_adaptador', {a: entrada.adaptador}));
   const r = await ad(entrada.args);
   const dir = path.join(RAIZ, 'datos', 'biblioteca');
   fs.mkdirSync(dir, {recursive: true});
   const archivo = path.join(dir, `${entrada.id}.csv`);
   const filas = r.filas.filter((f) => f[0] && f[1] !== '' && f[1] !== '.' && f[1] != null);
-  if (!filas.length) throw new Error(`${entrada.id}: la descarga no trajo filas con valor`);
+  if (!filas.length) throw new Error(tx('cat.e_sin_filas', {id: entrada.id}));
   const csv = [r.columnas.join(','), ...filas.map((f) => f.join(','))].join('\n') + '\n';
   fs.writeFileSync(archivo, csv);
   const sha = crypto.createHash('sha256').update(csv).digest('hex');

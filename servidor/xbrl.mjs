@@ -5,6 +5,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {RAIZ} from './compilar.mjs';
+import {t as tx, registrar} from '../motor/idioma.js';
+
+// Mensajes de la SEC y del detalle XBRL (los usa también trimestres.mjs): siguen el idioma activo (es por defecto).
+registrar('sec', {
+  e_resp: {es: 'SEC respondió {s}', en: 'SEC responded {s}'},
+  e_resp_url: {es: 'SEC respondió {s} en {u}', en: 'SEC responded {s} for {u}'},
+  e_sin_instancia: {es: 'El reporte {a} no trae archivo XBRL de instancia.', en: 'Filing {a} has no XBRL instance file.'},
+  a_lineas: {es: 'Las líneas de gasto de {p} suman {a} M y los gastos operativos son {b} M: se usa el desglose resumido.', en: 'The expense lines of {p} add up to {a} M and operating expenses are {b} M: the summarized breakdown is used.'},
+});
 
 const CONTACTO = process.env.RTL_SEC_CONTACTO ?? 'david@macrowise.co';
 const UA = `RideTheLightning/1.0 (herramienta local de graficas; contacto: ${CONTACTO})`;
@@ -18,8 +27,8 @@ export async function www(url, {json = false, reintentos = 3} = {}) {
     ultimaPeticion = Date.now();
     try {
       const r = await fetch(url, {headers: {'User-Agent': UA, 'Accept-Encoding': 'gzip, deflate'}, signal: AbortSignal.timeout(120000)});
-      if (r.status === 429 || r.status >= 500) { ultimo = new Error(`SEC respondió ${r.status}`); await dormir(3000 * (k + 1)); continue; }
-      if (!r.ok) throw new Error(`SEC respondió ${r.status} en ${url}`);
+      if (r.status === 429 || r.status >= 500) { ultimo = new Error(tx('sec.e_resp', {s: r.status})); await dormir(3000 * (k + 1)); continue; }
+      if (!r.ok) throw new Error(tx('sec.e_resp_url', {s: r.status, u: url}));
       return json ? await r.json() : await r.text();
     } catch (e) { ultimo = e; await dormir(1500 * (k + 1)); }
   }
@@ -51,7 +60,7 @@ export async function detalleFiling(cik, accn) {
   if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, 'utf8'));
   const base = `https://www.sec.gov/Archives/edgar/data/${cik}/${accn.replace(/-/g, '')}`, idx = await www(`${base}/index.json`, {json: true}), nombres = idx.directory.item.map((i) => i.name);
   const inst = nombres.find((n) => /-\d{8}(_htm)?\.xml$/.test(n)), cal = nombres.find((n) => /_cal\.xml$/.test(n)), lab = nombres.find((n) => /_lab\.xml$/.test(n));
-  if (!inst) throw new Error(`El reporte ${accn} no trae archivo XBRL de instancia.`);
+  if (!inst) throw new Error(tx('sec.e_sin_instancia', {a: accn}));
   const x = await www(`${base}/${inst}`);
   const ctx = {};
   for (const m of x.matchAll(/<context id="([^"]+)">([\s\S]*?)<\/context>/g)) {
@@ -124,7 +133,7 @@ export function detalleTrimestre(pools, {fin, ingresos, opexTotal, costoConcepto
     const L = hijos.map((c) => ({id: c.h, valor: (v(c.h) ?? NaN) * c.w})).filter((l) => Number.isFinite(l.valor) && Math.abs(l.valor) > 0);
     const suma = L.reduce((s, l) => s + l.valor, 0);
     if (L.length && Math.abs(suma - opexTotal) / opexTotal <= 0.005 && L.every((l) => l.valor > 0)) { out.lineas = L.map((l) => ({nombre: nombreDe(det, l.id), valor: l.valor, concepto: l.id})); break; }
-    if (L.length) out.avisos.push(`Las líneas de gasto de ${padre} suman ${(suma / 1e6).toFixed(0)} M y los gastos operativos son ${(opexTotal / 1e6).toFixed(0)} M: se usa el desglose resumido.`);
+    if (L.length) out.avisos.push(tx('sec.a_lineas', {p: padre, a: (suma / 1e6).toFixed(0), b: (opexTotal / 1e6).toFixed(0)}));
   }
   // 2) ingresos por producto/segmento: el eje cuyos miembros (los más finos) suman el total reportado
   const revIds = ['us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax', 'us-gaap:Revenues', 'us-gaap:SalesRevenueNet', 'us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax'];

@@ -7,6 +7,19 @@ import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import XLSX from 'xlsx';
 import {utc} from '../motor/nucleo.js';
+import {t as tx, registrar} from '../motor/idioma.js';
+
+// Errores y avisos de lectura de archivos: siguen el idioma activo (es por defecto).
+registrar('dat', {
+  e_no_existe: {es: 'No existe el archivo: {r}', en: 'File not found: {r}'},
+  e_json: {es: 'JSON no reconocido: usa un arreglo de objetos, un arreglo de filas o {columna:[valores]}', en: 'Unrecognized JSON: use an array of objects, an array of rows or {column:[values]}'},
+  e_hoja: {es: 'La hoja "{h}" no existe. Hojas: {l}', en: 'Sheet "{h}" does not exist. Sheets: {l}'},
+  e_formato: {es: 'Formato no soportado: {e}. Admitidos: {l}', en: 'Unsupported format: {e}. Supported: {l}'},
+  e_encabezado: {es: 'No encontré fila de encabezados (texto en todas sus celdas). Indica "filaEncabezado" (1 = primera fila).', en: 'No header row found (text in all its cells). Set "filaEncabezado" (1 = first row).'},
+  e_columna: {es: 'No existe la columna "{c}". Columnas: {l}', en: 'Column "{c}" does not exist. Columns: {l}'},
+  a_hojas: {es: 'El libro tiene {n} hojas ({l}); se usó la primera ("{h}"). Indica "hoja" para elegir.', en: 'The workbook has {n} sheets ({l}); the first one ("{h}") was used. Set "hoja" to choose.'},
+  a_encabezado: {es: 'Encabezado detectado en la fila {f}; se ignoraron {n} fila(s) previas.', en: 'Header detected on row {f}; {n} earlier row(s) were ignored.'},
+});
 
 export const FORMATOS_HOJA = ['.xlsx', '.xlsm', '.xlsb', '.xls', '.ods', '.fods'];
 export const FORMATOS_TEXTO = ['.csv', '.tsv', '.txt', '.tab'];
@@ -99,7 +112,7 @@ function filasDeHoja(ws) {
 /** Devuelve {columnas, filas, formato, hoja, hojas, hash, avisos}. filaEncabezado es 1-based sobre la hoja. */
 export function leerTabla(ruta, {hoja, filaEncabezado} = {}) {
   if (!fs.existsSync(ruta)) { const alt = rutaInstantanea(ruta); if (alt) ruta = alt; }   // caída a data/ (instantánea abierta)
-  if (!fs.existsSync(ruta)) throw new Error(`No existe el archivo: ${ruta}`);
+  if (!fs.existsSync(ruta)) throw new Error(tx('dat.e_no_existe', {r: ruta}));
   const ext = path.extname(ruta).toLowerCase();
   const avisos = [];
   let crudo, hojas = null, hojaUsada = null;
@@ -112,7 +125,7 @@ export function leerTabla(ruta, {hoja, filaEncabezado} = {}) {
     else if (j && typeof j === 'object') {
       const cols = Object.keys(j), n = Math.max(...cols.map((c) => j[c].length));
       crudo = [cols, ...Array.from({length: n}, (_, i) => cols.map((c) => j[c][i] ?? null))];
-    } else throw new Error('JSON no reconocido: usa un arreglo de objetos, un arreglo de filas o {columna:[valores]}');
+    } else throw new Error(tx('dat.e_json'));
   } else if (FORMATOS_TEXTO.includes(ext)) {
     const txt = fs.readFileSync(ruta, 'utf8').replace(/^﻿/, '');
     crudo = parseDelimitado(txt, ext === '.tsv' || ext === '.tab' ? '\t' : detectarDelim(txt));
@@ -120,14 +133,14 @@ export function leerTabla(ruta, {hoja, filaEncabezado} = {}) {
     const wb = XLSX.readFile(ruta, {cellNF: true, raw: true});
     hojas = wb.SheetNames;
     hojaUsada = hoja ?? hojas[0];
-    if (!wb.Sheets[hojaUsada]) throw new Error(`La hoja "${hojaUsada}" no existe. Hojas: ${hojas.join(', ')}`);
-    if (hojas.length > 1 && !hoja) avisos.push(`El libro tiene ${hojas.length} hojas (${hojas.join(', ')}); se usó la primera ("${hojaUsada}"). Indica "hoja" para elegir.`);
+    if (!wb.Sheets[hojaUsada]) throw new Error(tx('dat.e_hoja', {h: hojaUsada, l: hojas.join(', ')}));
+    if (hojas.length > 1 && !hoja) avisos.push(tx('dat.a_hojas', {n: hojas.length, l: hojas.join(', '), h: hojaUsada}));
     crudo = filasDeHoja(wb.Sheets[hojaUsada]);
-  } else throw new Error(`Formato no soportado: ${ext}. Admitidos: ${FORMATOS.join(' ')}`);
+  } else throw new Error(tx('dat.e_formato', {e: ext, l: FORMATOS.join(' ')}));
 
   let h = filaEncabezado ? filaEncabezado - 1 : crudo.findIndex((f) => f.filter((v) => !esNulo(v)).length >= 2 && f.filter((v) => !esNulo(v)).every((v) => typeof v === 'string' && Number.isNaN(Number(v))));
-  if (h < 0) throw new Error('No encontré fila de encabezados (texto en todas sus celdas). Indica "filaEncabezado" (1 = primera fila).');
-  if (h > 0) avisos.push(`Encabezado detectado en la fila ${h + 1}; se ignoraron ${h} fila(s) previas.`);
+  if (h < 0) throw new Error(tx('dat.e_encabezado'));
+  if (h > 0) avisos.push(tx('dat.a_encabezado', {f: h + 1, n: h}));
   const columnas = crudo[h].map((c, i) => (esNulo(c) ? `col${i + 1}` : String(c).trim()));
   const filas = crudo.slice(h + 1).filter((f) => f.some((v) => !esNulo(v)));
   return {columnas, filas, formato: ext.slice(1), hoja: hojaUsada, hojas, hash: hashArchivo(ruta), avisos, filaEncabezado: h + 1};
@@ -138,7 +151,7 @@ export function indiceColumna(tabla, nombre) {
   if (i < 0) {
     const ci = tabla.columnas.findIndex((c) => c.toLowerCase() === String(nombre).toLowerCase());
     if (ci >= 0) return ci;
-    throw new Error(`No existe la columna "${nombre}". Columnas: ${tabla.columnas.join(' | ')}`);
+    throw new Error(tx('dat.e_columna', {c: nombre, l: tabla.columnas.join(' | ')}));
   }
   return i;
 }

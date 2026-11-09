@@ -68,6 +68,8 @@ for (const arch of ['servidor/estudio.mjs', 'servidor/chat.mjs', 'servidor/cli.m
   for (const m of s.matchAll(/\b(?:tr|T)\('(srv_[\w]+)'/g)) if (!(m[1] in DICT.en) && !/_$/.test(m[1])) F(`${arch}: missing key ${m[1]}`);
   for (const m of s.matchAll(/'(srv_(?:ex|h)_[\w]*)'/g)) if (!(m[1] in DICT.en) && !/_$/.test(m[1])) F(`${arch}: missing key ${m[1]}`);
 }
+// every zod .describe() in the MCP must be English or switch on the language (LS === 'en' ? … : …); a bare Spanish literal leaks into English sessions
+for (const m of leer('servidor/mcp.mjs').matchAll(/\.describe\(\s*(['`])((?:(?!\1)[^\\\n]|\\.)*)\1/g)) if (/[áéíóúñ¿¡]|\b(?:de|del|la|el|los|por|para|texto|pieza)\b/i.test(m[2])) F('Spanish .describe() in servidor/mcp.mjs: ' + m[2].slice(0, 60));
 for (const t of ['pieza_actual', 'editar_pieza', 'generar_trimestre', 'generar_pieza', 'listar_trimestres', 'buscar_series', 'descargar_serie', 'analizar_serie', 'vista_previa', 'compilar_spec']) if (!(`srv_h_${t}` in DICT.en)) F(`missing srv_h_${t}`);
 
 console.log(`es keys: ${kes.length} · en keys: ${ken.length} · keys used by the UI: ${usadas.size}`);
