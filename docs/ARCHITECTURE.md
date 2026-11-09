@@ -52,12 +52,13 @@ Takes a spec and returns a **plan** (resolved layers + data in pixel-ready form)
 - `escena.js`: stacking by `z`, camera keyframes in *data space* (text stays crisp), per-format scaling.
 - `capas.js` and `capas_extra.js`: the chart layers, each a pure function `(env, layer)`; annotations (`llamada`, `zona`, `contador`) anchor to data (`{"fecha": …}`, `{"max": true}`), never to pixels.
 - `escalas.js` (color scales: divergent BrBG-based, viridis sequential), `arbol.js` (treemap layout: d3-hierarchy squarify/resquarify), `etiquetas.js` (deterministic 1-D label relaxation, whole-word wrapping with no `…`) and `vendor/` (vendored, permissively licensed d3 pieces, each with its LICENSE; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
-- `diseno.js`: the **design system** — type scale with per-format minimum sizes (vertical: names ≥ 40 px, axes/units ≥ 32, footer ≥ 28), WCAG contrast helpers, safe-zone constants, Material motion curves, 40 ms stagger, and the mandatory source footer *"Source: <name> · <date of last data point> · RTL"*.
+- `diseno.js`: the **design system** — type scale with per-format minimum sizes (vertical: names ≥ 40 px, axes/units ≥ 32, footer ≥ 28), WCAG contrast helpers, safe-zone constants, Material motion curves plus `CURVA.trazo` (every data reveal — line trace, bars, counters — starts at once and eases out; no dead time), 40 ms stagger, and the mandatory source footer *"Source: <name> · <date of last data point> · RTL"*.
 
 ### 5. Renderer (`servidor/render.mjs`)
 Headless Edge/Chrome (via `playwright-core`) loads `web/render.html`, seeks frame by frame, and pipes frames to **ffmpeg**:
 - reference **MP4** (`libx264 -crf 17 -preset slow -pix_fmt yuv420p`);
 - **ProRes 4444 with alpha** (`.mov`) for compositing in Premiere;
+- the MP4 and the alpha pass run **concurrently** (two pages, two ffmpeg processes; byte-identical to running them in sequence, ~20 % faster; `RTL_SECUENCIAL=1` forces the old order);
 - a JSON verification report next to every render (`salidas/<piece>/<piece>_vN.json`);
 - subtitles are never burned in.
 
@@ -91,6 +92,8 @@ Headless Edge/Chrome (via `playwright-core`) loads `web/render.html`, seeks fram
 | `fuentes/` | Geist fonts (SIL OFL) |
 
 ## Testing
+
+`npm run check` runs every suite below in the right order (cheap first; heavy ones are skipped after a cheap failure unless `--seguir`), prints a per-suite time summary and exits 1 on failure (`--jobs=3`: 282 s in total, versus well over 10 min one after another). `npm run antes-de-subir` is the ~10 s pre-push guard (not a git hook; it never blocks). `npm run salud` (`scripts/salud.mjs`) checks the environment and the data silently going stale: ffmpeg + encoders, a browser that starts, Geist/Geist Mono really loaded by the render page, duplicate/unsourced catalogue ids, orphan or empty CSVs, and the 24/7 updater (last pass, series with errors, series without a good download for 4+ days).
 
 ```
 node scripts/prueba.mjs               # formats, accuracy rules, base chart types

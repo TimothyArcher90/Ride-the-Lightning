@@ -221,6 +221,9 @@ npm run gallery
 ## Tests
 
 ```bash
+npm run check                         # ALL suites, cheap ones first, summary + non-zero exit on failure (--rapido = cheap subset, --jobs=N parallel, --solo=name)
+npm run salud                         # health check: ffmpeg/encoders, browser, fonts really loaded, catalogue drift, live-data freshness
+npm run antes-de-subir                # ~10 s guard to run before `git push` (not a git hook): quick suites + instructions in sync
 node scripts/prueba.mjs               # formats, accuracy rules, base chart types
 node scripts/prueba-tablas.mjs        # table recognition (flows / categories / series)
 node scripts/prueba-plantillas.mjs    # templates against the catalog

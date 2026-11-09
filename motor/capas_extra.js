@@ -5,7 +5,7 @@
 // Tipografía: tamaños base de 1080 px de lado corto que pasan por el piso del sistema de diseño (motor/diseno.js).
 import {colorDivergente} from './escalas.js';
 import {PALETA, COLOR, TEMA, clamp, lerp, ease, prog, colorDe, mezcla, rgba, fmtNum, fmtSigno, fmtPct, fmtFecha, ticksNum, ticksFecha, etiquetaTick} from './nucleo.js';
-import {escalarFuente, fuenteCss, margenes, envolver, contraste, legible, entrada as entradaDiseno} from './diseno.js';
+import {escalarFuente, fuenteCss, margenes, envolver, contraste, legible, CURVA, entrada as entradaDiseno} from './diseno.js';
 import {envolverEntero, relajar1D} from './etiquetas.js';
 import {t as tr, registrar, idioma, MESES_CORTO} from './idioma.js';   // «tr»: en las capas «t» es el tiempo
 
@@ -183,7 +183,7 @@ function radar(env, capa) {
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const L = (capa._rd ??= ejesRadar(capa, tab)), N = L.ejes.length;
   const wLab = B.w * 0.21, lh = tam(env, 26) * 1.18, fila = tam(env, 26) * 1.5, rrL = tam(env, 18) * 0.62, LNr = vert ? (capa._rn ??= L.ejes.map((e) => nombreEnLineas(env, e.nombre, B.w - 2 * rrL - med(env, fN(e.v, e.fmt), 26, 800, true) - 40 * u, 26, 700, 2))) : [], offY = LNr.map((_, i) => LNr.slice(0, i).reduce((a, l) => a + (l.length - 1) * tam(env, 26) * 1.1, 0)), hLista = vert ? N * fila + (offY.length ? offY[N - 1] + (LNr[N - 1].length - 1) * tam(env, 26) * 1.1 : 0) + 18 * u : 0;   // vertical: los rótulos van en una lista numerada debajo (los laterales no caben en la zona segura)
-  const R = vert ? Math.min(B.w / 2 - 44 * u, (B.h - hLista - 190 * u) / 2) : Math.min(B.w / 2 - wLab, B.h / 2 - lh * 3.3), cx = B.x + B.w / 2, cy = vert ? B.y + 54 * u + R : B.y + B.h / 2, p = prog(t, t0, t1, ease.io2);
+  const R = vert ? Math.min(B.w / 2 - 44 * u, (B.h - hLista - 190 * u) / 2) : Math.min(B.w / 2 - wLab, B.h / 2 - lh * 3.3), cx = B.x + B.w / 2, cy = vert ? B.y + 54 * u + R : B.y + B.h / 2, p = prog(t, t0, t1, CURVA.trazo);
   const ang = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / N;
   nota(env, B, capa.nota ?? (L.tabla ? tr('ce.radar_tabla', {esc: fN(L.esc, L.fmt), ant: L.conAnt ? tr('ce.radar_ant') : ''}) : tr('ce.radar_serie')), capa.id ?? 'radar', ap);
   ctx.save(); ctx.globalAlpha *= ap;
@@ -247,7 +247,7 @@ function apilada(env, capa) {
   const wLab = Math.min(B.w * 0.45, Math.max(...L.nom.map((q) => med(env, q, 26, 700)), ...L.idx.map((si) => med(env, fN(L.tot[F_ - 1], tab.series[si].fmt), 18, 800, true))) + 34 * u), lh = tam(env, 26) * 1.15 + tam(env, 18) * 1.15, hx = tam(env, 18) * 1.5 + 18 * u;
   const x0 = B.x + wEje, x1 = B.x + B.w - wLab - 16 * u, y0 = B.y + tam(env, 18) * 1.3, y1 = B.y + B.h - hx;
   const xa = tab.x[L.filas[0]], xb = tab.x[L.filas[F_ - 1]], px = (x) => x0 + ((x - xa) / (xb - xa)) * (x1 - x0), py = (v) => y1 - (v / L.top) * (y1 - y0);
-  const reveal = prog(t, t0, t1, ease.io2), xh = lerp(xa, xb, reveal);
+  const reveal = prog(t, t0, t1, CURVA.trazo), xh = lerp(xa, xb, reveal);
   const frac = (r, j) => { let v = 0; for (let q = 0; q <= j; q++) v += tab.series[L.idx[L.orden[q]]].y[L.filas[r]]; return pct ? (v / L.tot[r]) * 100 : v; };
   nota(env, B, capa.nota ?? (pct ? tr('ce.apilada_pct') : tr('ce.apilada_abs') + uni(fmt)), capa.id ?? 'apilada', ap);
   ctx.save(); ctx.globalAlpha *= ap;
@@ -319,7 +319,7 @@ function velas(env, capa) {
   const wEje = Math.max(...ticks.map((v) => med(env, etY(v), 18, 500, true))) + 14 * u, S = tam(env, 18), cab = vert ? S * 6.2 : S * 4.1;
   const conVol = capa.volumen != null && L.velas.some((v) => v.v != null), hVol = conVol ? (B.h - cab) * 0.2 : 0;
   const x0 = B.x + wEje, x1 = B.x + B.w, y0 = B.y + cab, y1 = B.y + B.h - S * 1.7 - hVol, yv0 = y1 + S * 0.4, yv1 = B.y + B.h - S * 1.7;
-  const py = (v) => y1 - ((f(v) - a) / (b - a)) * (y1 - y0), paso = (x1 - x0) / n, px = (i) => x0 + paso * (i + 0.5), cw = Math.max(2 * u, Math.min(paso * 0.7, 30 * u)), reveal = prog(t, t0, t1, ease.io2), vis = Math.min(n, Math.floor(reveal * n) + 1);
+  const py = (v) => y1 - ((f(v) - a) / (b - a)) * (y1 - y0), paso = (x1 - x0) / n, px = (i) => x0 + paso * (i + 0.5), cw = Math.max(2 * u, Math.min(paso * 0.7, 30 * u)), reveal = prog(t, t0, t1, CURVA.trazo), vis = Math.min(n, Math.floor(reveal * n) + 1);
   const un = tr('ce.u_' + L.unidad);
   nota(env, B, capa.nota ?? (L.real ? tr('ce.velas_real', {un, log: logE ? tr('ce.velas_log_real') : ''}) : tr('ce.velas_cierres', {un, log: logE ? tr('ce.velas_log') : ''})), capa.id ?? 'velas', ap);
   ctx.save(); ctx.globalAlpha *= ap;
@@ -365,7 +365,7 @@ function histograma(env, capa) {
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const L = (capa._hs ??= armarHist(capa, tab, vert)), S = tam(env, 18), fmt = L.ret ? {decimales: decDe(L.paso), sufijo: ' %'} : {...tab.series[capa.series?.[0] ?? 0].fmt};
   const mxS = Math.max(...L.share), yt = marcasHasta(mxS * 1.05, 4), etY = (v) => `${fN(v, {decimales: decDe(yt.ticks[1] - yt.ticks[0])})} %`, wEje = Math.max(...yt.ticks.map((v) => med(env, etY(v), 18, 500, true))) + 14 * u;
-  const cab = S * 4.4, x0 = B.x + wEje, x1 = B.x + B.w, y0 = B.y + cab, y1 = B.y + B.h - S * 1.9, px = (v) => x0 + ((v - L.e0) / (L.paso * L.nb)) * (x1 - x0), py = (v) => y1 - (v / yt.top) * (y1 - y0), p = prog(t, t0, t1, ease.io2);
+  const cab = S * 4.4, x0 = B.x + wEje, x1 = B.x + B.w, y0 = B.y + cab, y1 = B.y + B.h - S * 1.9, px = (v) => x0 + ((v - L.e0) / (L.paso * L.nb)) * (x1 - x0), py = (v) => y1 - (v / yt.top) * (y1 - y0), p = prog(t, t0, t1, CURVA.trazo);
   const per = frecuencia(L.paso2), xt = ticksNum(L.e0, L.e0 + L.paso * L.nb, Math.max(3, Math.floor((x1 - x0) / (med(env, '−4,5 %', 18, 500, true) * 1.9)))), etX = (v) => fN(v, {...fmt, prefijo: fmt.prefijo ?? '', decimales: L.ret ? decDe(L.paso) : (fmt.decimales ?? 'auto')});
   nota(env, B, capa.nota ?? (L.ret ? tr('ce.hist_ret', {n: fN(L.n, {decimales: 0}), per: per.toUpperCase(), col: L.fuera0 + L.fuera1 ? tr('ce.hist_col') : ''}) : tr('ce.hist_niv', {n: fN(L.n, {decimales: 0})}) + uni(fmt)), capa.id ?? 'histograma', ap);
   ctx.save(); ctx.globalAlpha *= ap;
@@ -399,7 +399,7 @@ function dumbbell(env, capa) {
   const eje = pos ? marcasHasta(mx * 1.02, 4) : (() => { const tk = ticksNum(mn - (mx - mn) * 0.05, mx + (mx - mn) * 0.05, 4); return {ticks: tk, top: tk[tk.length - 1]}; })(), lo = pos ? 0 : eje.ticks[0], hi = eje.top;
   const dTxt = (f) => { const d = f.v0 > 0 ? (f.v1 / f.v0 - 1) * 100 : null; return d == null ? '' : pSigno(d, decPct(d)); }, vTxt = (f) => `${fN(f.v0, f.fmt)} → ${fN(f.v1, f.fmt)}`;
   const wUna = Math.max(...L.filas.map((f) => med(env, `${vTxt(f)}  ${dTxt(f)}`, 26, 800, true))), wNom = Math.max(...L.filas.map((f) => med(env, f.nombre, 26, 700))), dos = wUna + Math.min(wNom, B.w * 0.4) + 24 * u > B.w;   // ¿caben nombre y valores en una línea?
-  const cab = S * 1.0, holg = n <= 6 ? (vert ? 2.3 : 1.55) : 1, fila = Math.min((B.h - cab - S * 2.4) / n, (dos ? N * 2.5 + S * 2.2 : N * 2.5) * holg), x0 = B.x + 8 * u, x1 = B.x + B.w - 8 * u, px = (v) => x0 + ((v - lo) / (hi - lo)) * (x1 - x0), p = prog(t, t0, t1, ease.io2) * n, yy = B.y + cab, fmt = L.filas[0].fmt;
+  const cab = S * 1.0, holg = n <= 6 ? (vert ? 2.3 : 1.55) : 1, fila = Math.min((B.h - cab - S * 2.4) / n, (dos ? N * 2.5 + S * 2.2 : N * 2.5) * holg), x0 = B.x + 8 * u, x1 = B.x + B.w - 8 * u, px = (v) => x0 + ((v - lo) / (hi - lo)) * (x1 - x0), p = prog(t, t0, t1, CURVA.trazo) * n, yy = B.y + cab, fmt = L.filas[0].fmt;
   nota(env, B, capa.nota ?? tr('ce.dumbbell', {l0: L.l0, l1: L.l1, cero: pos ? tr('ce.dumbbell_cero') : '', u: uni(L.filas[0].fmt)}), capa.id ?? 'dumbbell', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   eje.ticks.forEach((v) => { const x = px(v); if (x < x0 - 1 || x > x1 + 1) return; ctx.strokeStyle = rgba(PALETA.piedra, v === lo ? 0.3 : 0.08); ctx.lineWidth = 1 * u; ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x, yy + fila * n); ctx.stroke(); rot(env, fN(v, {...fmt, decimales: decDe(eje.ticks[1] - eje.ticks[0])}), x, yy + fila * n + S * 1.3, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'center', `${capa.id ?? 'dumbbell'}:x${v}`, {mono: true, tipo: 'eje-x', lim: [x0, x1]}); });
@@ -434,7 +434,7 @@ const TINTA_OSCURA = '#0A0A0A', tintaSobre = (bg) => (contraste(bg, TINTA_OSCURA
 function calendario(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
-  const L = (capa._cal ??= armarCalendario(capa, tab, vert)), S = tam(env, 18), diario = capa.modo === 'diario', lim = L.lim, p = prog(t, t0, t1, ease.io2);
+  const L = (capa._cal ??= armarCalendario(capa, tab, vert)), S = tam(env, 18), diario = capa.modo === 'diario', lim = L.lim, p = prog(t, t0, t1, CURVA.trazo);
   const leyH = S * 3.4, wA = med(env, '2000', 18, 700, true) + 14 * u;
   ctx.save(); ctx.globalAlpha *= ap;
   let aviso = '';
@@ -510,7 +510,7 @@ function agrupadas(env, capa) {
   // leyenda de momentos (colores) — sale en una o varias líneas según el ancho
   let lx = B.x, ly = B.y + S * 1.0; const sw = 18 * u;
   L.et.forEach((e, j) => { const w = med(env, e, 18, 700, true) + sw + 26 * u; if (lx + w > B.x + B.w) { lx = B.x; ly += S * 1.4; } ctx.save(); ctx.globalAlpha *= ap; ctx.fillStyle = cols[j]; ctx.fillRect(lx, ly - sw * 0.8, sw, sw); ctx.restore(); rot(env, e, lx + sw + 8 * u, ly, 18, 700, PALETA.piedraClara, 'left', `${capa.id ?? 'agrupadas'}:l${j}`, {mono: true, alpha: ap}); lx += w; });
-  const cab = ly - B.y + S * 0.9, grupoH = (B.h - cab) / n, bh = Math.max(10 * u, Math.min(N * 1.1, (grupoH - N * 1.45) / k - 3 * u)), p = prog(t, t0, t1, ease.io2) * n;
+  const cab = ly - B.y + S * 0.9, grupoH = (B.h - cab) / n, bh = Math.max(10 * u, Math.min(N * 1.1, (grupoH - N * 1.45) / k - 3 * u)), p = prog(t, t0, t1, CURVA.trazo) * n;
   nota(env, B, capa.nota ?? tr('ce.agrupadas') + uni(fmt), capa.id ?? 'agrupadas', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   L.idx.forEach((si, g) => {
@@ -542,7 +542,7 @@ function armarBullet(capa, tab) {
 function bullet(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
-  const L = (capa._bl ??= armarBullet(capa, tab)), n = L.length, S = tam(env, 18), N = tam(env, 26), p = prog(t, t0, t1, ease.io2);
+  const L = (capa._bl ??= armarBullet(capa, tab)), n = L.length, S = tam(env, 18), N = tam(env, 26), p = prog(t, t0, t1, CURVA.trazo);
   const lhB = tam(env, 26) * 1.12, LNB = (capa._bn ??= L.map((r) => nombreEnLineas(env, r.nombre, B.w - med(env, fN(r.v, r.fmt), 28, 800, true) - 20 * u, 26, 700, 2))), extB = Math.max(...LNB.map((l) => l.length)) - 1, fila = Math.min((B.h - S * 0.5) / n, N * 7 + extB * lhB), oy = vert ? Math.max(0, (B.h - S * 0.5 - fila * n) / 2) : 0, bh = Math.max(26 * u, N * 1.0);   // vertical: el bloque de medidores se centra en su caja en vez de pegarse arriba
   nota(env, B, capa.nota ?? tr('ce.bullet'), capa.id ?? 'bullet', ap);
   ctx.save(); ctx.globalAlpha *= ap;
@@ -582,7 +582,7 @@ function bandas(env, capa) {
   const L = (capa._bd ??= armarBandas(capa, tab)), S = tam(env, 18), fmt = tab.series[capa.series?.[0] ?? 0].fmt, acento = acento_(capa);
   const vs = [...L.bandas.filter(Boolean).flatMap((b) => [b.min, b.max]), ...L.actual.filter((q) => q != null)], ticks = ticksNum(Math.min(...vs) - (Math.max(...vs) - Math.min(...vs)) * 0.04, Math.max(...vs) + (Math.max(...vs) - Math.min(...vs)) * 0.04, 5);
   const lo = Math.min(...vs), hi = Math.max(...vs), a = Math.min(ticks[0], lo), b = Math.max(ticks[ticks.length - 1], hi), etY = (v) => fN(v, {...fmt, prefijo: '', sufijo: '', decimales: decDe(ticks[1] - ticks[0])}), wEje = Math.max(...ticks.map((v) => med(env, etY(v), 18, 500, true))) + 14 * u;
-  const cab = S * 2.8, x0 = B.x + wEje, x1 = B.x + B.w - 10 * u, y0 = B.y + cab, y1 = B.y + B.h - S * 1.9, px = (m) => x0 + ((m + 0.5) / 12) * (x1 - x0), py = (v) => y1 - ((v - a) / (b - a)) * (y1 - y0), reveal = prog(t, t0, t1, ease.io2);
+  const cab = S * 2.8, x0 = B.x + wEje, x1 = B.x + B.w - 10 * u, y0 = B.y + cab, y1 = B.y + B.h - S * 1.9, px = (m) => x0 + ((m + 0.5) / 12) * (x1 - x0), py = (v) => y1 - ((v - a) / (b - a)) * (y1 - y0), reveal = prog(t, t0, t1, CURVA.trazo);
   nota(env, B, capa.nota ?? tr('ce.bandas', {desde: L.desde, hasta: L.hasta, anio: L.anio, u: uni(fmt)}), capa.id ?? 'bandas', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   ticks.forEach((v) => { const y = py(v); ctx.strokeStyle = rgba(PALETA.piedra, 0.07); ctx.lineWidth = 1 * u; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); rot(env, etY(v), x0 - 10 * u, y + S * 0.35, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'right', `${capa.id ?? 'bandas'}:y${v}`, {mono: true, tipo: 'eje-y'}); });
@@ -611,7 +611,7 @@ function armarPicto(capa, tab, B, env) {
 function pictograma(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
-  const L = (capa._pc ??= armarPicto(capa, tab, B, env)), n = L.items.length, S = tam(env, 18), N = tam(env, 26), pal = paleta(), p = prog(t, t0, t1, ease.io2) * n, lhP = tam(env, 26) * 1.12, LN = (capa._pn ??= L.items.map((it) => { const pct = (it.valor / L.total) * 100; return nombreEnLineas(env, it.nombre, B.w - med(env, `${fN(it.valor, tab.fmt)}  ·  ${pTxt(pct, decPct(pct))}`, 26, 800, true) - 24 * u, 26, 700, 3); })), ext = Math.max(...LN.map((l) => l.length)) - 1, fila = Math.min((B.h - S * 2) / n, (vert ? N * 4.1 : N * 3.2) + L.sq * (vert ? 1.9 : 1.4) + ext * lhP), cab = S * 1.9;
+  const L = (capa._pc ??= armarPicto(capa, tab, B, env)), n = L.items.length, S = tam(env, 18), N = tam(env, 26), pal = paleta(), p = prog(t, t0, t1, CURVA.trazo) * n, lhP = tam(env, 26) * 1.12, LN = (capa._pn ??= L.items.map((it) => { const pct = (it.valor / L.total) * 100; return nombreEnLineas(env, it.nombre, B.w - med(env, `${fN(it.valor, tab.fmt)}  ·  ${pTxt(pct, decPct(pct))}`, 26, 800, true) - 24 * u, 26, 700, 3); })), ext = Math.max(...LN.map((l) => l.length)) - 1, fila = Math.min((B.h - S * 2) / n, (vert ? N * 4.1 : N * 3.2) + L.sq * (vert ? 1.9 : 1.4) + ext * lhP), cab = S * 1.9;
   nota(env, B, capa.nota ?? tr('ce.picto', {un: fN(L.unidad, tab.fmt), om: L.omitidas ? tr('ce.picto_om', {n, m: n + L.omitidas}) : ''}), capa.id ?? 'pictograma', ap);
   ctx.save(); ctx.globalAlpha *= ap;
   L.items.forEach((it, i) => {
@@ -640,7 +640,7 @@ function armarRanking(capa, tab, vert, maxDef) {
 function ranking(env, capa) {
   const {ctx, u, t, H, W} = env, tab = env.tablas[capa.datos], vert = H > W;
   const B = cajaDef(env, capa), [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
-  const N = tam(env, 26), L = (capa._rk ??= armarRanking(capa, tab, vert, Math.max(6, Math.min(14, Math.floor(B.h / (N * 2.45)))))), n = L.filas.length, S = tam(env, 18), pal = paleta(), p = prog(t, t0, t1, ease.io2) * n, fila = Math.min(B.h / n, N * 3.1), acento = acento_(capa);
+  const N = tam(env, 26), L = (capa._rk ??= armarRanking(capa, tab, vert, Math.max(6, Math.min(14, Math.floor(B.h / (N * 2.45)))))), n = L.filas.length, S = tam(env, 18), pal = paleta(), p = prog(t, t0, t1, CURVA.trazo) * n, fila = Math.min(B.h / n, N * 3.1), acento = acento_(capa);
   const vmax = L.todos[0].valor, anyNeg = L.todos.some((i) => i.valor < 0), wC = Math.max(...L.filas.filter((f) => f.codigo).map((f) => med(env, f.codigo, 18, 800, true) + 22 * u), 0), wR = med(env, '10', 18, 800, true) + 12 * u;
   const wV = Math.max(...L.filas.filter((f) => !f.salto).map((f) => med(env, fN(f.valor, tab.fmt), 26, 800, true))), x0 = B.x, xb = x0 + wR + wC + 8 * u, largo = B.x + B.w - xb - wV - 18 * u;
   nota(env, B, capa.nota ?? tr('ce.ranking', {cero: anyNeg ? '' : tr('ce.ranking_cero'), om: L.omitidas > 0 ? tr('ce.ranking_om', {n: n - (L.filas.some((f) => f.salto) ? 1 : 0), m: L.todos.length}) : ''}), capa.id ?? 'ranking', ap);
@@ -736,7 +736,7 @@ function dosHitos(env, capa) {
   const L = (capa._dh ??= calcularDosHitos(capa, tab)); if (L.errores.length) return;
   const id = capa.id ?? 'dos_hitos', S = tam(env, 18), N = tam(env, 26), lhS = S * 1.3, lhN = N * 1.15, lhA = S * 1.25;
   const col = [0, 1].map((k) => colorDe(capa.colores?.[k], k)), colT = col.map((c) => legible(c, PALETA.fondo)), nM = L.nMax, hs = L.hitos;
-  const sCur = prog(t, t0, t1, ease.io2) * nM, tSwap = t1 + (capa.espera ?? 3.4);
+  const sCur = prog(t, t0, t1, CURVA.trazo) * nM, tSwap = t1 + (capa.espera ?? 3.4);
   const log = L.escala === 'log', fx = log ? Math.log : (v) => v;
   const rojo = legible(COLOR.rojo, PALETA.fondo), verde = legible(COLOR.verde, PALETA.fondo);
   const colSigno = (v) => (v > 0.0005 ? verde : v < -0.0005 ? rojo : PALETA.blanco);

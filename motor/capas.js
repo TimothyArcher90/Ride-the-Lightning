@@ -89,7 +89,7 @@ function estadosCamara(capa, tab, idxs) {
 function ventanaSeguir(capa, tab, idxs, t) {
   const dom = dominioAuto(capa, tab, idxs), [t0, t1] = capa.t ?? [0.5, 6], span = (dom.x[1] - dom.x[0]) * (capa.ventana ?? 0.28);
   const en = (tt) => {
-    const xh = lerp(dom.x[0], dom.x[1], prog(tt, t0, t1, ease.io2));
+    const xh = lerp(dom.x[0], dom.x[1], prog(tt, t0, t1, CURVA.trazo));
     const a = Math.max(dom.x[0], xh - span * 0.85), b = Math.min(dom.x[1], a + span);
     return {x: [a, b], xh};
   };
@@ -152,7 +152,15 @@ function linea(env, capa) {
   const idxs = capa.series ?? tab.series.map((_, i) => i);
   const der = new Set(capa.ejeDer ?? []);
   const izq = idxs.filter((i) => !der.has(i));
-  const reveal = prog(t, t0, t1, ease.io2);
+  // Canal derecho para los nombres de las cabezas: con el cuadro por defecto, si el nombre más largo no cabe entre el final de la gráfica y el borde útil,
+  // la gráfica se estrecha lo justo (tope: 22 % del ancho en horizontal, 15 % en vertical) para que cada nombre quede junto a su línea y no encima de otra curva.
+  if (!capa.caja && capa.etiquetas !== false && idxs.length > 1) {
+    const vertL = env.H > env.W, limL = vertL ? ZONA.x * env.W - 6 : env.W - 40 * u;
+    ctx.font = fnt(700, 24 * u);
+    const wmax = Math.max(...idxs.map((si) => ctx.measureText(tab.series[si].nombre).width)) + 4 * u, falta = B.x + B.w + 16 * u + wmax - limL;
+    if (falta > 0) B.w -= Math.min(falta, (vertL ? 0.15 : 0.22) * env.W);
+  }
+  const reveal = prog(t, t0, t1, CURVA.trazo);
   const xmin = tab.x[0], xmax = tab.x[n - 1], xh = lerp(xmin, xmax, reveal);
   const cam = camaraEn(capa, tab, izq.length ? izq : idxs, t);
   const ap = aparece(env, capa, t0);
@@ -1064,7 +1072,7 @@ function sankey(env, capa) {
   const B = caja(env, capa, vert ? [0.02, 0.2, 0.7, 0.67] : [0.035, 0.235, 0.93, 0.66]);
   const [t0, t1] = capa.t ?? [0.5, 6], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const L = (capa._lay ??= vert ? disenarSankeyV(env, capa, tab, B) : disenarSankey(env, capa, tab, B));
-  const p = prog(t, t0, t1, ease.io2);
+  const p = prog(t, t0, t1, CURVA.trazo);
   if (L.vertical) { ctx.save(); ctx.globalAlpha *= ap; dibujarSankeyV(env, capa, tab, B, L, p); ctx.restore(); return; }
   const rx = lerp(B.x, B.x + B.w, p), k = L.k;
   ctx.save(); ctx.globalAlpha *= ap;
@@ -1136,7 +1144,7 @@ function donut(env, capa) {
   const items = (capa._it ??= [...tab.items].filter((x) => x.valor > 0).sort((a, b) => (capa.orden === 'archivo' ? 0 : b.valor - a.valor)));
   const total = items.reduce((a, x) => a + x.valor, 0), TAU = Math.PI * 2;
   const R = vert ? Math.min(B.w * 0.28, 190 * u) : Math.min(B.h * 0.46, B.w * 0.27), cx = vert ? B.x + B.w / 2 : B.x + R + 40 * u, cy = vert ? B.y + R + 10 * u : B.y + B.h / 2, grosor = R * 0.38;
-  const p = prog(t, t0, t1, ease.io2) * TAU, paleta = [colorTipo('ingreso'), COLOR.teal, COLOR.purpura, COLOR.verde, COLOR.rojo, PALETA.piedra, COLOR.amarillo, COLOR.rosa];
+  const p = prog(t, t0, t1, CURVA.trazo) * TAU, paleta = [colorTipo('ingreso'), COLOR.teal, COLOR.purpura, COLOR.verde, COLOR.rojo, PALETA.piedra, COLOR.amarillo, COLOR.rosa];
   ctx.save(); ctx.globalAlpha *= ap;
   let a0 = -Math.PI / 2; const arr = [];
   items.forEach((it, i) => {
@@ -1183,7 +1191,7 @@ function cascadaVertical(env, capa) {
   }));
   const extra = lay.reduce((s, l) => s + (l.lineas.length - 1) * lhN, 0), h0 = Math.min(110 * u, (B.h - extra) / n), bh = Math.min(26 * u, h0 * 0.26);
   const ys = []; { let a = B.y; lay.forEach((l) => { ys.push(a); a += h0 + (l.lineas.length - 1) * lhN; }); ys.push(a); }
-  const px = (v) => B.x + ((v - vmin) / ((vmax - vmin) || 1)) * B.w, p = prog(t, t0, t1, ease.io2) * n, y0 = B.y;
+  const px = (v) => B.x + ((v - vmin) / ((vmax - vmin) || 1)) * B.w, p = prog(t, t0, t1, CURVA.trazo) * n, y0 = B.y;
   ctx.save(); ctx.globalAlpha *= ap;
   ctx.strokeStyle = rgba(PALETA.piedra, 0.35); ctx.lineWidth = 1.5 * u; ctx.beginPath(); ctx.moveTo(px(0), y0); ctx.lineTo(px(0), ys[n]); ctx.stroke();
   barras.forEach((b, i) => {
@@ -1214,7 +1222,7 @@ function cascada(env, capa) {
   const n = barras.length, vmin = Math.min(0, ...barras.flatMap((b) => [b.ini, b.fin])), vmax = Math.max(0, ...barras.flatMap((b) => [b.ini, b.fin]));
   const zonaNombre = 96 * u, top = B.y + 40 * u, bajo = B.y + B.h - zonaNombre - 44 * u, pad = (vmax - vmin) * 0.04 || 1;
   const py = (v) => bajo - ((v - vmin) / (vmax - vmin + pad)) * (bajo - top), slot = B.w / n, bw = Math.min(slot * 0.62, 150 * u), k = clamp(slot / (170 * u), 0.55, 1);
-  const p = prog(t, t0, t1, ease.io2) * n;
+  const p = prog(t, t0, t1, CURVA.trazo) * n;
   // si las cifras con unidad no caben en su columna, se muestran solo los números y la unidad va una vez, arriba
   const compacto = (capa._cp ??= (() => { ctx.save(); ctx.font = fnt(800, 26 * u * k, true); const w = Math.max(...barras.map((b) => ctx.measureText(b.tipo === 'inicio' || b.tipo === 'total' ? fmtNum(b.valor, tab.fmt) : fmtSigno(b.valor, tab.fmt)).width)); ctx.restore(); return w > slot * 0.92; })());
   const fm = compacto ? {...tab.fmt, prefijo: '', sufijo: ''} : tab.fmt, unidadTxt = `${(tab.fmt.prefijo ?? '').trim()} ${(tab.fmt.sufijo ?? '').trim()}`.trim() || tab.fmt.unidad;
@@ -1278,7 +1286,7 @@ function pendiente(env, capa) {
     const yl = separar(idxs.map((si) => py(tab.series[si].y[i0])), gap, top - 10 * u, bajo + 10 * u), yr = separar(idxs.map((si) => py(tab.series[si].y[i1])), gap, top - 10 * u, bajo + 10 * u);
     return {idxs, py, yl, yr, logE, nombres, omitidas: (capa.series ?? tab.series.map((_, i) => i)).length - idxs.length};
   })());
-  const p = prog(t, t0, t1, ease.io2);
+  const p = prog(t, t0, t1, CURVA.trazo);
   ctx.save(); ctx.globalAlpha *= ap;
   [[xl, i0], [xr, i1]].forEach(([x, i]) => { rotulo(ctx, etiquetaX(tab, i), x, B.y + 40 * u, fnt(800, 30 * u, true), PALETA.piedraClara, 'center', u); ctx.font = fnt(800, 30 * u, true); const w = ctx.measureText(etiquetaX(tab, i)).width; reg(env, 'etiqueta', [x - w / 2, B.y - 4 * u, x + w / 2, B.y + 50 * u], `${capa.id ?? 'pendiente'}:x${i}`); });
   if (L.logE) {
@@ -1333,7 +1341,7 @@ function bump(env, capa) {
   const LW = vert ? B.w * 0.4 : Math.min(B.w * 0.26, Math.max(...L.idxs.map((si) => Math.max(...nombreEnv(tab.series[si].nombre, B.w * 0.26 - 28 * u).map((l) => ctx.measureText(l).width)))) + 28 * u);
   const x0 = B.x + LW + 30 * u, x1 = vert ? B.x + B.w - 24 * u : B.x + B.w - LW - 10 * u, paso = (x1 - x0) / (L.pts.length - 1);
   const top = B.y + 80 * u, fila = Math.min(vert ? 112 * u : 86 * u, (B.h - 120 * u) / S), cyR = (r) => top + r * fila + fila / 2, cx = (q) => x0 + q * paso;
-  const rx = lerp(x0 - 20 * u, x1 + 20 * u, prog(t, t0, t1, ease.io2)), rad = escalarFuente(20 * u) * 0.68;
+  const rx = lerp(x0 - 20 * u, x1 + 20 * u, prog(t, t0, t1, CURVA.trazo)), rad = escalarFuente(20 * u) * 0.68;
   ctx.save(); ctx.globalAlpha *= ap;
   // años: solo los que caben (el primero y el último siempre)
   ctx.font = fnt(700, 21 * u, true); const wy = ctx.measureText(etiquetaX(tab, L.pts[0])).width, cada = Math.max(1, Math.ceil((wy * 1.5) / paso));
@@ -1412,7 +1420,7 @@ function treemap(env, capa) {
     C.filas.forEach((fila, r) => { const xs = relajar1D(fila.map((p) => ({x: p.ax, w: p.w})), {min: B.x, max: B.x + B.w, gap: 14 * u}); fila.forEach((p, i) => { p.cx = xs[i]; p.fila = r; }); });
     return {nodos: A.nodos, total, pie, R: A.R, C, filaH, fC};
   })());
-  const n = L.nodos.length, p = prog(t, t0, t1, ease.io2) * n, sinRotulo = [];
+  const n = L.nodos.length, p = prog(t, t0, t1, CURVA.trazo) * n, sinRotulo = [];
   ctx.save(); ctx.globalAlpha *= ap;
   L.nodos.forEach((nd, i) => {
     const a = ease.out3(clamp(p - i)); if (a <= 0) return;
@@ -1455,7 +1463,7 @@ function waffle(env, capa) {
     return {base, celdas, total};
   })());
   const lado = vert ? Math.min(B.w * 0.62, 420 * u) : Math.min(B.h * 0.9, B.w * 0.4), cel = lado / 10, gx = vert ? B.x + (B.w - lado) / 2 : B.x + 30 * u, gy = vert ? B.y + 10 * u : B.y + (B.h - lado) / 2, pal = paletaCat();
-  const p = prog(t, t0, t1, ease.io2) * 100;
+  const p = prog(t, t0, t1, CURVA.trazo) * 100;
   ctx.save(); ctx.globalAlpha *= ap;
   L.celdas.forEach((it, c) => {
     const a = ease.out3(clamp(p - c)); const fila = 9 - Math.floor(c / 10), col = c % 10, x = gx + col * cel, y = gy + fila * cel, s = (cel - 5 * u) * (0.3 + 0.7 * a);
@@ -1484,7 +1492,7 @@ function lollipop(env, capa) {
   const [t0, t1] = capa.t ?? [0.5, 5], ap = aparece(env, capa, t0); if (ap <= 0) return;
   const items = (capa._lp ??= [...tab.items].filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor)), total = items.reduce((a, x) => a + x.valor, 0), n = items.length;
   const fila = Math.min(vert ? 118 * u : 120 * u, B.h / n), k = vert ? clamp(fila / (100 * u), 0.6, 1) : clamp(fila / (70 * u), 0.8, 1), fN = fnt(700, 31 * u * k), fV = fnt(800, 29 * u * k, true), fP = fnt(700, 24 * u * k, true);
-  const pal = paletaCat(), vmax = items[0].valor, p = prog(t, t0, t1, ease.io2) * n, y0 = B.y + (B.h - fila * n) / 2;
+  const pal = paletaCat(), vmax = items[0].valor, p = prog(t, t0, t1, CURVA.trazo) * n, y0 = B.y + (B.h - fila * n) / 2;
   ctx.font = fV; const wMax = Math.max(...items.map((it) => ctx.measureText(`${fmtNum(it.valor, tab.fmt)}  ·  ${pctTxt((it.valor / total) * 100)}`).width));
   ctx.font = fN; const nameW = vert ? 0 : Math.min(B.w * 0.3, Math.max(...items.map((it) => ctx.measureText(it.nombre).width)) + 28 * u);   // horizontal: nombre a la izquierda y el palo a la derecha, en UNA fila (fuentes más grandes y menos alto por fila)
   const xs = B.x + 12 * u + nameW, largo = Math.max(60 * u, B.x + B.w - 24 * u - xs - wMax - 56 * u * k);
@@ -1528,7 +1536,7 @@ function divergente(env, capa) {
   const sV = escalarFuente(30 * u), yN = sN + 4 * u, yBar = yN + 8 * u + sV * 0.75, yS = yBar + sV * 0.35 + 8 * u + sS, fila = Math.min(vert ? 170 * u : 130 * u, B.h / S);   // nombre · barra · «de → a»
   const fmtP = (x) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(Math.abs(x) < 10 ? 1 : 0).replace('.', ',')} %`;
   ctx.font = fV; const wP = Math.max(...L.filas.map((f) => ctx.measureText(fmtP(f.pct)).width)) + 16 * u;
-  const xa = B.x + (L.lo < 0 ? wP : 0) + 8 * u, xb = B.x + B.w - (L.hi > 0 ? wP : 0) - 8 * u, px = (v) => xa + ((v - L.lo) / ((L.hi - L.lo) || 1)) * (xb - xa), y0 = B.y + (B.h - fila * S) / 2, p = prog(t, t0, t1, ease.io2) * S;
+  const xa = B.x + (L.lo < 0 ? wP : 0) + 8 * u, xb = B.x + B.w - (L.hi > 0 ? wP : 0) - 8 * u, px = (v) => xa + ((v - L.lo) / ((L.hi - L.lo) || 1)) * (xb - xa), y0 = B.y + (B.h - fila * S) / 2, p = prog(t, t0, t1, CURVA.trazo) * S;
   ctx.save(); ctx.globalAlpha *= ap;
   ctx.strokeStyle = rgba(PALETA.piedra, 0.5); ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.moveTo(px(0), y0 - 6 * u); ctx.lineTo(px(0), y0 + fila * S); ctx.stroke();
   L.filas.forEach((f, i) => {

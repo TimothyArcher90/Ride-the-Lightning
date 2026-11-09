@@ -160,9 +160,15 @@ export async function renderizar(spec, informe, {nombre, calidad = 'final', alfa
   const srv = await iniciarServidor(0), nav = await lanzarNavegador();
   const t0 = Date.now(), salidas = {};
   try {
-    await pasada(spec, {tipo: 'mp4', salida: `${pref}.mp4`, calidad, puerto: srv.puerto, navegador: nav, ancho, alto, muestras, onProgreso});
+    // El MP4 y el ProRes con alfa son dos pasadas independientes (cada fotograma depende solo de su instante): corren A LA VEZ, cada una con su página y su ffmpeg,
+    // y el resultado es idéntico al secuencial. RTL_SECUENCIAL=1 vuelve a una pasada tras otra (equipos con poca memoria).
+    const pMp4 = () => pasada(spec, {tipo: 'mp4', salida: `${pref}.mp4`, calidad, puerto: srv.puerto, navegador: nav, ancho, alto, muestras, onProgreso});
+    const pAlfa = () => pasada(spec, {tipo: 'alfa', salida: `${pref}_alfa.mov`, calidad, puerto: srv.puerto, navegador: nav, ancho, alto, muestras, onProgreso});
     salidas.mp4 = `${pref}.mp4`;
-    if (alfa) { await pasada(spec, {tipo: 'alfa', salida: `${pref}_alfa.mov`, calidad, puerto: srv.puerto, navegador: nav, ancho, alto, muestras, onProgreso}); salidas.alfa = `${pref}_alfa.mov`; }
+    if (alfa) salidas.alfa = `${pref}_alfa.mov`;
+    if (!alfa) await pMp4();
+    else if (process.env.RTL_SECUENCIAL) { await pMp4(); await pAlfa(); }
+    else await Promise.all([pMp4(), pAlfa()]);
   } finally { await nav.close(); await srv.cerrar(); }
   // contacto: 12 fotogramas repartidos, para revisar de un vistazo
   const contacto = `${pref}_contacto.png`;

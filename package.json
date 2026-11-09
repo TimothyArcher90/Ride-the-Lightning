@@ -18,7 +18,10 @@
     "buscar": "node servidor/cli.mjs buscar",
     "catalogo": "node scripts/construir-catalogo.mjs",
     "trimestres": "node scripts/trimestres.mjs",
-    "prueba:trimestres": "node scripts/prueba-trimestres.mjs",
+    "check": "node scripts/check.mjs",
+    "salud": "node scripts/salud.mjs",
+    "antes-de-subir": "node scripts/antes-de-subir.mjs",
+    "prueba:trimestres":"node scripts/prueba-trimestres.mjs",
     "prueba:tablas": "node scripts/prueba-tablas.mjs",
     "gallery": "node scripts/generar-galeria.mjs",
     "instrucciones": "node scripts/sincronizar-instrucciones.mjs"

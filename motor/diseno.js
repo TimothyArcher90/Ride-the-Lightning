@@ -87,7 +87,9 @@ function bezier(x1, y1, x2, y2) {
   const X = (s) => ((ax * s + bx) * s + cx) * s, Y = (s) => ((ay * s + by) * s + cy) * s;
   return (t) => { if (t <= 0) return 0; if (t >= 1) return 1; let s = t; for (let i = 0; i < 8; i++) { const e = X(s) - t, d = (3 * ax * s + 2 * bx) * s + cx; if (Math.abs(e) < 1e-6 || Math.abs(d) < 1e-6) break; s -= e / d; } return Y(s); };
 }
-export const CURVA = {entrada: bezier(0, 0, 0.2, 1), estandar: bezier(0.4, 0, 0.2, 1), salida: bezier(0.4, 0, 1, 1)};
+// «trazo»: la curva de TODO revelado de datos (línea que se dibuja, barras que van saliendo, contador que sube). Arranca YA con velocidad casi media (sin tiempo muerto:
+// un io2 simétrico llevaba solo el 4,5 % del recorrido tras el primer 15 % del tiempo) y frena suave al final. Las cifras que cuentan siguen al trazo, así que heredan el mismo easing.
+export const CURVA = {entrada: bezier(0, 0, 0.2, 1), estandar: bezier(0.4, 0, 0.2, 1), salida: bezier(0.4, 0, 1, 1), trazo: bezier(0.3, 0.2, 0.25, 1)};
 export const MOV = {
   entrada: 0.55,        // s: un elemento que aparece
   salida: 0.4,          // s: un elemento que se va (más corta que la entrada)
