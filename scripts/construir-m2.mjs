@@ -52,7 +52,7 @@ const fuente = {nombre: 'Federal Reserve H.6 vía FRED (M2SL mensual SA, WM2NS s
 const col = (c, nombre, color) => ({col: c, nombre, color, prefijo: '', sufijo: '%', decimales: 1, unidad: 'interanual, %'});
 // ── coreografía: todo se programa respecto a CUÁNDO llega la cabeza de la línea a cada fecha (se invierte la curva de trazo), no a ojo ──
 import {CURVA} from '../motor/diseno.js';
-const DUR = 28, L0 = 1.2, L1 = 19;   // la línea se dibuja entre L0 y L1 s; después se quedan las anotaciones y la cifra final
+const L0 = 1.2, L1 = 19, T_ULT = L1 + 7.2, DUR = +(T_ULT + 1.2).toFixed(2);   // termina en la cifra final; el compilador añade el hold de 5 s y el cierre con el logo (marca/cierre.json)
 const xa = new Date(fechas[0] + 'T00:00:00Z').getTime(), xb = new Date(fechas[fechas.length - 1] + 'T00:00:00Z').getTime();
 const tLlegada = (iso) => { const f = (new Date(iso + 'T00:00:00Z').getTime() - xa) / (xb - xa); let lo = 0, hi = 1; for (let k = 0; k < 40; k++) { const mid = (lo + hi) / 2; if (CURVA.trazo(mid) < f) lo = mid; else hi = mid; } return +(L0 + ((lo + hi) / 2) * (L1 - L0)).toFixed(2); };
 const spec = {version: 1, idioma: 'en', titulo: 'US M2 money supply, year over year', formato: 'horizontal', fps: 30, duracion: DUR,
@@ -67,7 +67,7 @@ const spec = {version: 1, idioma: 'en', titulo: 'US M2 money supply, year over y
     // anotaciones EN SECUENCIA (nunca dos a la vez), con aire entre una y otra, después de que la línea termina
     {tipo: 'llamada', id: 'c_max', capa: 'g1', datos: 'd', serie: 0, ancla: {max: true}, texto: 'Series high', t: [L1 + 0.6, L1 + 3.4]},
     {tipo: 'llamada', id: 'c_min', capa: 'g1', datos: 'd', serie: 0, ancla: {min: true}, texto: 'Series low', t: [L1 + 3.9, L1 + 6.7]},
-    {tipo: 'llamada', id: 'c_ult', capa: 'g1', datos: 'd', serie: 2, ancla: {ultimo: true}, texto: 'Latest, weekly', t: [L1 + 7.2, DUR - 0.5]},
+    {tipo: 'llamada', id: 'c_ult', capa: 'g1', datos: 'd', serie: 2, ancla: {ultimo: true}, texto: 'Latest, weekly', t: [T_ULT, DUR - 0.5]},
   ]};
 fs.mkdirSync(path.join(RAIZ, 'specs'), {recursive: true});
 fs.writeFileSync(path.join(RAIZ, 'specs', 'm2-yoy.json'), JSON.stringify(spec, null, 2));

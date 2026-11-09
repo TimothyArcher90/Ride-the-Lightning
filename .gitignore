@@ -13,3 +13,6 @@ specs/_chat_actual.json
 # data/ (instantanea abierta, SI se versiona) no es datos/ (descargas locales con licencias de terceros, ignoradas)
 !data/
 !data/**
+
+# logo de marca: no se publica en el repo abierto (el cierre lo exige en local)
+marca/macrowise-logo.png

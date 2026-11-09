@@ -5,7 +5,7 @@ import {fijarFormato} from './diseno.js';
 import {fijarIdioma} from './idioma.js';
 import {TIPOS_EXTRA} from './capas_extra.js';
 
-const ANOTACION = new Set(['llamada', 'contador', 'titulo', 'cortina', 'sello']);
+const ANOTACION = new Set(['llamada', 'contador', 'titulo', 'cortina', 'cierre', 'sello']);
 const GRAFICA = new Set(['linea', 'barras', 'carrera', 'dispersion', 'calor', 'sankey', 'donut', 'cascada', 'pendiente', 'bump', 'treemap', 'waffle', 'lollipop', 'divergente', ...TIPOS_EXTRA, 'zona', 'imagen']);
 
 export class Escena {
@@ -49,11 +49,11 @@ export class Escena {
   }
 
   /** modo: 'todo' | 'graficas' (fondo + gráficas, para promediar el desenfoque) | 'texto' (anotaciones nítidas, sin desenfoque). */
-  dibujar(ctx, W, H, t, {sinFondo = false, modo = 'todo'} = {}) {
+  dibujar(ctx, W, H, t, {sinFondo = false, modo = 'todo', alfa = sinFondo} = {}) {   // alfa = entregable ProRes con transparencia (la pasada de texto usa sinFondo siempre, pero no es el canal alfa)
     fijarFormato(H > W, Math.min(W, H) / 1080);
     ctx.clearRect(0, 0, W, H);
     if (!sinFondo && modo !== 'texto') this.fondo(ctx, W, H, t);
-    const env = {ctx, W, H, u: Math.min(W, H) / 1080, t, tablas: this.spec.tablas, imgs: this.imgs, vistas: {}, cabezas: {}, proy: {}, registro: [], capasTodas: this.capas};
+    const env = {ctx, W, H, sinFondo, alfa, u: Math.min(W, H) / 1080, t, tablas: this.spec.tablas, imgs: this.imgs, vistas: {}, cabezas: {}, proy: {}, registro: [], capasTodas: this.capas};
     // las zonas (z 8) van DETRÁS de la gráfica (z 10) pero necesitan su proyección datos→píxel: se dibuja antes la gráfica a la que apuntan en un lienzo desechable
     // solo para publicar su vista, y se descarta lo que ese dibujo registró (cajas de texto) para no duplicar colisiones
     const conZona = new Set(this.capas.filter((c) => c.tipo === 'zona' && c.capa).map((c) => c.capa));

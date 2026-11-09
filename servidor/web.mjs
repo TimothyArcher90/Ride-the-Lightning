@@ -10,7 +10,7 @@ const MIME = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; char
   '.gif': 'image/gif', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.csv': 'text/csv; charset=utf-8'};
 
 const RAICES = {'/motor/': 'motor', '/fuentes/': 'fuentes', '/web/': 'web', '/archivos/': '.', '/salidas/': 'salidas'};
-const PERMITIDO_ARCHIVOS = ['entradas', 'datos', 'specs'];
+const PERMITIDO_ARCHIVOS = ['entradas', 'datos', 'specs', 'marca'];
 
 export function servirEstatico(req, res) {
   const url = new URL(req.url, 'http://x');

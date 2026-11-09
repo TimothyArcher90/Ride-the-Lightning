@@ -21,6 +21,7 @@ const SUITES = [
   {id: 'catalogo-ingles', archivo: 'prueba-catalogo-ingles.mjs', rapida: true},
   {id: 'ui-idioma', archivo: 'prueba-ui-idioma.mjs', rapida: true},
   {id: 'paises', archivo: 'prueba-paises.mjs', rapida: true},
+  {id: 'cierre', archivo: 'prueba-cierre.mjs', rapida: true},
   {id: 'loess', archivo: 'prueba-loess.mjs', rapida: true},
   // pesadas (≈ 2-3 min cada una: renderizan decenas de escenas); van de más lenta a más rápida para que con --jobs el reparto sea parejo
   {id: 'plantillas', archivo: 'prueba-plantillas.mjs'},
@@ -38,7 +39,7 @@ const tiemposArchivo = path.join(RAIZ, '.tmp', 'check-tiempos.json');
 let previos = {}; try { previos = JSON.parse(fs.readFileSync(tiemposArchivo, 'utf8')); } catch {}
 const correr = (s) => new Promise((ok) => {
   const t0 = Date.now(); let out = '';
-  const p = spawn(process.execPath, [path.join('scripts', s.archivo), ...(s.args ?? [])], {cwd: RAIZ, stdio: ['ignore', 'pipe', 'pipe']});
+  const p = spawn(process.execPath, [path.join('scripts', s.archivo), ...(s.args ?? [])], {cwd: RAIZ, stdio: ['ignore', 'pipe', 'pipe'], env: {...process.env, RTL_SIN_CIERRE: '1'}});
   p.stdout.on('data', (d) => (out += d)); p.stderr.on('data', (d) => (out += d));
   p.on('close', (code) => ok({...s, code, seg: (Date.now() - t0) / 1000, out}));
   p.on('error', (e) => ok({...s, code: 1, seg: 0, out: String(e)}));

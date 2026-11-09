@@ -65,7 +65,7 @@ window.RTL = {
       ctx.globalAlpha = 1;
     }
     // texto y anotaciones: un solo dibujo, siempre nítido
-    escena.dibujar(tctx, W, H, t, {sinFondo: true, modo: 'texto'});
+    escena.dibujar(tctx, W, H, t, {sinFondo: true, modo: 'texto', alfa: sinFondo});
     ctx.drawImage(trabajo, 0, 0);
     return true;
   },

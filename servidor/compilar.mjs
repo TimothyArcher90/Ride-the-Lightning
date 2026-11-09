@@ -21,7 +21,7 @@ registrar('m', {indice_unidad: {es: 'Índice (100 = {base})', en: 'Index (100 = 
 
 export const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TIPOS_GRAFICA = ['linea', 'barras', 'carrera', 'dispersion', 'calor', 'sankey', 'donut', 'cascada', 'pendiente', 'bump', 'treemap', 'waffle', 'lollipop', 'divergente', ...TIPOS_EXTRA];
-const TIPOS = [...TIPOS_GRAFICA, 'zona', 'llamada', 'contador', 'titulo', 'cortina', 'imagen', 'sello'];
+const TIPOS = [...TIPOS_GRAFICA, 'zona', 'llamada', 'contador', 'titulo', 'cortina', 'cierre', 'imagen', 'sello'];
 const MAX_PX = {horizontal: [1920, 1080], vertical: [1080, 1920]};
 
 /** Ruta segura dentro del proyecto (evita que una spec lea fuera de la carpeta). */
@@ -226,7 +226,20 @@ function resolverAncla(capa, tab, si, informe, donde) {
   return i;
 }
 
+/** Cierre de marca determinista (marca/cierre.json): a TODA pieza se le añade al final `hold` s con la gráfica final quieta y una tarjeta con el logo.
+ *  Las capas que duraban hasta el final se prolongan para que la imagen final no se apague antes. No toca la spec original. Se apaga con spec.cierre=false. */
+function conCierre(spec, raiz) {
+  if (spec.cierre === false || process.env.RTL_SIN_CIERRE === '1' || (spec.capas ?? []).some((k) => k.tipo === 'cierre')) return spec;
+  let cfg; try { cfg = JSON.parse(fs.readFileSync(path.join(raiz, 'marca', 'cierre.json'), 'utf8')); } catch { return spec; }
+  if (!cfg.activo) return spec;
+  const d0 = spec.duracion ?? 15, hold = cfg.hold ?? 5, tarjeta = cfg.tarjeta ?? 4.6;
+  const capas = (spec.capas ?? []).map((k) => (Array.isArray(k.t) && k.t[1] >= d0 - 1 ? {...k, t: [k.t[0], k.t[1] + hold + tarjeta]} : k));
+  capas.push({tipo: 'cierre', id: 'cierre', archivo: cfg.archivo, t: [d0 + hold, d0 + hold + tarjeta]});
+  return {...spec, duracion: +(d0 + hold + tarjeta).toFixed(2), capas};
+}
+
 export function compilar(spec, {raiz = RAIZ} = {}) {
+  spec = conCierre(spec, raiz);
   fijarIdioma(spec.idioma);   // el compilador formatea cifras y fechas con el idioma de la pieza ('es' por defecto)
   const informe = {errores: [], avisos: [], datos: [], cifras: [], metodos: []};
   const E = (m) => informe.errores.push(m);
@@ -358,7 +371,7 @@ export function compilar(spec, {raiz = RAIZ} = {}) {
       });
     }
 
-    if (capa.tipo === 'imagen') {
+    if (capa.tipo === 'imagen' || (capa.tipo === 'cierre' && capa.archivo)) {
       try { const abs = rutaSegura(capa.archivo, raiz); if (!fs.existsSync(abs)) E(`${donde}: no existe la imagen ${capa.archivo}`); else imagenes.add(capa.archivo); } catch (e) { E(`${donde}: ${e.message}`); }
     }
     capas.push(capa);

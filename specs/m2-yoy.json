@@ -4,7 +4,7 @@
   "titulo": "US M2 money supply, year over year",
   "formato": "horizontal",
   "fps": 30,
-  "duracion": 28,
+  "duracion": 27.4,
   "datos": {
     "d": {
       "archivo": "datos/m2/m2_yoy.csv",
@@ -55,7 +55,7 @@
       "texto": "M2 growth nears 6%, its fastest pace since 2022",
       "t": [
         0.3,
-        27.4
+        26.799999999999997
       ],
       "sub": "White: monthly, seasonally adjusted. Gold: the latest two years; thin gold is weekly, not adjusted. Grey bands: NBER recessions.",
       "verificada": {
@@ -97,7 +97,7 @@
       "color": "piedra",
       "t": [
         1.13,
-        27.5
+        26.9
       ]
     },
     {
@@ -111,7 +111,7 @@
       "color": "piedra",
       "t": [
         3.31,
-        27.5
+        26.9
       ]
     },
     {
@@ -125,7 +125,7 @@
       "color": "piedra",
       "t": [
         3.88,
-        27.5
+        26.9
       ]
     },
     {
@@ -139,7 +139,7 @@
       "color": "piedra",
       "t": [
         4.65,
-        27.5
+        26.9
       ]
     },
     {
@@ -153,7 +153,7 @@
       "color": "piedra",
       "t": [
         4.83,
-        27.5
+        26.9
       ]
     },
     {
@@ -167,7 +167,7 @@
       "color": "piedra",
       "t": [
         5.89,
-        27.5
+        26.9
       ]
     },
     {
@@ -181,7 +181,7 @@
       "color": "piedra",
       "t": [
         7.32,
-        27.5
+        26.9
       ]
     },
     {
@@ -195,7 +195,7 @@
       "color": "piedra",
       "t": [
         8.48,
-        27.5
+        26.9
       ]
     },
     {
@@ -209,7 +209,7 @@
       "color": "piedra",
       "t": [
         11.91,
-        27.5
+        26.9
       ]
     },
     {
@@ -254,7 +254,7 @@
       "texto": "Latest, weekly",
       "t": [
         26.2,
-        27.5
+        26.9
       ]
     }
   ]

@@ -43,7 +43,7 @@ function lineasCabeza(ctx, nombre, vert, W) {
   return mejor;
 }
 
-export const Z = {imagen: 5, zona: 8, sankey: 10, donut: 10, cascada: 10, pendiente: 10, bump: 10, treemap: 10, waffle: 10, lollipop: 10, divergente: 10, linea: 10, barras: 10, carrera: 10, dispersion: 10, calor: 10, llamada: 20, contador: 25, titulo: 30, cortina: 40, sello: 50};
+export const Z = {imagen: 5, zona: 8, sankey: 10, donut: 10, cascada: 10, pendiente: 10, bump: 10, treemap: 10, waffle: 10, lollipop: 10, divergente: 10, linea: 10, barras: 10, carrera: 10, dispersion: 10, calor: 10, llamada: 20, contador: 25, titulo: 30, cortina: 40, cierre: 45, sello: 50};
 
 function caja(env, capa, def) {
   let c = capa.caja ?? def;
@@ -907,6 +907,19 @@ function imagen(env, capa) {
   ctx.restore();
 }
 
+/** Cierre de marca: la gráfica final se queda y se funde (suave, sin cortes) a una tarjeta OPACA Warm Black con SOLO el logo (archivo, PNG con transparencia).
+ *  Lo añade el compilador a TODA pieza (servidor/compilar.mjs, marca/cierre.json). En el canal alfa (ProRes para montar) no se dibuja: ahí la tarjeta la pone el editor. */
+function cierre(env, capa) {
+  if (env.alfa) return;
+  const {ctx, u, t, W, H} = env, [t0] = capa.t ?? [0, 99];
+  const f = prog(t, t0, t0 + 1.2, ease.io3); if (f <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = f; ctx.fillStyle = PALETA.fondo; ctx.fillRect(0, 0, W, H);
+  const img = capa.archivo ? env.imgs[capa.archivo] : null, a1 = prog(t, t0 + 0.9, t0 + 1.9, ease.out3);
+  if (img && a1 > 0) { const w = Math.min(W * 0.36, 760 * u), h = w * (img.height / img.width); ctx.globalAlpha = a1; ctx.drawImage(img, W / 2 - w / 2, H / 2 - h / 2 + (1 - a1) * 14 * u, w, h); }
+  ctx.restore();
+}
+
 function sello(env, capa) {
   const {ctx} = env, S = cajaSello(env, capa);
   ctx.save();
@@ -1574,4 +1587,4 @@ function divergente(env, capa) {
 }
 
 import {CAPAS_EXTRA, acortarNombres} from './capas_extra.js';   // visualizador universal (capas nuevas)
-export const DIBUJO = {...CAPAS_EXTRA, linea, barras, carrera, dispersion, calor, zona, llamada, contador, titulo, cortina, imagen, sello, sankey, donut, cascada, pendiente, bump, treemap, waffle, lollipop, divergente};
+export const DIBUJO = {...CAPAS_EXTRA, linea, barras, carrera, dispersion, calor, zona, llamada, contador, titulo, cortina, cierre, imagen, sello, sankey, donut, cascada, pendiente, bump, treemap, waffle, lollipop, divergente};
