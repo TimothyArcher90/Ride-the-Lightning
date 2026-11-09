@@ -14,5 +14,5 @@ specs/_chat_actual.json
 !data/
 !data/**
 
-# logo de marca: no se publica en el repo abierto (el cierre lo exige en local)
-marca/macrowise-logo.png
+# cierre de marca (videos): activo de MacroWise, no se publica en el repo abierto; se regenera con scripts/construir-cierre.mjs
+marca/cierre/*.mp4

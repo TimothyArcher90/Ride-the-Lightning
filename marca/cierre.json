@@ -1,7 +1,8 @@
 {
-  "_nota": "Cierre de marca DETERMINISTA: toda pieza que se compila queda quieta `hold` s en su gráfica final y se funde a una tarjeta opaca Warm Black con SOLO el logo (`tarjeta` s). Se apaga con spec.cierre=false o RTL_SIN_CIERRE=1 (solo pruebas).",
+  "_nota": "Cierre de marca DETERMINISTA de todo video de Ride the Lightning (MP4): la gráfica final queda quieta `hold` s, hace un fundido a negro de `fundido` s y entra el cierre aprobado de MacroWise (marca/cierre/*.mp4: horizontal = el original de David; vertical = el mismo, encajado en la zona segura de reels). El ProRes con alfa no lleva cierre (se monta en el editor). Se apaga con spec.cierre=false o RTL_SIN_CIERRE=1 (solo pruebas).",
   "activo": true,
-  "archivo": "marca/macrowise-logo.png",
   "hold": 5,
-  "tarjeta": 4.6
+  "fundido": 0.8,
+  "h": "marca/cierre/macrowise-cierre-h.mp4",
+  "v": "marca/cierre/macrowise-cierre-v.mp4"
 }

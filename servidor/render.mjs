@@ -6,7 +6,7 @@ import path from 'node:path';
 import {spawn, spawnSync} from 'node:child_process';
 import {chromium} from 'playwright-core';
 import {iniciarServidor} from './web.mjs';
-import {RAIZ} from './compilar.mjs';
+import {RAIZ, configCierre} from './compilar.mjs';
 import {t as tx, registrar, conIdioma, idioma} from '../motor/idioma.js';
 import {escribirAccesibilidad} from './accesibilidad.mjs';
 
@@ -148,6 +148,33 @@ export function sonda(archivo) {
 }
 
 /**
+ * Cierre de marca: al MP4 terminado le anexa el video de cierre de MacroWise (marca/cierre.json) con un fundido a negro; elige el horizontal o el vertical según el formato.
+ * El ProRes con alfa NO lo lleva. Devuelve {anexado, segundos} (sin cambios si el cierre está apagado).
+ */
+registrar('cierre', {
+  falta: {es: 'Falta el video de cierre de marca: {f} (se crea con: node scripts/construir-cierre.mjs). No se entrega un video sin su cierre.', en: 'The brand closing video is missing: {f} (create it with: node scripts/construir-cierre.mjs). A video is never delivered without its closing.'},
+  sin_mp4: {es: 'No se pudo leer el MP4 para anexarle el cierre.', en: 'Could not read the MP4 to append the closing to it.'},
+  ffmpeg: {es: 'ffmpeg no pudo anexar el cierre: {e}', en: 'ffmpeg could not append the closing: {e}'},
+});
+export function anexarCierre(mp4, spec, calidad = 'final') {
+  const cfg = configCierre();
+  if (!cfg || spec.cierre === false || process.env.RTL_SIN_CIERRE === '1') return {anexado: false};
+  const vertical = spec.alto > spec.ancho, clip = path.join(RAIZ, vertical ? cfg.v : cfg.h);
+  if (!fs.existsSync(clip)) throw new Error(tx('cierre.falta', {f: path.relative(RAIZ, clip)}));
+  const s = sonda(mp4); if (!s) throw new Error(tx('cierre.sin_mp4'));
+  const W = Number(s.width), H = Number(s.height), fps = spec.fps ?? 30, f = cfg.fundido ?? 0.8;
+  const d0 = Number(spec.duracion), d1 = Number(spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', clip], {encoding: 'utf8'}).stdout.trim());
+  const total = +(d0 + d1 - f).toFixed(3), tmp = mp4.replace(/.mp4$/, '_conCierre.mp4');
+  const filtro = `[0:v]fps=${fps},format=yuv420p,setsar=1[a];[1:v]scale=${W}:${H}:flags=lanczos,fps=${fps},format=yuv420p,setsar=1[b];[a][b]xfade=transition=fadeblack:duration=${f}:offset=${(d0 - f).toFixed(3)}[v]`;
+  const r = spawnSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', mp4, '-i', clip, '-f', 'lavfi', '-t', String(total), '-i', 'anullsrc=r=44100:cl=stereo', '-filter_complex', filtro, '-map', '[v]', '-map', '2:a',
+    '-c:v', 'libx264', '-crf', calidad === 'final' ? '17' : '23', '-preset', calidad === 'final' ? 'slow' : 'veryfast', '-pix_fmt', 'yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv',
+    '-c:a', 'aac', '-b:a', '128k', '-t', String(total), '-movflags', '+faststart', tmp], {encoding: 'utf8'});
+  if (r.status !== 0) throw new Error(tx('cierre.ffmpeg', {e: String(r.stderr).slice(-500)}));
+  fs.renameSync(tmp, mp4);
+  return {anexado: true, segundos: total, clip: path.relative(RAIZ, clip)};
+}
+
+/**
  * calidad 'final' (1920×1080 o 1080×1920, 4 subfotogramas de desenfoque, crf 17 slow) | 'borrador' (mitad de tamaño, rápido).
  * alfa: además del MP4, un .mov ProRes 4444 sin fondo para montar en Premiere.
  */
@@ -173,9 +200,12 @@ export async function renderizar(spec, informe, {nombre, calidad = 'final', alfa
     else if (process.env.RTL_SECUENCIAL) { await pMp4(); await pAlfa(); }
     else await Promise.all([pMp4(), pAlfa()]);
   } finally { await nav.close(); await srv.cerrar(); }
+  // cierre de marca: el MP4 (no el ProRes) termina SIEMPRE con el video de cierre de MacroWise
+  const cierre = anexarCierre(salidas.mp4, spec, calidad);
+  const durTotal = cierre.anexado ? cierre.segundos : spec.duracion;
   // contacto: 12 fotogramas repartidos, para revisar de un vistazo
   const contacto = `${pref}_contacto.png`;
-  spawnSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', salidas.mp4, '-vf', `fps=12/${spec.duracion},scale=640:-1,tile=4x3`, '-frames:v', '1', contacto]);
+  spawnSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', salidas.mp4, '-vf', `fps=12/${durTotal},scale=640:-1,tile=4x3`, '-frames:v', '1', contacto]);
   if (fs.existsSync(contacto)) salidas.contacto = contacto;
   fs.writeFileSync(`${pref}.json`, JSON.stringify({generado: new Date().toISOString(), calidad, spec_compilada_titulo: spec.titulo, informe}, null, 2));
   salidas.informe = `${pref}.json`;
@@ -183,5 +213,5 @@ export async function renderizar(spec, informe, {nombre, calidad = 'final', alfa
   const acc = escribirAccesibilidad(pref, spec, informe, {calidad, alfa, escala});
   salidas.alt = acc.alt; salidas.proveniencia = acc.proveniencia;
   const verif = {mp4: sonda(salidas.mp4), alfa: salidas.alfa ? sonda(salidas.alfa) : null};
-  return {salidas, version: v, segundos: Math.round((Date.now() - t0) / 1000), verificacion: verif, cuadros: Math.round(spec.duracion * spec.fps)};
+  return {salidas, cierre, version: v, segundos: Math.round((Date.now() - t0) / 1000), verificacion: verif, cuadros: Math.round(spec.duracion * spec.fps)};
 }
