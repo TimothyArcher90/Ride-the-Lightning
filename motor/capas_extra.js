@@ -126,12 +126,12 @@ function nombreEnLineas(env, s, ancho, base, peso = 700, maxL = 2) {
   const r = ctx.measureText(String(s)).width <= ancho ? [String(s)] : envolverEntero(ctx, String(s), ancho, maxL);
   ctx.restore(); return r ?? [cortarA(env, s, ancho, base, peso)];
 }
-function lineasDe(env, s, ancho, base, peso, maxL) { const {ctx} = env; ctx.save(); ctx.font = F(env, peso, base); const r = envolver(ctx, s, ancho, maxL); ctx.restore(); return r; }
+function lineasDe(env, s, ancho, base, peso, maxL, extra = 0) { const {ctx} = env; ctx.save(); ctx.font = F(env, peso, base); const r = envolver(ctx, s, ancho, maxL, {extra}); ctx.restore(); return r; }
 
 /** Nota de método/escala que se DECLARA en pantalla: va en la franja libre justo encima de la gráfica (hasta 3 líneas). */
 function nota(env, B, texto, id, alpha = 1) {
   if (!texto) return;
-  const px = tam(env, 18), lh = px * 1.28, L = lineasDe(env, texto, B.w, 18, 500, env.H > env.W ? 6 : 3);   // en vertical la caja es más estrecha: más líneas, para no cortar la declaración de escala con «…»
+  const px = tam(env, 18), lh = px * 1.28, L = lineasDe(env, texto, B.w, 18, 500, env.H > env.W ? 6 : 3, 2);   // en vertical la caja es más estrecha: más líneas, para no cortar la declaración de escala con «…»
   L.forEach((l, i) => rot(env, l, B.x, B.y - 16 * env.u - (L.length - 1 - i) * lh, 18, 500, rgba(PALETA.piedraClara, 0.9), 'left', `${id}:nota${i}`, {alpha, halo: false}));
 }
 /** Opacidad de entrada escalonada del elemento i de n que arranca en t0 (curva de desaceleración, nunca lineal). */

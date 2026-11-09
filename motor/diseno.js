@@ -107,14 +107,24 @@ export const salida = (t, t1, dur = MOV.salida) => 1 - CURVA.salida(Math.min(1, 
 // ── Pie de fuente ───────────────────────────────────────────────────────────────────────────────────────────────
 /** «Fuente: <nombre> · <fecha del último dato> · RTL» (el pie obligatorio de toda pieza). */
 export const textoPie = (nombre, fecha) => `${t('fuente')}: ${[nombre, fecha].filter(Boolean).join(' · ')} · RTL`;
-/** Parte un texto en líneas que caben en `ancho` (por palabras; si una palabra sola no cabe, se corta con «…»). */
-export function envolver(ctx, s, ancho, maxLineas = 3) {
+/** Líneas por palabras COMPLETAS que caben en `ancho`, sin tope de líneas. Solo una palabra que sola no cabe se corta con «…» (única excepción). */
+export function envolverPalabras(ctx, s, ancho) {
   const pal = String(s).split(' '), out = []; let l = '';
   for (const p of pal) {
     const c = l ? `${l} ${p}` : p;
     if (ctx.measureText(c).width <= ancho || !l) l = c; else { out.push(l); l = p; }
   }
   if (l) out.push(l);
-  if (out.length > maxLineas) { const resto = out.slice(maxLineas - 1).join(' '); out.length = maxLineas - 1; out.push(resto); }
+  return out.map((x) => { while (x.length > 4 && ctx.measureText(x).width > ancho) x = x.slice(0, -2) + '…'; return x; });
+}
+/**
+ * Parte un texto en líneas que caben en `ancho`, por palabras completas. Si hacen falta más de `maxLineas`, se aceptan hasta `maxLineas + extra`
+ * (el llamador crece hacia donde hay sitio: pie, notas de método); solo si ni así caben, la última línea absorbe el resto y se acorta con «…».
+ * Una palabra que sola no cabe se corta con «…» (única excepción dentro de los topes).
+ */
+export function envolver(ctx, s, ancho, maxLineas = 3, {extra = 0} = {}) {
+  const todo = envolverPalabras(ctx, s, ancho);
+  if (todo.length <= maxLineas + extra) return todo;
+  const out = todo.slice(0, maxLineas - 1); out.push(todo.slice(maxLineas - 1).join(' '));
   return out.map((x) => { while (x.length > 4 && ctx.measureText(x).width > ancho) x = x.slice(0, -2) + '…'; return x; });
 }

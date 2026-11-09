@@ -30,7 +30,7 @@ registrar('c', {
   waffle_nota: {es: 'Cada cuadro vale 1 % del total', en: 'Each square is worth 1% of the total'},
 });
 
-import {escalarFuente, fuenteCss, tipo, ZONA, margenes, envolver, textoPie, MOV, CURVA, entrada as entradaEsc, retardo, contraste, legible} from './diseno.js';
+import {escalarFuente, fuenteCss, tipo, ZONA, margenes, envolver, envolverPalabras, textoPie, MOV, CURVA, entrada as entradaEsc, retardo, contraste, legible} from './diseno.js';
 // TODA fuente pasa por el sistema de diseño (motor/diseno.js): nunca baja del piso de legibilidad de su banda y formato.
 const fnt = (peso, px, mono = false) => fuenteCss(peso, escalarFuente(px), mono);
 
@@ -624,7 +624,8 @@ function cajaTitulo(env, capa) {
   let tam = capa.tam ? capa.tam * u : T, lineas = [];
   const medir = () => { ctx.font = fuenteCssT(tam); return envolver(ctx, String(capa.texto ?? ''), libre, maxL); };
   lineas = medir();
-  while ((lineas.length > maxL || lineas.some((l) => ctx.measureText(l).width > libre)) && tam > minimo) { tam -= 2 * u; lineas = medir(); }
+  const sobra = () => envolverPalabras(ctx, String(capa.texto ?? ''), libre).length > maxL || lineas.some((l) => ctx.measureText(l).width > libre);   // el título se achica ANTES de recortar una palabra o juntar líneas con «…»
+  while (sobra() && tam > minimo) { tam -= 2 * u; lineas = medir(); }
   ctx.font = fuenteCssT(tam);
   const w = Math.max(...lineas.map((l) => ctx.measureText(l).width)), lh = tam * 1.12, ult = y + (lineas.length - 1) * lh;
   const subT = capa.sub ? tipo(env, 'sub') : 0;
@@ -632,7 +633,7 @@ function cajaTitulo(env, capa) {
   let subLineas = [];
   if (capa.sub) {
     ctx.font = fuenteCss(500, subT); const tope = vert ? ZONA.x * W - x - 6 : Math.min(W - 2 * x, Math.max(w + 400 * u, W * 0.5));
-    subLineas = ctx.measureText(String(capa.sub)).width <= tope ? [String(capa.sub)] : (envolverEntero(ctx, String(capa.sub), tope, 2) ?? envolverEntero(ctx, String(capa.sub), tope, 3) ?? envolver(ctx, String(capa.sub), tope, 3));
+    subLineas = ctx.measureText(String(capa.sub)).width <= tope ? [String(capa.sub)] : (envolverEntero(ctx, String(capa.sub), tope, 2) ?? envolverEntero(ctx, String(capa.sub), tope, 3) ?? envolver(ctx, String(capa.sub), tope, 3, {extra: 1}));
   }
   // si el subtítulo ocupa 2+ líneas (vertical, posición por defecto) el bloque sube lo que crece, para no invadir el contador ni la gráfica
   const dy = vert && !capa.pos ? -Math.min(Math.max(0, subLineas.length - 1) * subT * 1.25, 0.035 * H) : 0, yy = y + dy, ult2 = ult + dy;
@@ -668,7 +669,7 @@ function cajaSello(env, capa) {
   const {ctx, u, W, H} = env, vert = H > W, px = tipo(env, 'pie'), D = margenes(env);
   const {nombre, fecha} = datosSello(env, capa);
   ctx.font = fuenteCss(500, px);
-  const ancho = (vert ? ZONA.x * W - 8 : W - D.m) - D.m, lineas = envolver(ctx, textoPie(nombre, fecha), ancho, 3), lh = px * 1.3;
+  const ancho = (vert ? ZONA.x * W - 8 : W - D.m) - D.m, lineas = envolver(ctx, textoPie(nombre, fecha), ancho, 3, {extra: 2}), lh = px * 1.3;   // la fuente nunca se corta: crece hacia arriba
   const yTop = H - (vert ? 0.03 : 0.045) * H - (lineas.length - 1) * lh, w = Math.max(...lineas.map((l) => ctx.measureText(l).width));
   return {lineas, px, lh, x: D.m, y: yTop, caja: [D.m - 4 * u, yTop - px, D.m + w + 4 * u, yTop + (lineas.length - 1) * lh + px * 0.3]};
 }
@@ -1300,7 +1301,7 @@ function pendiente(env, capa) {
   ctx.save(); ctx.globalAlpha *= ap;
   [[xl, i0], [xr, i1]].forEach(([x, i]) => { rotulo(ctx, etiquetaX(tab, i), x, B.y + 40 * u, fnt(800, 30 * u, true), PALETA.piedraClara, 'center', u); ctx.font = fnt(800, 30 * u, true); const w = ctx.measureText(etiquetaX(tab, i)).width; reg(env, 'etiqueta', [x - w / 2, B.y - 4 * u, x + w / 2, B.y + 50 * u], `${capa.id ?? 'pendiente'}:x${i}`); });
   if (L.logE) {
-    ctx.font = fnt(600, 16 * u); const lin = envolver(ctx, tr('c.log_nota'), B.w, 3), s = escalarFuente(16 * u);
+    ctx.font = fnt(600, 16 * u); const lin = envolver(ctx, tr('c.log_nota'), B.w, 3, {extra: 2}), s = escalarFuente(16 * u);
     lin.forEach((l, q) => rotulo(ctx, l, B.x, B.y + B.h + 30 * u + s + q * s * 1.25, fnt(600, 16 * u), PALETA.piedraOscura, 'left', u));
     reg(env, 'etiqueta', [B.x, B.y + B.h + 30 * u, B.x + B.w, B.y + B.h + 30 * u + s * (1.25 * lin.length + 0.5)], `${capa.id ?? 'pendiente'}:escala`);
   }
@@ -1357,7 +1358,7 @@ function bump(env, capa) {
   ctx.font = fnt(700, 21 * u, true); const wy = ctx.measureText(etiquetaX(tab, L.pts[0])).width, cada = Math.max(1, Math.ceil((wy * 1.5) / paso));
   L.pts.forEach((i, q) => { if ((q % cada === 0 && L.pts.length - 1 - q >= cada) || q === L.pts.length - 1) { const tx = etiquetaX(tab, i); rotulo(ctx, tx, cx(q), B.y + 44 * u, fnt(700, 21 * u, true), PALETA.piedraClara, 'center', u); const w = ctx.measureText(tx).width; reg(env, 'etiqueta', [cx(q) - w / 2, B.y + 8 * u, cx(q) + w / 2, B.y + 56 * u], `${capa.id ?? 'bump'}:p${q}`); } });
   const nota = capa.orden !== 'valor' ? tr('c.bump_crecio', {x: etiquetaX(tab, L.pts[0])}) : tr('c.bump_valor');
-  ctx.font = fnt(600, 16 * u); const nl = envolver(ctx, nota, B.w, 2), sNota = escalarFuente(16 * u);
+  ctx.font = fnt(600, 16 * u); const nl = envolver(ctx, nota, B.w, 2, {extra: 2}), sNota = escalarFuente(16 * u);
   nl.forEach((l, q) => rotulo(ctx, l, B.x, B.y + B.h + 30 * u + sNota + q * sNota * 1.25, fnt(600, 16 * u), PALETA.piedraOscura, 'left', u));
   reg(env, 'etiqueta', [B.x, B.y + B.h + 30 * u, B.x + B.w, B.y + B.h + 30 * u + sNota * (1.25 * nl.length + 0.4)], `${capa.id ?? 'bump'}:orden`);
   L.idxs.forEach((si, j) => {
