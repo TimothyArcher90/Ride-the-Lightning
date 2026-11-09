@@ -145,7 +145,7 @@ function corriente(env, capa) {
   const hSb = sb * k, xs = B.x + 12 * u; ctx.strokeStyle = PALETA.blanco; ctx.lineWidth = 3 * u; ctx.beginPath(); ctx.moveTo(xs, yc - hSb / 2); ctx.lineTo(xs, yc + hSb / 2); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(xs - 5 * u, yc - hSb / 2); ctx.lineTo(xs + 5 * u, yc - hSb / 2); ctx.moveTo(xs - 5 * u, yc + hSb / 2); ctx.lineTo(xs + 5 * u, yc + hSb / 2); ctx.stroke();
   rot(env, txtSb, xs + 12 * u, yc + S * 0.35, 18, 800, PALETA.blanco, 'left', `${id}:escala`, {mono: true});
-  const fecha = tab.tipoX === 'fecha', tf = fecha ? ticksFecha(xa, xb, Math.max(3, Math.floor((x1 - x0) / (S * 4.6)))) : {ticks: ticksNum(xa, xb, 5), unidad: 'y'};
+  const fecha = tab.tipoX === 'fecha', tf = fecha ? ticksFecha(xa, xb, Math.max(2, Math.floor((x1 - x0) / (S * 4.6)))) : {ticks: ticksNum(xa, xb, Math.max(2, Math.min(5, Math.floor((x1 - x0) / (S * 4.6)))) ), unidad: 'y'};
   tf.ticks.forEach((tk) => { const lb = fecha ? etiquetaTick(tk, tf.unidad) : fN(tk, {decimales: 0}), hw = med(env, lb, 18, 500, true) / 2; rot(env, lb, clamp(px(tk), x0 + hw, x1 - hw), y1 + S * 1.6, 18, 500, rgba(PALETA.piedraOscura, 0.95), 'center', `${id}:x${tk}`, {mono: true, tipo: 'eje-x'}); });
   let rr = 0; for (let r = 0; r < L.m; r++) if (tab.x[L.filas[r]] <= xh + 1e-9) rr = r;
   const ys = L.orden.map((j, q) => py((cum(rr, q) + cum(rr, q + 1)) / 2)), pos = separar(ys, lh, y0 + lh * 0.5, y1 - lh * 0.5);
